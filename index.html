@@ -410,6 +410,41 @@
   .conn { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; margin-top: 14px; font-size: .8rem; color: var(--muted); }
   .conn-dot { width: 8px; height: 8px; border-radius: 50%; background: #c9a227; flex: none; }
   .conn[data-kind="local"] .conn-dot, .conn[data-kind="custom"] .conn-dot { background: var(--ok); }
+  /* Customer projects */
+  .projects {
+    margin: 20px 0 4px; padding: 14px 16px;
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow);
+  }
+  .proj-row { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 10px 12px; }
+  .proj-pick { flex: 1 1 320px; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+  .proj-pick span { font-size: .85rem; font-weight: 600; }
+  .proj-pick select {
+    width: 100%; padding: 9px 12px; font: inherit; font-size: .95rem; color: var(--text);
+    background: var(--surface); border: 1.5px solid var(--border); border-radius: 10px;
+  }
+  .proj-pick select:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+  .proj-actions { display: flex; gap: 8px; align-items: center; }
+  .proj-actions .btn-sm { padding: 9px 14px; font-size: .875rem; }
+  .proj-more { position: relative; }
+  .proj-more summary { list-style: none; cursor: pointer; }
+  .proj-more summary::-webkit-details-marker { display: none; }
+  .proj-menu {
+    position: absolute; right: 0; top: calc(100% + 6px); z-index: 20; min-width: 240px;
+    display: flex; flex-direction: column; padding: 6px;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 12px; box-shadow: 0 10px 30px rgba(0, 0, 0, .15);
+  }
+  .proj-menu button, .proj-menu label {
+    padding: 9px 12px; font: inherit; font-size: .9rem; text-align: left; color: var(--text);
+    background: none; border: 0; border-radius: 8px; cursor: pointer;
+  }
+  .proj-menu button:hover, .proj-menu label:hover, .proj-menu label:focus-within { background: var(--surface-2); }
+  .proj-menu .danger { color: var(--bad); }
+  .proj-status { margin: 8px 0 0; font-size: .8rem; color: var(--muted); }
+  .proj-status[data-state="error"] { color: var(--bad); font-weight: 600; }
+  .proj-dialog { width: min(560px, calc(100% - 24px)); }
+  .deck-of { margin: 0 0 2px; font-size: .85rem; color: var(--muted); }
+  .deck-of strong { color: var(--accent); }
+
   .conn-more { flex-basis: 100%; }
   .conn-help { font-weight: 600; color: var(--accent); }
   .source-note a { color: inherit; font-weight: 600; }
@@ -537,6 +572,45 @@
   </header>
 
   <main>
+    <section class="projects" id="projects" aria-label="โปรเจกต์ลูกค้า">
+      <div class="proj-row">
+        <label class="proj-pick">
+          <span>โปรเจกต์ลูกค้า (แยกงานของลูกค้าแต่ละคน)</span>
+          <select id="proj-select"></select>
+        </label>
+        <div class="proj-actions">
+          <button class="btn-sm is-on" id="proj-new" type="button">+ โปรเจกต์ใหม่</button>
+          <details class="proj-more">
+            <summary class="btn-sm">จัดการ ▾</summary>
+            <div class="proj-menu">
+              <button type="button" data-proj="duplicate">ทำสำเนาโปรเจกต์นี้</button>
+              <button type="button" data-proj="export">ส่งออกไฟล์ (สำรอง / ส่งต่อ)</button>
+              <label>นำเข้าไฟล์โปรเจกต์…<input class="visually-hidden" type="file" accept=".json,application/json" id="proj-import"></label>
+              <button type="button" data-proj="delete" class="danger">ลบโปรเจกต์นี้</button>
+            </div>
+          </details>
+        </div>
+      </div>
+      <p class="proj-status" id="proj-status" role="status" aria-live="polite"></p>
+    </section>
+
+    <dialog class="editor proj-dialog" id="proj-dialog" aria-labelledby="proj-dialog-title">
+      <form id="proj-form" autocomplete="off">
+        <header class="editor-head"><h3 id="proj-dialog-title">โปรเจกต์ใหม่</h3></header>
+        <div class="editor-body">
+          <p class="sub">เริ่มงานของลูกค้ารายใหม่ แยกจากโปรเจกต์อื่นทั้งหมด (เปลี่ยนชื่อภายหลังได้ที่ “ข้อมูลโครงการ”)</p>
+          <div class="fields">
+            <label class="field"><span>ชื่อลูกค้า (OWNER)</span><input name="np_owner" placeholder="เช่น คุณสมชาย"></label>
+            <label class="field"><span>ชื่อโครงการ</span><input name="np_project" placeholder="เช่น บ้านพักอาศัย 2 ชั้น"></label>
+          </div>
+        </div>
+        <footer class="editor-foot">
+          <button class="btn-ghost" type="button" data-np="cancel">ยกเลิก</button>
+          <button class="btn" type="submit">สร้างโปรเจกต์</button>
+        </footer>
+      </form>
+    </dialog>
+
     <form class="search" id="search-form" autocomplete="off">
       <p class="field-label" id="source-label">แหล่งข้อมูล</p>
       <div class="toggles sources" role="radiogroup" aria-labelledby="source-label">
@@ -582,13 +656,14 @@
     <div class="results" id="results"></div>
 
     <section class="deck" id="deck" hidden aria-labelledby="deck-title">
+      <p class="deck-of">โปรเจกต์: <strong id="deck-project"></strong></p>
       <h2 id="deck-title">สร้างงานนำเสนอ Material Selection Confirmation</h2>
-      <p class="lede">จัดหน้าตามแบบเทมเพลตใน Canva (หน้าปก หน้ารายการวัสดุ และกรอบท้ายกระดาษ) แล้วนำเข้า Canva เพื่อแก้ไขต่อได้ทุกข้อความและรูปภาพ · สินค้าที่ค้นหาจะถูกเพิ่มเข้ามาเรื่อย ๆ ค้นหาหลายรอบได้</p>
+      <p class="lede">จัดหน้าตามแบบเทมเพลตใน Canva (หน้าปก หน้ารายการวัสดุ และกรอบท้ายกระดาษ) แล้วนำเข้า Canva เพื่อแก้ไขต่อได้ทุกข้อความและรูปภาพ · สินค้าที่ค้นหาจะถูกเพิ่มเข้าโปรเจกต์ที่เปิดอยู่ ค้นหาหลายรอบได้</p>
 
       <form id="deck-form" autocomplete="off" novalidate>
         <fieldset>
           <legend>ข้อมูลโครงการ</legend>
-          <p class="sub">แสดงบนหน้าปกและกรอบท้ายทุกหน้า ระบบจำค่าไว้ในเครื่องนี้ให้ใช้ครั้งถัดไป</p>
+          <p class="sub">แสดงบนหน้าปกและกรอบท้ายทุกหน้า · บันทึกแยกตามโปรเจกต์ (ชื่อบริษัทและโลโก้ใช้ร่วมกันทุกโปรเจกต์)</p>
           <div class="fields">
             <label class="field"><span>ชื่อโครงการ</span><input name="project" placeholder="เช่น บ้านพักอาศัยคุณ..."></label>
             <label class="field"><span>เจ้าของ (OWNER)</span><input name="owner" placeholder="ชื่อลูกค้า"></label>
@@ -654,7 +729,7 @@
             <button class="btn-sm" type="button" data-act="auto-layout">จัดหน้าใหม่</button>
             <button class="btn-sm" type="button" data-act="add-page">+ เพิ่มหน้า</button>
             <button class="btn-sm" type="button" data-act="add-custom">+ เพิ่มสินค้าเอง</button>
-            <button class="btn-sm btn-sm--plain" type="button" data-act="clear-deck">ล้างทั้งหมด</button>
+            <button class="btn-sm btn-sm--plain" type="button" data-act="clear-deck">ล้างสินค้าในโปรเจกต์นี้</button>
           </div>
           <div class="pages" id="pages"></div>
           <div class="tray" id="tray" hidden></div>
@@ -1408,15 +1483,10 @@
     renderSourceNote();
   }
 
-  function setHash(src, text) {
-    try {
-      history.replaceState(null, '', '#' + encodeURIComponent((src === 'btv' ? '' : src + ':') + text));
-    } catch (_) { /* file:// in some browsers */ }
-  }
-
   // ---------- Search flow ----------
   async function run(text) {
     await proxyReady;
+    await projectsReady; // searches add to the project that is open
     const src = currentSource;
     const byName = SOURCES[src].by === 'name';
     const entries = byName ? parseNames(text) : parseCodes(text, src);
@@ -1441,7 +1511,6 @@
     submitBtn.disabled = true;
     submitBtn.textContent = 'กำลังค้นหา…';
     renderSkeleton(entries.length);
-    setHash(src, entries.map((e) => e.input).join(byName ? '\n' : ','));
 
     try {
       const groups = src === 'btv' ? await lookupBtv(entries)
@@ -1512,7 +1581,7 @@
   const PPTX_SRC = 'https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js';
   const PPTX_SRI = 'sha384-Cck14aA9cifjYolcnjebXRfWGkz5ltHMBiG4px/j8GS+xQcb7OhNQWZYyWjQ+UwQ';
   const STORE_KEY = 'btv-deck-project-v2';
-  const PERSIST_FIELDS = ['project', 'owner', 'address', 'preparer', 'tel', 'company'];
+  const PROJECT_FIELDS = ['project', 'owner', 'date', 'address', 'preparer', 'tel'];
   const DEFAULT_COMPANY = 'KS HOME';
   const DEFAULT_LOGO = { data: 'data:image/png;base64,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', w: 129, h: 164 };
   const MAX_ITEMS = { image: 8, full: 12 };
@@ -1620,27 +1689,43 @@
   const pointerStyle = () => (deckForm.querySelector('input[name="pointer"]:checked') || {}).value || 'number';
   const autoPer = () => Math.max(1, Math.min(MAX_ITEMS.full, parseInt(deckForm.elements.autoPer.value, 10) || 5));
 
-  function loadProject() {
-    let saved = {};
-    try { saved = JSON.parse(localStorage.getItem(STORE_KEY) || '{}') || {}; } catch (_) { saved = {}; }
+  // Display options of a project (which fields to show, pointer style, items per page).
+  function readSettings() {
     const f = deckForm.elements;
-    for (const k of PERSIST_FIELDS) if (typeof saved[k] === 'string') f[k].value = saved[k];
-    if (typeof saved.company !== 'string') f.company.value = DEFAULT_COMPANY;
-    f.date.value = thaiDate(new Date());
-    if (saved.fields) for (const d of FIELD_DEFS) if (typeof saved.fields[d.key] === 'boolean') f['f_' + d.key].checked = saved.fields[d.key];
-    if (POINTER_STYLES.includes(saved.pointer)) deckForm.querySelector(`input[name="pointer"][value="${saved.pointer}"]`).checked = true;
-    if (POINTER_COLORS[saved.pointerColor]) f.pointerColor.value = saved.pointerColor;
-    if (saved.autoPer) f.autoPer.value = saved.autoPer;
-    if (saved.logoMode === 'custom' && saved.customLogo && saved.customLogo.data) { customLogo = saved.customLogo; logoMode = 'custom'; }
-    else if (saved.logoMode === 'none') logoMode = 'none';
+    return { fields: readFields(), pointer: pointerStyle(), pointerColor: f.pointerColor.value, autoPer: f.autoPer.value };
+  }
+  function applySettings(s) {
+    if (!s) return;
+    const f = deckForm.elements;
+    if (s.fields) for (const d of FIELD_DEFS) if (typeof s.fields[d.key] === 'boolean') f['f_' + d.key].checked = s.fields[d.key];
+    if (POINTER_STYLES.includes(s.pointer)) deckForm.querySelector(`input[name="pointer"][value="${s.pointer}"]`).checked = true;
+    if (POINTER_COLORS[s.pointerColor]) f.pointerColor.value = s.pointerColor;
+    if (s.autoPer) f.autoPer.value = s.autoPer;
+  }
+
+  // Company-wide settings live in this browser: company name, logo, and what a new project starts with.
+  let globalSaved = {};
+  function loadGlobal() {
+    try { globalSaved = JSON.parse(localStorage.getItem(STORE_KEY) || '{}') || {}; } catch (_) { globalSaved = {}; }
+    deckForm.elements.company.value = typeof globalSaved.company === 'string' ? globalSaved.company : DEFAULT_COMPANY;
+    if (globalSaved.logoMode === 'custom' && globalSaved.customLogo && globalSaved.customLogo.data) { customLogo = globalSaved.customLogo; logoMode = 'custom'; }
+    else if (globalSaved.logoMode === 'none') logoMode = 'none';
     renderLogo();
   }
 
-  function saveProject() {
+  function saveGlobal() {
     const f = deckForm.elements;
-    const data = { fields: readFields(), pointer: pointerStyle(), pointerColor: f.pointerColor.value, autoPer: f.autoPer.value, logoMode };
-    for (const k of PERSIST_FIELDS) data[k] = f[k].value;
+    const data = {
+      ...globalSaved,
+      company: f.company.value,
+      logoMode,
+      preparer: f.preparer.value,
+      tel: f.tel.value,
+      ...readSettings(),
+    };
     if (logoMode === 'custom') data.customLogo = customLogo;
+    else delete data.customLogo;
+    globalSaved = data;
     try {
       localStorage.setItem(STORE_KEY, JSON.stringify(data));
     } catch (_) {
@@ -1668,6 +1753,7 @@
     const box = deckForm.querySelector('.upload[data-slot="cover"]');
     box.querySelector('.upload-preview').style.backgroundImage = coverImage ? `url("${coverImage.data}")` : '';
     box.querySelector('[data-act="cover-clear"]').hidden = !coverImage;
+    scheduleSave();
   }
 
   // ---------- Pages model ----------
@@ -1686,7 +1772,6 @@
       pool.set(v.key, { kind: 'product', view: v, usage: '', image: null, edited: false });
       placeKey(v.key, null, per);
     }
-    deckSection.hidden = pool.size === 0;
     renderPages();
   }
 
@@ -1971,6 +2056,7 @@
     renderTray();
     refreshAddButtons();
     toDeckBtn.hidden = pool.size === 0;
+    scheduleSave();
   }
 
   function renderPage(p, idx, { start, carry }) {
@@ -2983,6 +3069,370 @@
     }
   }
 
+  // ---------- Projects: one per customer, saved automatically ----------
+  // With start.bat each project is a file in the "projects" folder next to it;
+  // otherwise projects are kept in this browser (IndexedDB). Export/import moves them anywhere.
+  const APP_ID = 'ks-material-selection';
+  const API_HEADERS = { 'X-KS-App': '1' };
+  const projSelect = $('#proj-select');
+  const projStatus = $('#proj-status');
+  const projDialog = $('#proj-dialog');
+  const projForm = $('#proj-form');
+
+  let store = null;            // where projects are kept
+  let current = null;          // { id, createdAt } of the open project
+  let projectList = [];        // summaries of every project
+  let loadingProject = false;  // true while a project is being put on screen (no saving then)
+  let saveTimer = null;
+  let dirty = false;
+  let saveChain = Promise.resolve();
+  let projectsReady = Promise.resolve();
+
+  async function apiFetch(path, opts = {}) {
+    const res = await fetch(path, { ...opts, cache: 'no-store', headers: { ...API_HEADERS, ...(opts.headers || {}) } });
+    if (!res.ok) throw httpError(res.status);
+    return res;
+  }
+
+  const folderStore = {
+    where: 'โฟลเดอร์ projects ข้างไฟล์ start.bat',
+    list: async () => (await apiFetch('/api/projects')).json(),
+    load: async (id) => (await apiFetch('/api/projects/' + id)).json(),
+    async save(rec) {
+      const json = { 'Content-Type': 'application/json' };
+      await apiFetch('/api/projects/' + rec.meta.id, { method: 'PUT', headers: json, body: JSON.stringify(rec) });
+      await apiFetch('/api/projects/' + rec.meta.id + '/meta', { method: 'PUT', headers: json, body: JSON.stringify(rec.meta) });
+    },
+    remove: async (id) => { await apiFetch('/api/projects/' + id, { method: 'DELETE' }); },
+  };
+
+  let dbPromise = null;
+  function openDb() {
+    if (!dbPromise) {
+      dbPromise = new Promise((resolve, reject) => {
+        const req = indexedDB.open(APP_ID, 1);
+        req.onupgradeneeded = () => {
+          req.result.createObjectStore('projects');
+          req.result.createObjectStore('meta');
+        };
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error);
+      });
+    }
+    return dbPromise;
+  }
+  async function idb(stores, mode, work) {
+    const db = await openDb();
+    return new Promise((resolve, reject) => {
+      const t = db.transaction(stores, mode);
+      const req = work(t);
+      t.oncomplete = () => resolve(req ? req.result : undefined);
+      t.onerror = () => reject(t.error);
+      t.onabort = () => reject(t.error);
+    });
+  }
+  const browserStore = {
+    where: 'เบราว์เซอร์นี้ในเครื่องนี้',
+    list: () => idb('meta', 'readonly', (t) => t.objectStore('meta').getAll()),
+    load: (id) => idb('projects', 'readonly', (t) => t.objectStore('projects').get(id)),
+    save: (rec) => idb(['projects', 'meta'], 'readwrite', (t) => {
+      t.objectStore('projects').put(rec, rec.meta.id);
+      t.objectStore('meta').put(rec.meta, rec.meta.id);
+    }),
+    remove: (id) => idb(['projects', 'meta'], 'readwrite', (t) => {
+      t.objectStore('projects').delete(id);
+      t.objectStore('meta').delete(id);
+    }),
+  };
+
+  // Last resort when the browser refuses storage (e.g. a private window).
+  const memory = new Map();
+  const memoryStore = {
+    where: 'หน้านี้ชั่วคราว (เบราว์เซอร์ไม่ให้บันทึก ใช้ “ส่งออกไฟล์” เพื่อเก็บงาน)',
+    list: async () => [...memory.values()].map((r) => r.meta),
+    load: async (id) => memory.get(id),
+    save: async (rec) => { memory.set(rec.meta.id, rec); },
+    remove: async (id) => { memory.delete(id); },
+  };
+
+  const projectLabel = (m) => `${m.owner || 'ยังไม่ระบุลูกค้า'} — ${m.project || 'ยังไม่ตั้งชื่อโครงการ'}`;
+  const fmtWhen = (iso) => {
+    const d = new Date(iso);
+    return isNaN(d) ? '' : d.toLocaleString('th-TH', { dateStyle: 'medium', timeStyle: 'short' });
+  };
+  const byRecent = (a, b) => String(b.updatedAt || '').localeCompare(String(a.updatedAt || ''));
+
+  function projectInfo() {
+    const f = deckForm.elements;
+    const info = {};
+    for (const k of PROJECT_FIELDS) info[k] = k === 'address' ? f[k].value : f[k].value.trim();
+    return info;
+  }
+
+  // Everything about the open project, ready to save.
+  function snapshot() {
+    const info = projectInfo();
+    return {
+      app: APP_ID,
+      version: 1,
+      meta: {
+        id: current.id,
+        project: info.project,
+        owner: info.owner,
+        items: [...pool.values()].filter((it) => !isSet(it)).length,
+        pages: pages.length,
+        createdAt: current.createdAt,
+        updatedAt: new Date().toISOString(),
+      },
+      data: { info, settings: readSettings(), cover: coverImage, pool: [...pool.entries()], pages, nextPageId },
+    };
+  }
+
+  function blankRecord(info = {}) {
+    const now = new Date().toISOString();
+    return {
+      app: APP_ID,
+      version: 1,
+      meta: { id: uid('p-'), project: info.project || '', owner: info.owner || '', items: 0, pages: 0, createdAt: now, updatedAt: now },
+      data: {
+        info: {
+          project: info.project || '', owner: info.owner || '', date: thaiDate(new Date()), address: info.address || '',
+          preparer: globalSaved.preparer || '', tel: globalSaved.tel || '',
+        },
+        settings: { fields: globalSaved.fields, pointer: globalSaved.pointer, pointerColor: globalSaved.pointerColor, autoPer: globalSaved.autoPer },
+        cover: null, pool: [], pages: [], nextPageId: 1,
+      },
+    };
+  }
+
+  // Put a saved project on screen.
+  function applyRecord(rec) {
+    loadingProject = true;
+    try {
+      const d = rec.data || {};
+      current = { id: rec.meta.id, createdAt: rec.meta.createdAt || new Date().toISOString() };
+      const f = deckForm.elements;
+      const info = d.info || {};
+      for (const k of PROJECT_FIELDS) f[k].value = info[k] || '';
+      if (!f.date.value) f.date.value = thaiDate(new Date());
+      applySettings(d.settings);
+      coverImage = d.cover || null;
+      pool.clear();
+      for (const [key, it] of d.pool || []) pool.set(key, it);
+      pages = Array.isArray(d.pages) ? d.pages : [];
+      nextPageId = d.nextPageId || pages.reduce((m, p) => Math.max(m, p.id), 0) + 1;
+      placing = null;
+      selection = { pageId: null, keys: new Set() };
+      deckStatus.innerHTML = '';
+      renderCover();
+      renderPages();
+      renderProjectTitle();
+    } finally {
+      loadingProject = false;
+    }
+    dirty = false;
+  }
+
+  function renderProjectList() {
+    projSelect.innerHTML = [...projectList].sort(byRecent).map((m) =>
+      `<option value="${esc(m.id)}"${current && m.id === current.id ? ' selected' : ''}>${esc(projectLabel(m))} · ${m.items || 0} รายการ · แก้ไข ${esc(fmtWhen(m.updatedAt))}</option>`).join('');
+  }
+
+  // The open project's name follows the customer / project fields as they are typed.
+  function renderProjectTitle() {
+    const info = projectInfo();
+    $('#deck-project').textContent = projectLabel(info);
+    const m = current && projectList.find((x) => x.id === current.id);
+    if (m) {
+      m.owner = info.owner;
+      m.project = info.project;
+      const opt = projSelect.querySelector(`option[value="${current.id}"]`);
+      if (opt) opt.textContent = `${projectLabel(m)} · ${m.items || 0} รายการ · แก้ไข ${fmtWhen(m.updatedAt)}`;
+    }
+  }
+
+  function setSaveStatus(state, detail) {
+    projStatus.dataset.state = state;
+    const where = store ? store.where : '';
+    projStatus.textContent = {
+      pending: 'กำลังบันทึก…',
+      saved: `บันทึกอัตโนมัติแล้ว ${detail ? new Date(detail).toLocaleTimeString('th-TH') : ''} · เก็บที่${where}`,
+      opened: `เปิดโปรเจกต์แล้ว · ทุกการแก้ไขบันทึกอัตโนมัติที่${where}`,
+      error: `บันทึกไม่สำเร็จ: ${(detail && detail.message) || detail || ''} — ลองอีกครั้ง หรือกด “ส่งออกไฟล์” เพื่อเก็บงานไว้ก่อน`,
+    }[state] || '';
+  }
+
+  function scheduleSave() {
+    if (loadingProject || !current || !store) return;
+    dirty = true;
+    setSaveStatus('pending');
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(flushSave, 1000);
+  }
+
+  // Save now if anything changed; saves run one after another.
+  function flushSave() {
+    clearTimeout(saveTimer);
+    if (!dirty || !current || !store) return saveChain;
+    dirty = false;
+    const rec = snapshot();
+    saveChain = saveChain
+      .then(() => store.save(rec))
+      .then(() => {
+        const i = projectList.findIndex((m) => m.id === rec.meta.id);
+        if (i >= 0) projectList[i] = rec.meta;
+        else projectList.push(rec.meta);
+        if (current && current.id === rec.meta.id) renderProjectList();
+        setSaveStatus('saved', rec.meta.updatedAt);
+      })
+      .catch((err) => {
+        dirty = true;
+        setSaveStatus('error', err);
+      });
+    return saveChain;
+  }
+
+  const LAST_KEY = 'ks-last-project';
+  const rememberOpen = (id) => { try { localStorage.setItem(LAST_KEY, id); } catch (_) { /* storage unavailable */ } };
+
+  async function openProject(id) {
+    await flushSave();
+    try {
+      const rec = await store.load(id);
+      if (!rec || !rec.meta) throw new Error('ไม่พบข้อมูลโปรเจกต์');
+      applyRecord(rec);
+      rememberOpen(rec.meta.id);
+      setSaveStatus('opened');
+    } catch (err) {
+      setSaveStatus('error', err);
+    }
+    renderProjectList();
+  }
+
+  async function createProject(rec) {
+    await flushSave();
+    applyRecord(rec);
+    rememberOpen(rec.meta.id);
+    projectList.push(rec.meta);
+    renderProjectList();
+    dirty = true;
+    await flushSave();
+  }
+
+  async function deleteProject() {
+    const m = projectList.find((x) => x.id === current.id) || projectInfo();
+    if (!window.confirm(`ลบโปรเจกต์ “${projectLabel(m)}” ?${store === folderStore ? '\n\n(ไฟล์จะถูกย้ายไปโฟลเดอร์ projects\\deleted กู้คืนได้ภายหลัง)' : '\n\nลบแล้วกู้คืนไม่ได้ ถ้ายังต้องการ กด “ส่งออกไฟล์” ก่อน'}`)) return;
+    clearTimeout(saveTimer);
+    dirty = false;
+    await saveChain;
+    try {
+      await store.remove(current.id);
+    } catch (err) {
+      setSaveStatus('error', err);
+      return;
+    }
+    projectList = projectList.filter((x) => x.id !== current.id);
+    current = null;
+    const next = [...projectList].sort(byRecent)[0];
+    if (next) await openProject(next.id);
+    else await createProject(blankRecord());
+  }
+
+  async function duplicateProject() {
+    await flushSave();
+    const rec = JSON.parse(JSON.stringify(snapshot()));
+    const now = new Date().toISOString();
+    rec.meta = { ...rec.meta, id: uid('p-'), project: (rec.meta.project || 'โปรเจกต์') + ' (สำเนา)', createdAt: now, updatedAt: now };
+    rec.data.info.project = rec.meta.project;
+    await createProject(rec);
+  }
+
+  async function exportProject() {
+    await flushSave();
+    const rec = snapshot();
+    const name = projectLabel(rec.meta).replace(/[\\/:*?"<>|\r\n]+/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 80);
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([JSON.stringify(rec)], { type: 'application/json' }));
+    a.download = `${name}.ksproject.json`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  }
+
+  async function importProject(file) {
+    try {
+      const rec = JSON.parse(await file.text());
+      if (!rec || rec.app !== APP_ID || !rec.data || !rec.meta) throw new Error('ไฟล์นี้ไม่ใช่ไฟล์โปรเจกต์ของเว็บนี้');
+      const now = new Date().toISOString();
+      // Always a new copy, so importing never overwrites a project already here.
+      rec.meta = { ...rec.meta, id: uid('p-'), createdAt: rec.meta.createdAt || now, updatedAt: now };
+      await createProject(rec);
+    } catch (err) {
+      setSaveStatus('error', err);
+    }
+  }
+
+  async function initProjects() {
+    await proxyReady;
+    store = proxyKind === 'local' ? folderStore : browserStore;
+    try {
+      projectList = (await store.list()) || [];
+    } catch (_) {
+      store = store === folderStore ? browserStore : memoryStore;
+      try { projectList = (await store.list()) || []; } catch (__) { store = memoryStore; projectList = []; }
+    }
+    // Reopen the project last opened in this browser, else the most recently edited one.
+    let lastId = '';
+    try { lastId = localStorage.getItem(LAST_KEY) || ''; } catch (_) { lastId = ''; }
+    const latest = projectList.find((m) => m.id === lastId) || [...projectList].sort(byRecent)[0];
+    if (latest) {
+      await openProject(latest.id);
+      if (current) return;
+    }
+    // First time: start a project, carrying over what an earlier version of the page remembered.
+    await createProject(blankRecord({ project: globalSaved.project, owner: globalSaved.owner, address: globalSaved.address }));
+    setSaveStatus('opened');
+  }
+
+  projSelect.addEventListener('change', () => openProject(projSelect.value));
+  $('#proj-new').addEventListener('click', () => {
+    projForm.reset();
+    projDialog.showModal();
+    projForm.elements.np_owner.focus();
+  });
+  projForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const f = projForm.elements;
+    projDialog.close();
+    await createProject(blankRecord({ owner: f.np_owner.value.trim(), project: f.np_project.value.trim() }));
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    input.focus();
+  });
+  projForm.addEventListener('click', (e) => {
+    if (e.target.closest('[data-np="cancel"]')) projDialog.close();
+  });
+  $('#projects').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-proj]');
+    if (!b) return;
+    b.closest('details').open = false;
+    ({ duplicate: duplicateProject, export: exportProject, delete: deleteProject })[b.dataset.proj]();
+  });
+  $('#proj-import').addEventListener('change', (e) => {
+    const file = e.target.files && e.target.files[0];
+    e.target.value = '';
+    e.target.closest('details').open = false;
+    if (file) importProject(file);
+  });
+  // Don't lose the last second of typing.
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') flushSave(); });
+  window.addEventListener('beforeunload', (e) => {
+    if (!dirty) return;
+    flushSave();
+    e.preventDefault();
+    e.returnValue = '';
+  });
+
   // ---------- Deck events ----------
   $('#field-options').innerHTML = FIELD_DEFS.map((d) =>
     `<label class="toggle"><input type="checkbox" name="f_${d.key}"${d.on ? ' checked' : ''}><span>${esc(d.label)}</span></label>`).join('');
@@ -3002,7 +3452,14 @@
 
   deckForm.addEventListener('input', (e) => {
     const t = e.target;
-    if (PERSIST_FIELDS.includes(t.name) || t.name === 'autoPer') { saveProject(); return; }
+    if (t.name === 'company') { saveGlobal(); return; }
+    if (PROJECT_FIELDS.includes(t.name) || t.name === 'autoPer') {
+      if (t.name === 'preparer' || t.name === 'tel' || t.name === 'autoPer') saveGlobal(); // defaults for the next new project
+      if (t.name === 'project' || t.name === 'owner') renderProjectTitle();
+      scheduleSave();
+      return;
+    }
+    scheduleSave();
     if (t.dataset.act === 'title') { pageById(t.closest('.page').dataset.page).title = t.value; return; }
     if (t.dataset.act === 'note') { pageById(t.closest('.page').dataset.page).note = t.value; return; }
     const it = t.closest('[data-key]') ? pool.get(t.closest('[data-key]').dataset.key) : null;
@@ -3031,7 +3488,7 @@
           customLogo = await prepImage(file, { maxSide: 800, keepAlpha: true });
           logoMode = 'custom';
           renderLogo();
-          saveProject();
+          saveGlobal();
         } else if (t.dataset.upload === 'cover') {
           coverImage = await prepImage(file, { maxSide: 2000 });
           renderCover();
@@ -3074,7 +3531,10 @@
       if (t.value) moveKey(t.value, page.id);
       return;
     }
-    if (t.name && (t.name.startsWith('f_') || t.name === 'pointer' || t.name === 'pointerColor')) saveProject();
+    if (t.name && (t.name.startsWith('f_') || t.name === 'pointer' || t.name === 'pointerColor')) {
+      saveGlobal();
+      scheduleSave();
+    }
   });
 
   deckForm.addEventListener('click', (e) => {
@@ -3174,7 +3634,7 @@
       case 'logo-none':
         logoMode = act === 'logo-default' ? 'default' : 'none';
         renderLogo();
-        saveProject();
+        saveGlobal();
         return;
       case 'cover-clear':
         coverImage = null;
@@ -3192,8 +3652,9 @@
     renderPages();
     deckSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
   });
-  loadProject();
-  renderCover();
+  loadGlobal();
+  deckSection.hidden = false;
+  projectsReady = initProjects();
 
   // ---------- Search events ----------
   function autoGrow() {
@@ -3260,6 +3721,8 @@
     const m = /^(homepro|traphet|ecodoor):([\s\S]*)$/.exec(raw);
     setSource(m ? m[1] : 'btv');
     const text = m ? m[2] : raw;
+    // A link's codes are used once: clear them so a reload can't add them to another customer's project.
+    try { history.replaceState(null, '', location.pathname + location.search); } catch (_) { /* file:// */ }
     input.value = SOURCES[currentSource].by === 'name' ? text : text.split(',').join(', ');
     autoGrow();
     run(input.value);
