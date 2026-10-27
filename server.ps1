@@ -67,21 +67,86 @@ Write-Host "  - Close this window when you are done."
 Write-Host ""
 if (-not $NoBrowser) { Start-Process $url }
 
-function Send-Response($ctx, [int]$status, [byte[]]$body, [string]$type) {
+$utf8 = New-Object System.Text.UTF8Encoding($false)
+# Customer projects are saved here, one file per project (plus a small summary file).
+$projectsDir = Join-Path $root 'projects'
+
+# $shared = $false keeps a response private to this page (no cross-site access header).
+function Send-Response($ctx, [int]$status, [byte[]]$body, [string]$type, [bool]$shared = $true) {
   $res = $ctx.Response
   $res.StatusCode = $status
   if ($type) { $res.ContentType = $type }
-  $res.Headers['Access-Control-Allow-Origin'] = '*'
+  if ($shared) { $res.Headers['Access-Control-Allow-Origin'] = '*' }
   $res.Headers['Cache-Control'] = 'no-store'
   if ($body) {
     $res.ContentLength64 = $body.Length
-    $res.OutputStream.Write($body, 0, $body.Length)
+    if ($ctx.Request.HttpMethod -ne 'HEAD') { $res.OutputStream.Write($body, 0, $body.Length) }
   }
   $res.Close()
 }
 
-function Send-Text($ctx, [int]$status, [string]$text) {
-  Send-Response $ctx $status ([Text.Encoding]::UTF8.GetBytes($text)) 'text/plain; charset=utf-8'
+function Send-Text($ctx, [int]$status, [string]$text, [bool]$shared = $true) {
+  Send-Response $ctx $status ([Text.Encoding]::UTF8.GetBytes($text)) 'text/plain; charset=utf-8' $shared
+}
+
+# Project data is only for this page: the request must come to localhost and carry the
+# page's own header (other websites can't add it without the browser blocking them).
+function Test-PageRequest($ctx) {
+  $req = $ctx.Request
+  return ($req.Headers['Host'] -in @("localhost:$Port", "127.0.0.1:$Port")) -and ($req.Headers['X-KS-App'] -eq '1')
+}
+
+function Handle-Projects($ctx, [string]$path) {
+  if (-not (Test-PageRequest $ctx)) { Send-Text $ctx 403 'Forbidden' $false; return }
+  $method = $ctx.Request.HttpMethod
+  $parts = @($path.Substring('/api/projects'.Length).Split('/') | Where-Object { $_ })
+
+  if ($parts.Count -eq 0) {
+    # List: the summary files joined into one JSON array.
+    $metas = @()
+    if (Test-Path -LiteralPath $projectsDir) {
+      $metas = @(Get-ChildItem -LiteralPath $projectsDir -Filter '*.meta.json' -File | ForEach-Object { [IO.File]::ReadAllText($_.FullName, $utf8) })
+    }
+    $list = $utf8.GetBytes('[' + ($metas -join ',') + ']')
+    Send-Response $ctx 200 $list 'application/json; charset=utf-8' $false
+    return
+  }
+
+  $id = $parts[0]
+  if ($id -cnotmatch '^[a-z0-9-]{3,64}$') { Send-Text $ctx 400 'Bad project id' $false; return }
+  $dataFile = Join-Path $projectsDir "$id.json"
+  $metaFile = Join-Path $projectsDir "$id.meta.json"
+
+  if ($method -eq 'GET' -and $parts.Count -eq 1) {
+    if (Test-Path -LiteralPath $dataFile) { Send-Response $ctx 200 ([IO.File]::ReadAllBytes($dataFile)) 'application/json; charset=utf-8' $false }
+    else { Send-Text $ctx 404 'Not found' $false }
+    return
+  }
+  if ($method -eq 'PUT') {
+    New-Item -ItemType Directory -Force $projectsDir | Out-Null
+    $buffer = New-Object System.IO.MemoryStream
+    $ctx.Request.InputStream.CopyTo($buffer)
+    $target = if ($parts.Count -ge 2 -and $parts[1] -eq 'meta') { $metaFile } else { $dataFile }
+    # Write to a temporary file first so a crash never leaves a half-written project.
+    $tmp = "$target.tmp"
+    [IO.File]::WriteAllBytes($tmp, $buffer.ToArray())
+    [IO.File]::Copy($tmp, $target, $true)
+    [IO.File]::Delete($tmp)
+    Send-Text $ctx 200 'saved' $false
+    return
+  }
+  if ($method -eq 'DELETE' -and $parts.Count -eq 1) {
+    # Deleted projects are kept in projects\deleted so they can be restored by hand.
+    $trash = Join-Path $projectsDir 'deleted'
+    New-Item -ItemType Directory -Force $trash | Out-Null
+    $stamp = Get-Date -Format 'yyyyMMdd-HHmmss'
+    foreach ($f in @($dataFile, $metaFile)) {
+      if (Test-Path -LiteralPath $f) { [IO.File]::Move($f, (Join-Path $trash ("$stamp-" + [IO.Path]::GetFileName($f)))) }
+    }
+    Send-Text $ctx 200 'deleted' $false
+    return
+  }
+  Send-Text $ctx 405 'Method not allowed' $false
 }
 
 while ($listener.IsListening) {
@@ -90,6 +155,8 @@ while ($listener.IsListening) {
     $path = $ctx.Request.Url.AbsolutePath
 
     if ($path -eq '/proxy-status') { Send-Text $ctx 200 'ok'; continue }
+
+    if ($path -eq '/api/projects' -or $path.StartsWith('/api/projects/')) { Handle-Projects $ctx $path; continue }
 
     if ($path -eq '/proxy') {
       # Read ?url= from the raw query so Thai characters decode as UTF-8.
@@ -113,7 +180,8 @@ while ($listener.IsListening) {
     $rel = [Uri]::UnescapeDataString($path.TrimStart('/'))
     if (-not $rel) { $rel = 'index.html' }
     $file = [IO.Path]::GetFullPath((Join-Path $root $rel))
-    if ($file.StartsWith($root, [StringComparison]::OrdinalIgnoreCase) -and (Test-Path -LiteralPath $file -PathType Leaf)) {
+    $inProjects = $file.StartsWith($projectsDir + '\', [StringComparison]::OrdinalIgnoreCase)
+    if (-not $inProjects -and $file.StartsWith($root, [StringComparison]::OrdinalIgnoreCase) -and (Test-Path -LiteralPath $file -PathType Leaf)) {
       $type = $types[[IO.Path]::GetExtension($file).ToLower()]
       if (-not $type) { $type = 'application/octet-stream' }
       Send-Response $ctx 200 ([IO.File]::ReadAllBytes($file)) $type
@@ -123,7 +191,7 @@ while ($listener.IsListening) {
   } catch {
     $msg = $_.Exception.Message
     if ($_.Exception.InnerException) { $msg = $_.Exception.InnerException.Message }
-    Write-Host "  error: $msg"
+    Write-Host "  error: $msg (line $($_.InvocationInfo.ScriptLineNumber), $($ctx.Request.HttpMethod) $($ctx.Request.Url.AbsolutePath))"
     try { Send-Text $ctx 502 ('Fetch failed: ' + $msg) } catch { }
   }
 }
