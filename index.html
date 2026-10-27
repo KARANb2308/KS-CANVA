@@ -631,9 +631,10 @@
         <span class="conn-dot" aria-hidden="true"></span>
         <span class="conn-text"></span>
         <a class="conn-help" href="คู่มือการใช้งาน.html#open" target="_blank" rel="noopener" hidden>วิธีเปิดผ่าน start.bat (ทีละขั้นตอน) ↗</a>
+        <a class="conn-logout" href="/logout" hidden>ออกจากระบบ</a>
         <details class="conn-more">
           <summary>ตั้งค่า Proxy</summary>
-          <p>ปกติไม่ต้องตั้ง: ดับเบิลคลิกไฟล์ <code>start.bat</code> แล้วหน้านี้จะเปิดผ่านโปรแกรมช่วยในเครื่องเอง ช่องนี้ใช้เมื่อเปิดจากเว็บ (เช่น GitHub Pages) พร้อม Proxy ของตัวเอง เช่น Cloudflare Worker จากไฟล์ <code>proxy-worker.js</code></p>
+          <p>ปกติไม่ต้องตั้ง: ดับเบิลคลิกไฟล์ <code>start.bat</code> แล้วหน้านี้จะเปิดผ่านโปรแกรมช่วยในเครื่องเอง ช่องนี้ใช้เฉพาะเมื่อเปิดจากเว็บอื่น (เช่น GitHub Pages) พร้อม Proxy ของตัวเอง</p>
           <div class="proxy-row">
             <input id="proxy-input" class="num-input" type="url" placeholder="https://xxxx.workers.dev/?url=" aria-label="Proxy URL">
             <button class="btn-sm" id="proxy-save" type="button">บันทึก</button>
@@ -892,10 +893,10 @@
 
   // ---------- Helper / proxy ----------
   // HomePro pages, ตราเพชร's store API and the WordPress images don't allow cross-site reads,
-  // so those go through start.bat's local helper (or a proxy URL the user sets).
+  // so those go through a helper on the same address as the page: start.bat on this computer
+  // ("local") or the online system on Cloudflare ("cloud"), or a proxy URL the user sets.
   const PROXY_KEY = 'btv-proxy-v1';
-  const LOCAL_PROXY = /^https?:$/.test(location.protocol) && /^(localhost|127\.0\.0\.1)$/.test(location.hostname)
-    ? location.origin + '/proxy?url=' : '';
+  const SAME_ORIGIN_PROXY = /^https?:$/.test(location.protocol) ? location.origin + '/proxy?url=' : '';
   let proxyBase = '';
   let proxyKind = 'none';
 
@@ -905,11 +906,14 @@
     proxyInput.value = custom;
     proxyBase = '';
     proxyKind = 'none';
-    if (LOCAL_PROXY) {
+    if (SAME_ORIGIN_PROXY) {
       try {
         const res = await fetch(location.origin + '/proxy-status', { cache: 'no-store' });
-        if (res.ok) { proxyBase = LOCAL_PROXY; proxyKind = 'local'; }
-      } catch (_) { /* plain static server */ }
+        if (res.ok && (await res.text()).trim() === 'ok') {
+          proxyBase = SAME_ORIGIN_PROXY;
+          proxyKind = res.headers.get('X-KS-Host') === 'cloud' ? 'cloud' : 'local';
+        }
+      } catch (_) { /* plain static hosting: no helper */ }
     }
     if (!proxyBase && custom) { proxyBase = custom; proxyKind = 'custom'; }
     renderConn();
@@ -921,12 +925,15 @@
   function renderConn() {
     const text = {
       local: 'เชื่อมต่อโปรแกรมช่วย (start.bat) แล้ว ดึงข้อมูลและรูปได้ครบทุกเว็บ',
+      cloud: 'ระบบออนไลน์ ดึงข้อมูลและรูปได้ครบทุกเว็บ · โปรเจกต์เก็บออนไลน์ ทีมเห็นร่วมกัน',
       custom: 'ใช้ Proxy ที่ตั้งไว้สำหรับ HomePro / ตราเพชร / Eco door',
       none: 'เปิดไฟล์โดยตรง: บุญถาวรใช้ได้ครบ · HomePro และรูปจากตราเพชร/Eco door ต้องเปิดผ่าน start.bat',
     }[proxyKind];
     connEl.querySelector('.conn-text').textContent = text;
     connEl.dataset.kind = proxyKind;
     connEl.querySelector('.conn-help').hidden = proxyKind !== 'none';
+    connEl.querySelector('.conn-logout').hidden = proxyKind !== 'cloud';
+    connEl.querySelector('.conn-more').hidden = proxyKind === 'cloud' || proxyKind === 'local';
   }
 
   function renderSourceNote() {
@@ -3090,18 +3097,25 @@
 
   async function apiFetch(path, opts = {}) {
     const res = await fetch(path, { ...opts, cache: 'no-store', headers: { ...API_HEADERS, ...(opts.headers || {}) } });
+    if (res.status === 401) throw new Error('หมดเวลาเข้าสู่ระบบ กรุณารีเฟรชหน้าแล้วใส่รหัสผ่านใหม่');
     if (!res.ok) throw httpError(res.status);
     return res;
   }
 
+  // The helper next to the page (start.bat on this computer, or the online system) keeps the projects.
   const folderStore = {
-    where: 'โฟลเดอร์ projects ข้างไฟล์ start.bat',
+    get where() {
+      return proxyKind === 'cloud' ? 'ระบบออนไลน์ (ทีมเห็นร่วมกัน)' : 'โฟลเดอร์ projects ข้างไฟล์ start.bat';
+    },
     list: async () => (await apiFetch('/api/projects')).json(),
     load: async (id) => (await apiFetch('/api/projects/' + id)).json(),
-    async save(rec) {
-      const json = { 'Content-Type': 'application/json' };
-      await apiFetch('/api/projects/' + rec.meta.id, { method: 'PUT', headers: json, body: JSON.stringify(rec) });
-      await apiFetch('/api/projects/' + rec.meta.id + '/meta', { method: 'PUT', headers: json, body: JSON.stringify(rec.meta) });
+    // One request per save: the summary travels in a header next to the full project.
+    save: async (rec) => {
+      await apiFetch('/api/projects/' + rec.meta.id, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'X-KS-Meta': encodeURIComponent(JSON.stringify(rec.meta)) },
+        body: JSON.stringify(rec),
+      });
     },
     remove: async (id) => { await apiFetch('/api/projects/' + id, { method: 'DELETE' }); },
   };
@@ -3267,7 +3281,7 @@
     dirty = true;
     setSaveStatus('pending');
     clearTimeout(saveTimer);
-    saveTimer = setTimeout(flushSave, 1000);
+    saveTimer = setTimeout(flushSave, 2000); // a short pause, so rapid edits become one save
   }
 
   // Save now if anything changed; saves run one after another.
@@ -3375,7 +3389,7 @@
 
   async function initProjects() {
     await proxyReady;
-    store = proxyKind === 'local' ? folderStore : browserStore;
+    store = proxyKind === 'local' || proxyKind === 'cloud' ? folderStore : browserStore;
     try {
       projectList = (await store.list()) || [];
     } catch (_) {
@@ -3694,7 +3708,7 @@
     } catch (_) { /* storage unavailable: applies to this visit only */ }
     proxyReady = initProxy();
     await proxyReady;
-    if (!LOCAL_PROXY && value) { proxyBase = value; proxyKind = 'custom'; renderConn(); renderSourceNote(); }
+    if (!proxyBase && value) { proxyBase = value; proxyKind = 'custom'; renderConn(); renderSourceNote(); }
   });
   resultsEl.addEventListener('click', (e) => {
     const add = e.target.closest('[data-add]');
