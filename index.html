@@ -480,6 +480,20 @@
   .merge-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 10px; padding: 8px 10px; border-radius: 10px; font-size: .875rem; background: var(--accent-soft); color: var(--accent); }
   .merge-bar span { margin-right: auto; font-weight: 600; }
   .merge-hint { margin: 0 0 8px; font-size: .8rem; color: var(--muted); }
+  .qty-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: .85rem; color: var(--muted); }
+  .qty-row label { display: inline-flex; align-items: center; gap: 6px; }
+  .qty-input, .unit-input {
+    padding: 5px 8px; font: inherit; font-size: .875rem; color: var(--text); background: var(--surface);
+    border: 1.5px solid var(--border); border-radius: 8px; outline: none;
+  }
+  .qty-input { width: 80px; }
+  .unit-input { width: 90px; }
+  .qty-input:focus, .unit-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+  .set-members { margin: 2px 0 0; padding: 0 0 0 1.2em; display: grid; gap: 8px; font-size: .875rem; }
+  .set-members li { padding-left: 2px; }
+  .sm-name { display: block; font-weight: 500; overflow-wrap: anywhere; }
+  .set-members .pi-meta { display: block; margin: 1px 0 4px; }
+  .ed-member .qty-row { margin-top: 6px; }
   .page-opts { display: flex; flex-wrap: wrap; gap: 4px 24px; }
   .page-opts .check--sm { margin-top: 12px; }
   .check input:disabled + span { opacity: .5; }
@@ -681,6 +695,7 @@
             <label class="field ed-product-only"><span>ขนาด</span><input name="ed_size"></label>
             <label class="field ed-product-only"><span>วัสดุ</span><input name="ed_material"></label>
             <label class="field"><span>จุดใช้งาน</span><input name="ed_usage" placeholder="เช่น ห้องนอน 1, 2"></label>
+            <label class="field ed-product-only"><span>จำนวน (หน่วยตาม “หน่วยนับ”)</span><input name="ed_qty" inputmode="decimal" placeholder="เช่น 25"></label>
             <label class="field field--wide ed-product-only"><span>ข้อมูลเพิ่มเติม (บรรทัดละ 1 ข้อ เช่น “รับประกัน: 2 ปี”)</span><textarea name="ed_extra" rows="3"></textarea></label>
             <label class="field field--wide ed-product-only"><span>ลิงก์สินค้า (ไม่บังคับ)</span><input name="ed_url" type="url" placeholder="https://"></label>
             <label class="field field--wide ed-product-only" id="ed-page-field"><span>ใส่ในหน้า</span><select name="ed_page"></select></label>
@@ -1495,7 +1510,6 @@
   const DEFAULT_COMPANY = 'KS HOME';
   const DEFAULT_LOGO = { data: 'data:image/png;base64,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', w: 129, h: 164 };
   const MAX_ITEMS = { image: 8, full: 12 };
-  const SET_LINES = 6; // set variants listed per item on a list page
   // Optional product attributes the user can show; `attr` is the attribute code on the product.
   const ATTR_FIELDS = [
     { key: 'color', label: 'สี', attr: 'color' },
@@ -1511,6 +1525,7 @@
     { key: 'brand', label: 'ยี่ห้อ', on: true },
     { key: 'price', label: 'ราคา', on: true },
     { key: 'usage', label: 'จุดใช้งาน', on: true },
+    { key: 'qty', label: 'จำนวน', on: true },
     ...ATTR_FIELDS.map((d) => ({ key: d.key, label: d.label, on: false })),
     { key: 'source', label: 'แหล่งที่มา', on: false },
     { key: 'specs', label: 'สเปกอื่น ๆ (หน้าสินค้าเดี่ยว)', on: true },
@@ -1731,6 +1746,7 @@
   }
 
   function moveKey(key, target) {
+    if (target.startsWith('set:')) { addToSet(target, key); renderPages(); return; }
     const from = pageOf(key);
     let to = null;
     if (target === 'new') {
@@ -1762,13 +1778,6 @@
     // Don't stop half-way through a word.
     const cut = p.lastIndexOf(' ');
     return (cut > 0 && cut < p.length - 1 ? p.slice(0, cut) : p).trim();
-  }
-
-  function variantLabel(v, prefix) {
-    const size = attrOf(v, 'dimension_unit');
-    if (size) return clip(size, 40);
-    const rest = prefix && v.name.startsWith(prefix) ? v.name.slice(prefix.length).replace(/^[\s\-–,:]+/, '') : '';
-    return clip(rest || v.name, 50);
   }
 
   // Rebuild the summary a set shows (name, pictures, lowest price) from its products.
@@ -1811,11 +1820,11 @@
     for (const k of keys) {
       const it = pool.get(k);
       if (isSet(it)) members.push(...it.members);
-      else members.push({ key: k, label: it.setLabel || '' });
+      // Each product keeps its full name (or the name given earlier) and its quantity.
+      else members.push({ key: k, label: it.setLabel || it.view.name, qty: it.qty || '', qtyUnit: it.qtyUnit || '' });
     }
     const names = members.map((m) => pool.get(m.key).view.name);
     const prefix = commonPrefix(names);
-    for (const m of members) if (!m.label) m.label = variantLabel(pool.get(m.key).view, prefix);
 
     // Reuse a ticked set (keeps its name and picture), otherwise start a new one.
     let setKey = keys.find((k) => isSet(pool.get(k)));
@@ -1846,6 +1855,35 @@
     if (placing && keys.includes(placing.key)) placing = null;
   }
 
+  // Put a product (or every product of another set) into an existing set, from any page.
+  function addToSet(setKey, key) {
+    const set = pool.get(setKey);
+    const it = pool.get(key);
+    if (!set || !it || setKey === key) return;
+    const added = isSet(it)
+      ? it.members
+      : [{ key, label: it.setLabel || it.view.name, qty: it.qty || '', qtyUnit: it.qtyUnit || '' }];
+    set.members = set.members.concat(added);
+    for (const m of added) pool.get(m.key).inSet = setKey;
+    const from = pageOf(key);
+    if (from) {
+      from.keys = from.keys.filter((k) => k !== key);
+      delete from.marks[key];
+    }
+    if (isSet(it)) pool.delete(key);
+    if (placing && placing.key === key) placing = null;
+    selection.keys.delete(key);
+    refreshSet(setKey);
+  }
+
+  // "รวมเข้าชุด" choices for the move menu: every set except the item itself.
+  function setOptions(key) {
+    const sets = deckKeys().filter((k) => k !== key && isSet(pool.get(k)));
+    return sets.length
+      ? `<optgroup label="รวมเข้าชุด">${sets.map((k) => `<option value="${esc(k)}">รวมเข้าชุด: ${esc(clip(pool.get(k).name, 40))}</option>`).join('')}</optgroup>`
+      : '';
+  }
+
   // Take products back out of a set (all of them, or just `only`), placing them
   // right after the set. A set left with fewer than two products is dissolved.
   function ungroup(setKey, only) {
@@ -1853,8 +1891,8 @@
     if (!set) return;
     const out = only || set.members.map((m) => m.key);
     const stay = set.members.filter((m) => !out.includes(m.key));
-    // Remember edited size/model names in case the products are combined again.
-    for (const m of set.members) pool.get(m.key).setLabel = m.label;
+    // Products take their quantity back, and remember their name in case they are combined again.
+    for (const m of set.members) Object.assign(pool.get(m.key), { setLabel: m.label, qty: m.qty || '', qtyUnit: m.qtyUnit || '' });
     const page = pageOf(setKey);
     if (stay.length >= 2) {
       set.members = stay;
@@ -1889,6 +1927,27 @@
       const full = q.keys.length >= maxFor(q);
       return `<option value="${q.id}"${full ? ' disabled' : ''}>หน้า ${j + 2}: ${esc(clip(q.title, 28))}${full ? ' (เต็ม)' : ''}</option>`;
     }).join('');
+  }
+
+  // Quantity + unit inputs; `act` is 'qty' for a product or 'mqty' for a product inside a set.
+  function qtyUI(qty, unit, defaultUnit, act, name) {
+    return `<span class="qty-row">
+      <label>จำนวน <input class="qty-input" data-act="${act}" value="${esc(qty || '')}" inputmode="decimal" aria-label="จำนวนของ ${esc(name)}"></label>
+      <input class="unit-input" data-act="${act}-unit" value="${esc(unit || '')}" placeholder="${esc(defaultUnit || 'หน่วย')}" aria-label="หน่วยของ ${esc(name)}">
+    </span>`;
+  }
+
+  // Every product of a set with its full name, code, price and its own quantity.
+  function setMembersUI(set) {
+    return `<ol class="set-members">${set.members.map((m, i) => {
+      const v = pool.get(m.key).view;
+      const meta = [v.sku ? 'รหัส ' + v.sku : '', v.final != null ? priceText(v) : ''].filter(Boolean).join(' · ');
+      return `<li data-mi="${i}">
+        <span class="sm-name">${esc(m.label)}</span>
+        ${meta ? `<span class="pi-meta">${esc(meta)}</span>` : ''}
+        ${qtyUI(m.qty, m.qtyUnit, v.unit, 'mqty', m.label)}
+      </li>`;
+    }).join('')}</ol>`;
   }
 
   function itemMeta(it) {
@@ -1928,8 +1987,9 @@
         ${thumb(it)}
         <div class="pi-main">
           <strong>${set ? '<span class="set-tag">ชุด</span>' : ''}${esc(v.name)}</strong>
-          <span class="pi-meta">${itemMeta(it)}${!set && it.edited ? ' · <em>แก้ไขแล้ว</em>' : ''}</span>
+          ${set ? setMembersUI(it) : `<span class="pi-meta">${itemMeta(it)}${it.edited ? ' · <em>แก้ไขแล้ว</em>' : ''}</span>`}
           <input class="pi-usage" data-act="usage" value="${esc(it.usage)}" placeholder="จุดใช้งาน เช่น ห้องนอน 1, 2" aria-label="จุดใช้งานของ ${esc(v.name)}">
+          ${set ? '' : qtyUI(it.qty, it.qtyUnit, v.unit, 'qty', v.name)}
           <div class="pi-tools">
             <button class="btn-sm" type="button" data-act="edit">${set ? 'แก้ไขชุด / เลือกรูป' : 'แก้ไข / เลือกรูป'}</button>
             ${set ? '<button class="btn-sm btn-sm--plain" type="button" data-act="ungroup">แยกชุด</button>' : ''}
@@ -1942,6 +2002,7 @@
               <option value="">ย้ายไป…</option>${pageOptions(p.id)}
               <option value="new">หน้าใหม่</option>
               <option value="tray">นำออกจากหน้านี้</option>
+              ${setOptions(key)}
             </select>
           </div>
         </div>
@@ -2027,7 +2088,7 @@
         <div class="pi-tools">
           <button class="btn-sm" type="button" data-act="edit">แก้ไข</button>
           <select class="mini-select" data-act="tray-add" aria-label="ใส่ในหน้า">
-            <option value="">ใส่ในหน้า…</option>${pageOptions(null)}<option value="new">หน้าใหม่</option>
+            <option value="">ใส่ในหน้า…</option>${pageOptions(null)}<option value="new">หน้าใหม่</option>${setOptions(key)}
           </select>
           <button class="btn-sm btn-sm--plain" type="button" data-act="tray-remove">ลบออก</button>
         </div>
@@ -2071,6 +2132,7 @@
     f.ed_unit.value = v ? v.unit : '';
     for (const [code, field] of EDIT_ATTRS) f[field].value = v ? attrOf(v, code) : '';
     f.ed_usage.value = it ? it.usage : '';
+    f.ed_qty.value = it ? it.qty || '' : '';
     f.ed_extra.value = v ? v.specs.filter((s) => s.code.startsWith('custom_')).map((s) => `${s.label}: ${plainText(s.value)}`).join('\n') : '';
     f.ed_url.value = v ? v.url : '';
     $('#ed-page-field').hidden = !!key;
@@ -2128,7 +2190,11 @@
         ${thumb(it)}
         <div class="pi-main">
           <span class="pi-meta">${esc(v.name)}${v.sku ? ' · รหัส ' + esc(v.sku) : ''}${v.final != null ? ' · ' + esc(priceText(v)) : ''}</span>
-          <input class="pi-usage" data-member="${i}" value="${esc(m.label)}" placeholder="ชื่อรุ่น / ขนาด ที่จะแสดง" aria-label="ชื่อรุ่นหรือขนาดของ ${esc(v.name)}">
+          <input class="pi-usage" data-member="${i}" data-field="label" value="${esc(m.label)}" placeholder="ชื่อที่จะแสดง" aria-label="ชื่อที่แสดงของ ${esc(v.name)}">
+          <span class="qty-row">
+            <label>จำนวน <input class="qty-input" data-member="${i}" data-field="qty" value="${esc(m.qty || '')}" inputmode="decimal" aria-label="จำนวนของ ${esc(v.name)}"></label>
+            <input class="unit-input" data-member="${i}" data-field="qtyUnit" value="${esc(m.qtyUnit || '')}" placeholder="${esc(v.unit || 'หน่วย')}" aria-label="หน่วยของ ${esc(v.name)}">
+          </span>
         </div>
         <button class="btn-sm btn-sm--plain" type="button" data-member-out="${i}">แยกออก</button>
       </div>`;
@@ -2176,10 +2242,11 @@
       url: f.ed_url.value.trim(),
     };
     const image = imageFromChoice(view.images[0]);
+    const extras = { usage: f.ed_usage.value.trim(), qty: f.ed_qty.value.trim(), image, edited: true };
     if (old) {
-      Object.assign(old, { view, usage: f.ed_usage.value.trim(), image, edited: true });
+      Object.assign(old, { view, ...extras });
     } else {
-      pool.set(view.key, { kind: 'product', view, usage: f.ed_usage.value.trim(), image, edited: true });
+      pool.set(view.key, { kind: 'product', view, ...extras });
       if (f.ed_page.value !== 'tray') placeKey(view.key, f.ed_page.value || 'new');
     }
     editor.close();
@@ -2195,7 +2262,7 @@
     set.name = name;
     set.usage = f.ed_usage.value.trim();
     set.image = imageFromChoice(set.view.images[0]);
-    set.members = editing.members.map((m) => ({ key: m.key, label: m.label.trim() || pool.get(m.key).view.name }))
+    set.members = editing.members.map((m) => ({ ...m, label: m.label.trim() || pool.get(m.key).view.name, qty: String(m.qty || '').trim() }))
       .concat(editing.removed);
     if (editing.removed.length) ungroup(editing.key, editing.removed.map((m) => m.key));
     refreshSet(editing.key);
@@ -2223,7 +2290,7 @@
   });
   edMembers.addEventListener('input', (e) => {
     const i = e.target.dataset.member;
-    if (i != null) editing.members[Number(i)].label = e.target.value;
+    if (i != null) editing.members[Number(i)][e.target.dataset.field || 'label'] = e.target.value;
   });
   edForm.addEventListener('click', (e) => {
     const out = e.target.closest('[data-member-out]');
@@ -2497,83 +2564,131 @@
     });
   }
 
-  // "รหัส 123 · 120 บาท / แผ่น" for one product of a set.
-  function variantDetail(v, f) {
-    return [f.sku && v.sku ? 'รหัส ' + v.sku : '', f.price && v.final != null ? priceText(v) : ''].filter(Boolean).join(' · ');
+  // "จำนวน 25 กล่อง", or '' when no quantity was entered.
+  function qtyText(qty, unit) {
+    const q = String(qty || '').trim();
+    return q ? `จำนวน ${q}${unit ? ' ' + unit : ''}` : '';
   }
 
+  // "รหัส 123 · 120 บาท / แผ่น · จำนวน 25 กล่อง" for one product of a set.
+  function variantDetail(m, f) {
+    const v = m.view;
+    return [
+      f.sku && v.sku ? 'รหัส ' + v.sku : '',
+      f.price && v.final != null ? priceText(v) : '',
+      f.qty ? qtyText(m.qty, m.qtyUnit || v.unit) : '',
+    ].filter(Boolean).join(' · ');
+  }
+
+  // Table rows for a one-item page. `required` rows are never dropped to save space.
   function detailRows(it, f, usageRow) {
     const v = it.view;
     const rows = [];
+    const add = (k, val, required = true) => rows.push({ k, val, required });
     if (it.members) {
-      if (f.brand && v.brand) rows.push(['ยี่ห้อ', v.brand]);
-      for (const m of it.members) rows.push([clip(m.label, 40), variantDetail(m.view, f) || m.view.name]);
+      if (f.brand && v.brand) add('ยี่ห้อ', v.brand);
+      for (const m of it.members) add(m.label, variantDetail(m, f) || '-');
     } else {
-      if (f.sku && v.sku) rows.push(['รหัสสินค้า', v.sku]);
-      if (f.brand && v.brand) rows.push(['ยี่ห้อ', v.brand]);
-      if (f.price && v.final != null) rows.push(['ราคา', priceText(v)]);
+      if (f.sku && v.sku) add('รหัสสินค้า', v.sku);
+      if (f.brand && v.brand) add('ยี่ห้อ', v.brand);
+      if (f.price && v.final != null) add('ราคา', priceText(v));
+      if (f.qty && qtyText(it.qty)) add('จำนวน', qtyText(it.qty, it.qtyUnit || v.unit).replace(/^จำนวน /, ''));
       for (const d of ATTR_FIELDS) {
         if (!f[d.key] || d.key === 'color') continue;
         const val = attrOf(v, d.attr);
-        if (val) rows.push([d.label, val]);
+        if (val) add(d.label, val);
       }
       if (f.specs) {
         for (const a of v.specs) {
           if (LONG_ATTRS.has(a.code) || ATTR_CODES.has(a.code)) continue;
           const val = plainText(a.value);
-          if (val && val.length <= 60) rows.push([a.label, val]);
+          if (val && val.length <= 80) add(a.label, val, false);
         }
       }
     }
-    if (usageRow && f.usage && it.usage) rows.push(['จุดใช้งาน', it.usage]);
-    if (f.source && v.source !== 'custom' && sourceLabel(v)) rows.push(['แหล่งที่มา', sourceLabel(v)]);
+    if (usageRow && f.usage && it.usage) add('จุดใช้งาน', it.usage);
+    if (f.source && v.source !== 'custom' && sourceLabel(v)) add('แหล่งที่มา', sourceLabel(v));
     return rows;
   }
 
-  // One item on the page: name, picture, colour and a table (spec rows, or one row per size for a set).
+  // Lines a text of `len` characters wraps to in a box `w` inches wide at `size` pt (rough).
+  const wrapLines = (len, w, size) => Math.max(1, Math.ceil(len / Math.max(6, Math.floor((w * 72) / (size * 0.5)))));
+
+  // One item on the page: name, picture, colour and a table (spec rows, or one row per product for a set).
+  // Everything is shown in full; the picture and font shrink when the table needs the room.
   // Returns the point a pointer line should start from.
   function addDetail(s, S, it, x, top, w, bottom, f, { smallImage, usageRow, number }) {
     const v = it.view;
     let y = top;
     let anchor = { x, y: top + 0.4 };
+    const pad = number ? 0.4 : 0;
     if (number) numberBadge(s, S, number, x, y + 0.22, 0.3, COL.navy);
+    const color = f.color && !it.members ? attrOf(v, 'color') : '';
+    const colorText = color ? (color.startsWith('สี') ? color : 'สี' + color) : '';
+
+    let rows = detailRows(it, f, usageRow);
+    const colW = it.members ? [w * 0.58, w * 0.42] : [1.55, w - 1.55];
+    const rowHeights = (size) => rows.map((r) => {
+      const lines = Math.max(wrapLines(r.k.length, colW[0] - 0.12, size), wrapLines(r.val.length, colW[1] - 0.12, size));
+      return Math.max(0.27, lines * size * 1.3 / 72 + 0.08);
+    });
+    const sum = (a) => a.reduce((t, h) => t + h, 0);
+
+    // Pick the largest name size, picture and table font that fit.
+    let nameSize = 15;
+    const nameH = () => (f.name ? Math.max(0.75, wrapLines(v.name.length, w - pad * 2, nameSize) * nameSize * 1.25 / 72 + 0.15) : number ? 0.75 : 0);
+    const fixed = () => nameH() + (f.name || number ? 0.1 : 0) + (colorText ? 0.5 : 0);
+    let size = 9.5;
+    let heights = rowHeights(size);
+    let imgH = smallImage ? 2.0 : 0;
+    const fits = () => fixed() + (smallImage ? imgH + 0.1 : 0) + sum(heights) <= bottom - top;
+    for (const s2 of [9.5, 8.5, 7.5, 7]) {
+      size = s2;
+      heights = rowHeights(size);
+      if (smallImage) imgH = Math.min(2.0, Math.max(0.8, bottom - top - fixed() - 0.1 - sum(heights)));
+      if (fits()) break;
+      if (nameSize > 12) nameSize -= 1;
+    }
+    // A product's optional spec rows give way before anything is cut; a set keeps every product.
+    while (!fits() && rows.some((r) => !r.required)) {
+      const drop = rows.map((r) => r.required).lastIndexOf(false);
+      rows = rows.filter((_, i) => i !== drop);
+      heights = rowHeights(size);
+    }
+
     if (f.name) {
-      const pad = number ? 0.4 : 0;
-      s.addText(clip(v.name, 90), { x: x + pad, y, w: w - pad * 2, h: 0.75, fontFace: FONT_HEAD, fontSize: 15, bold: true, color: COL.ink, align: 'center', valign: 'middle', margin: 0 });
-      y += 0.85;
+      const h = nameH();
+      s.addText(v.name, { x: x + pad, y, w: w - pad * 2, h, fontFace: FONT_HEAD, fontSize: nameSize, bold: true, color: COL.ink, align: 'center', valign: 'middle', margin: 0 });
+      y += h + 0.1;
     } else if (number) {
       y += 0.85;
     }
     if (smallImage) {
       if (it.img) {
-        const r = fitBox(it.img, x + (w - 2.4) / 2, y, 2.4, 2.0);
+        const r = fitBox(it.img, x + (w - 2.4) / 2, y, 2.4, imgH);
         s.addImage({ data: it.img.data, ...r });
         anchor = { x: r.x, y: r.y + r.h / 2 };
       }
-      y += 2.1;
+      y += imgH + 0.1;
     }
-    const color = f.color && !it.members ? attrOf(v, 'color') : '';
-    if (color) {
-      s.addText(clip(color.startsWith('สี') ? color : 'สี' + color, 60), { x, y, w, h: 0.38, fontFace: FONT_HEAD, fontSize: 13, bold: true, color: COL.ink, align: 'center', valign: 'middle', margin: 0 });
+    if (colorText) {
+      s.addText(colorText, { x, y, w, h: 0.38, fontFace: FONT_HEAD, fontSize: 13, bold: true, color: COL.ink, align: 'center', valign: 'middle', margin: 0 });
       y += 0.5;
     }
-    const rowH = 0.27;
-    const maxRows = Math.max(0, Math.floor((bottom - y) / rowH));
-    const rows = detailRows(it, f, usageRow).slice(0, maxRows).map(([k, val]) => [
-      { text: k, options: { color: COL.muted, fill: { color: COL.soft } } },
-      { text: clip(val, 60), options: { color: k === 'ราคา' ? COL.price : COL.ink, bold: k === 'ราคา' } },
-    ]);
     if (rows.length) {
-      s.addTable(rows, {
-        x, y, w, colW: [1.55, w - 1.55], rowH,
-        fontFace: FONT_BODY, fontSize: 9.5, valign: 'middle',
+      s.addTable(rows.map((r) => [
+        { text: r.k, options: { color: it.members ? COL.ink : COL.muted, fill: { color: COL.soft } } },
+        { text: r.val, options: { color: r.k === 'ราคา' ? COL.price : COL.ink, bold: r.k === 'ราคา' } },
+      ]), {
+        x, y, w, colW, rowH: heights,
+        fontFace: FONT_BODY, fontSize: size, valign: 'middle',
         border: { type: 'solid', pt: 0.5, color: 'D9D9D9' },
       });
     }
     return anchor;
   }
 
-  // Text of one list item as lines of styled segments.
+  // Text of one list item as lines of styled segments. Names are never shortened.
   function itemLines(it, f) {
     const v = it.view;
     const lines = [];
@@ -2581,7 +2696,7 @@
       const parts = segs.filter((x) => x && x.text);
       if (parts.length) lines.push(parts);
     };
-    if (f.name) line({ text: clip(v.name, 80), kind: 'name' });
+    if (f.name) line({ text: v.name, kind: 'name' });
     line({
       text: [
         f.sku && v.sku ? 'รหัสสินค้า ' + v.sku : '',
@@ -2591,21 +2706,27 @@
       kind: 'meta',
     });
     if (it.members) {
-      // A set: one line per size/model with its own code and price.
-      for (const m of it.members.slice(0, SET_LINES)) {
+      // A set: every product on its own line, full name, with its own code, price and quantity.
+      for (const m of it.members) {
+        const q = f.qty ? qtyText(m.qty, m.qtyUnit || m.view.unit) : '';
         line(
-          { text: '• ' + clip(m.label, 40), kind: 'variant' },
+          { text: '• ' + m.label, kind: 'variant' },
           f.sku && m.view.sku ? { text: ' · รหัส ' + m.view.sku, kind: 'meta' } : null,
           f.price && m.view.final != null ? { text: ' · ' + priceText(m.view), kind: 'price' } : null,
+          q ? { text: ' · ' + q, kind: 'qty' } : null,
         );
       }
-      if (it.members.length > SET_LINES) line({ text: `+ อีก ${it.members.length - SET_LINES} รายการ`, kind: 'meta' });
     } else {
-      if (f.price && v.final != null) line({ text: 'ราคา ' + priceText(v), kind: 'price' });
+      const q = f.qty ? qtyText(it.qty, it.qtyUnit || v.unit) : '';
+      const price = f.price && v.final != null ? 'ราคา ' + priceText(v) : '';
+      line(
+        price ? { text: price, kind: 'price' } : null,
+        q ? { text: (price ? ' · ' : '') + q, kind: 'qty' } : null,
+      );
       line({
         text: ATTR_FIELDS
           .filter((d) => f[d.key])
-          .map((d) => { const val = attrOf(v, d.attr); return val ? `${d.label} ${clip(val, 40)}` : ''; })
+          .map((d) => { const val = attrOf(v, d.attr); return val ? `${d.label} ${val}` : ''; })
           .filter(Boolean).join(' · '),
         kind: 'meta',
       });
@@ -2614,47 +2735,75 @@
     return lines;
   }
 
-  // Rough height of wrapped Thai/Latin text, to shrink fonts when rows get tight.
+  // Rough height of wrapped Thai/Latin text, to size rows and shrink fonts when space is tight.
   function textHeight(lines, w, nameSize, metaSize) {
     return lines.reduce((h, segs) => {
       const size = segs[0].kind === 'name' ? nameSize : metaSize;
       const len = segs.reduce((n, seg) => n + seg.text.length, 0);
-      const perLine = Math.max(8, Math.floor((w * 72) / (size * 0.5)));
-      return h + Math.ceil(len / perLine) * (size * 1.25) / 72;
+      return h + wrapLines(len, w, size) * (size * 1.25) / 72;
     }, 0);
   }
 
-  // Several items: numbered rows with picture and the chosen fields.
+  // Several items: numbered rows with picture and the chosen fields. Rows get the height
+  // their text needs (a set listing many products gets a taller row).
   // Returns, per item, the point a pointer line should start from.
   function addList(s, S, page, x, top, w, bottom, f, cols) {
     const items = page.items;
     const gap = 0.3;
     const colW = (w - gap * (cols - 1)) / cols;
-    const rows = Math.ceil(items.length / cols);
-    const rowH = Math.min(1.09, (bottom - top) / Math.max(rows, 1));
-    const isz = Math.max(0.4, rowH - 0.15);
-    const bs = rowH < 0.85 ? 0.26 : 0.3;
+    const avail = bottom - top;
+    const nRows = Math.ceil(items.length / cols);
+    const IMG_MAX = 0.94;
+    const lineSets = items.map((it) => itemLines(it, f));
+    const textW = colW - 0.3 - 0.1 - IMG_MAX - 0.15;
+
+    const need = [];
+    for (let r = 0; r < nRows; r++) {
+      let h = 0;
+      for (let c = 0; c < cols; c++) {
+        const i = r * cols + c;
+        if (i < items.length) h = Math.max(h, textHeight(lineSets[i], textW, 11, 9) + 0.12);
+      }
+      need.push(Math.max(0.6, h));
+    }
+    const sum = (a) => a.reduce((t, h) => t + h, 0);
+    const base = Math.min(1.09, avail / Math.max(nRows, 1));
+    let heights = need.map((h) => Math.max(h, base));
+    if (sum(heights) > avail) {
+      heights = need.slice();
+      const spare = avail - sum(heights);
+      heights = spare >= 0 ? heights.map((h) => h + spare / nRows) : heights.map((h) => h * (avail / sum(need)));
+    }
+    const rowTop = [];
+    heights.reduce((y, h, r) => { rowTop[r] = y; return y + h; }, top);
+
     const anchors = [];
     items.forEach((it, i) => {
       // Fill left-to-right so a short list spreads across both columns.
+      const r = Math.floor(i / cols);
+      const rowH = heights[r];
       const cx = x + (i % cols) * (colW + gap);
-      const ry = top + Math.floor(i / cols) * rowH;
+      const ry = rowTop[r];
+      const bs = rowH < 0.85 ? 0.26 : 0.3;
+      const isz = Math.min(IMG_MAX, Math.max(0.4, rowH - 0.15));
       numberBadge(s, S, (page.start || 0) + i + 1, cx, ry + 0.04, bs, COL.navy);
       anchors.push({ x: cx, y: ry + 0.04 + bs / 2 });
       const ix = cx + bs + 0.1;
       if (it.img) s.addImage({ data: it.img.data, ...fitBox(it.img, ix, ry, isz, isz) });
       const tx = ix + isz + 0.15;
       const tw = colW - (tx - cx);
-      const lines = itemLines(it, f);
+      const th = Math.max(isz, rowH - 0.1);
+      const lines = lineSets[i];
       if (!lines.length) return;
       let nameSize = 11;
       let metaSize = 9;
-      while (metaSize > 6.5 && textHeight(lines, tw, nameSize, metaSize) > isz) { nameSize -= 0.5; metaSize -= 0.5; }
+      while (metaSize > 6.5 && textHeight(lines, tw, nameSize, metaSize) > th) { nameSize -= 0.5; metaSize -= 0.5; }
       const style = {
         name: { bold: true, fontSize: nameSize, color: COL.ink },
         meta: { fontSize: metaSize, color: COL.muted },
         variant: { fontSize: metaSize, color: COL.ink },
         price: { fontSize: metaSize, bold: true, color: COL.price },
+        qty: { fontSize: metaSize, bold: true, color: COL.ink },
         usage: { fontSize: metaSize, color: COL.ink },
       };
       const runs = [];
@@ -2662,7 +2811,7 @@
         text: seg.text,
         options: { ...style[seg.kind], breakLine: si === segs.length - 1 && li < lines.length - 1 },
       })));
-      s.addText(runs, { x: tx, y: ry, w: tw, h: isz, fontFace: FONT_BODY, valign: 'middle', margin: 0 });
+      s.addText(runs, { x: tx, y: ry, w: tw, h: th, fontFace: FONT_BODY, valign: rowH > 1.15 ? 'top' : 'middle', margin: 0 });
     });
     return anchors;
   }
@@ -2793,9 +2942,13 @@
           return {
             view: it.view,
             usage: it.usage,
+            qty: it.qty || '',
+            qtyUnit: it.qtyUnit || '',
             img: imgByKey.get(key),
             mark: p.marks[key] || null,
-            members: isSet(it) ? it.members.map((m) => ({ label: m.label, view: pool.get(m.key).view })) : null,
+            members: isSet(it)
+              ? it.members.map((m) => ({ label: m.label, view: pool.get(m.key).view, qty: m.qty || '', qtyUnit: m.qtyUnit || '' }))
+              : null,
           };
         }),
       }));
@@ -2846,7 +2999,15 @@
     if (PERSIST_FIELDS.includes(t.name) || t.name === 'autoPer') { saveProject(); return; }
     if (t.dataset.act === 'title') { pageById(t.closest('.page').dataset.page).title = t.value; return; }
     if (t.dataset.act === 'note') { pageById(t.closest('.page').dataset.page).note = t.value; return; }
-    if (t.dataset.act === 'usage') pool.get(t.closest('[data-key]').dataset.key).usage = t.value;
+    const it = t.closest('[data-key]') ? pool.get(t.closest('[data-key]').dataset.key) : null;
+    if (!it) return;
+    if (t.dataset.act === 'usage') it.usage = t.value;
+    else if (t.dataset.act === 'qty') it.qty = t.value;
+    else if (t.dataset.act === 'qty-unit') it.qtyUnit = t.value;
+    else if (t.dataset.act === 'mqty' || t.dataset.act === 'mqty-unit') {
+      const m = it.members[Number(t.closest('[data-mi]').dataset.mi)];
+      m[t.dataset.act === 'mqty' ? 'qty' : 'qtyUnit'] = t.value;
+    }
   });
 
   deckForm.addEventListener('change', async (e) => {
