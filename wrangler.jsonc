@@ -1,5 +1,5 @@
 {
-  "name": "ks-home",
+  "name": "ks-projects",
   "main": "worker.js",
   "compatibility_date": "2026-04-09",
   "kv_namespaces": [
