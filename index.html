@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>ค้นหาสินค้าบุญถาวร</title>
+<title>ค้นหาสินค้าวัสดุ</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -403,6 +403,69 @@
   .tray-item .pi-thumb { width: 40px; height: 40px; }
   .tray-item .pi-tools { justify-content: flex-end; }
 
+  /* Search: sources, helper status, result groups */
+  .field-label { margin: 0 0 8px; font-weight: 600; }
+  .sources { margin-bottom: 18px; }
+  .source-note { margin: 10px 0 0; padding: 10px 14px; border-radius: 10px; font-size: .875rem; background: var(--bad-soft); color: var(--bad); }
+  .conn { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; margin-top: 14px; font-size: .8rem; color: var(--muted); }
+  .conn-dot { width: 8px; height: 8px; border-radius: 50%; background: #c9a227; flex: none; }
+  .conn[data-kind="local"] .conn-dot, .conn[data-kind="custom"] .conn-dot { background: var(--ok); }
+  .conn-more { flex-basis: 100%; }
+  .conn-more summary { cursor: pointer; color: var(--accent); width: max-content; }
+  .conn-more p { margin: 6px 0; max-width: 70ch; }
+  .proxy-row { display: flex; gap: 8px; max-width: 520px; }
+  .proxy-row input { flex: 1; width: auto; min-width: 0; }
+  .link-btn { padding: 0; font: inherit; color: var(--accent); background: none; border: 0; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
+  .result-group { display: grid; gap: 16px; }
+  .group-title { margin: 8px 0 0; font-size: 1.05rem; }
+  .group-title span { font-weight: 400; font-size: .85rem; color: var(--muted); }
+  .tag--src { color: var(--accent); background: var(--accent-soft); font-weight: 600; }
+  .price--none { font-size: 1.1rem; color: var(--muted); }
+  .price .from { margin: 0 6px 0 0; font-size: .85rem; }
+  .add-btn { color: var(--accent-ink); background: var(--accent); border-color: var(--accent); font-weight: 600; }
+  .add-btn:hover { color: var(--accent-ink); background: var(--accent-hover); }
+  .add-btn.is-added { color: var(--ok); background: var(--ok-soft); border-color: transparent; }
+  .add-btn.is-added:hover { color: var(--bad); background: var(--bad-soft); }
+
+  /* Deck additions */
+  .page-note {
+    width: 100%; margin: -4px 0 12px; padding: 6px 10px; resize: vertical; min-height: 34px;
+    font: inherit; font-size: .9rem; color: var(--text); background: var(--surface);
+    border: 1.5px solid var(--border); border-radius: 8px; outline: none;
+  }
+  .page-note:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+  .pi-thumb--empty { display: flex; align-items: center; justify-content: center; font-size: .65rem; color: #8a8880; text-align: center; }
+  .pi-meta em { font-style: normal; color: var(--accent); }
+  .add-custom { margin-top: 10px; }
+
+  /* Product editor dialog */
+  .editor {
+    width: min(760px, calc(100% - 24px)); max-height: calc(100vh - 24px);
+    padding: 0; border: 0; border-radius: 16px;
+    color: var(--text); background: var(--surface); box-shadow: 0 20px 60px rgba(0, 0, 0, .35);
+  }
+  .editor::backdrop { background: rgba(10, 10, 10, .5); }
+  .editor form { display: flex; flex-direction: column; max-height: calc(100vh - 24px); }
+  .editor-head, .editor-foot { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 16px 20px; }
+  .editor-head { border-bottom: 1px solid var(--border); }
+  .editor-head h3 { margin: 0; font-size: 1.15rem; }
+  .editor-head .sub { margin: 2px 0 0; font-size: .85rem; color: var(--muted); }
+  .editor-foot { justify-content: flex-end; border-top: 1px solid var(--border); }
+  .editor-body { padding: 16px 20px; overflow: auto; }
+  .ed-fields { margin-top: 18px; }
+  .field select { width: 100%; padding: 9px 12px; font: inherit; font-size: .95rem; color: var(--text); background: var(--surface); border: 1.5px solid var(--border); border-radius: 10px; }
+  .img-pick { display: grid; grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); gap: 8px; }
+  .pick {
+    aspect-ratio: 1 / 1; padding: 4px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font: inherit; font-size: .8rem; color: var(--muted);
+    background: #fff; border: 2px solid var(--border); border-radius: 10px;
+  }
+  .pick img { width: 100%; height: 100%; object-fit: contain; }
+  .pick.is-on { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+  .pick--none { background: var(--surface-2); }
+  .ed-error { margin: 12px 0 0; color: var(--bad); font-size: .9rem; min-height: 1em; }
+
   .deck-actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-top: 28px; }
   .deck-status { margin-top: 14px; }
   .deck-status:empty { display: none; }
@@ -434,24 +497,41 @@
 <body>
 <div class="wrap">
   <header class="site">
-    <p class="eyebrow">ดึงข้อมูลจาก boonthavorn.com</p>
-    <h1>ค้นหาข้อมูลสินค้าบุญถาวร</h1>
-    <p class="lede">ใส่รหัสสินค้าเพื่อดูชื่อ ราคา สถานะสต็อก รูปภาพ และข้อมูลจำเพาะล่าสุดจากเว็บไซต์</p>
+    <p class="eyebrow">บุญถาวร · HomePro · ตราเพชร · Eco door</p>
+    <h1>ค้นหาข้อมูลสินค้าวัสดุ</h1>
+    <p class="lede">เลือกแหล่งข้อมูล แล้วค้นหาด้วยรหัสหรือชื่อสินค้า เพื่อดูชื่อ ราคา รูปภาพ และข้อมูลจำเพาะล่าสุด แล้วจัดเป็นงานนำเสนอ Material Selection</p>
   </header>
 
   <main>
     <form class="search" id="search-form" autocomplete="off">
-      <label for="codes">รหัสสินค้า</label>
+      <p class="field-label" id="source-label">แหล่งข้อมูล</p>
+      <div class="toggles sources" role="radiogroup" aria-labelledby="source-label">
+        <label class="toggle"><input type="radio" name="source" value="btv" checked><span>บุญถาวร</span></label>
+        <label class="toggle"><input type="radio" name="source" value="homepro"><span>HomePro</span></label>
+        <label class="toggle"><input type="radio" name="source" value="traphet"><span>ตราเพชร</span></label>
+        <label class="toggle"><input type="radio" name="source" value="ecodoor"><span>Eco door</span></label>
+      </div>
+      <label for="codes" id="codes-label">รหัสสินค้า</label>
       <div class="search-row">
         <textarea id="codes" rows="1" spellcheck="false" placeholder="เช่น 1015431"></textarea>
         <button class="btn" id="submit" type="submit">ค้นหา</button>
       </div>
-      <p class="hint">ใส่ได้หลายรหัสพร้อมกัน คั่นด้วยเว้นวรรค จุลภาค หรือขึ้นบรรทัดใหม่ (Shift+Enter) · วางลิงก์หน้าสินค้าก็ได้</p>
-      <div class="examples">
-        <span>ลองตัวอย่าง:</span>
-        <button class="chip" type="button" data-example="1015431">1015431</button>
-        <button class="chip" type="button" data-example="1015431, 1068468, 1252051">หลายรหัส</button>
+      <p class="hint" id="search-hint"></p>
+      <p class="source-note" id="source-note" hidden></p>
+      <div class="examples" id="examples"></div>
+      <div class="conn" id="conn" data-kind="none">
+        <span class="conn-dot" aria-hidden="true"></span>
+        <span class="conn-text"></span>
+        <details class="conn-more">
+          <summary>ตั้งค่า Proxy</summary>
+          <p>ปกติไม่ต้องตั้ง: ดับเบิลคลิกไฟล์ <code>start.bat</code> แล้วหน้านี้จะเปิดผ่านโปรแกรมช่วยในเครื่องเอง ช่องนี้ใช้เมื่อเปิดจากเว็บ (เช่น GitHub Pages) พร้อม Proxy ของตัวเอง เช่น Cloudflare Worker จากไฟล์ <code>proxy-worker.js</code></p>
+          <div class="proxy-row">
+            <input id="proxy-input" class="num-input" type="url" placeholder="https://xxxx.workers.dev/?url=" aria-label="Proxy URL">
+            <button class="btn-sm" id="proxy-save" type="button">บันทึก</button>
+          </div>
+        </details>
       </div>
+      <p class="hint"><button class="link-btn" id="open-deck" type="button">เปิดส่วนสร้างงานนำเสนอ / เพิ่มสินค้าเอง ↓</button></p>
     </form>
 
     <div class="status" id="status" role="status" aria-live="polite"></div>
@@ -538,6 +618,7 @@
             <label>จัดหน้าอัตโนมัติ หน้าละ <input class="num-input" type="number" name="autoPer" value="5" min="1" max="12"> ชิ้น</label>
             <button class="btn-sm" type="button" data-act="auto-layout">จัดหน้าใหม่</button>
             <button class="btn-sm" type="button" data-act="add-page">+ เพิ่มหน้า</button>
+            <button class="btn-sm" type="button" data-act="add-custom">+ เพิ่มสินค้าเอง</button>
             <button class="btn-sm btn-sm--plain" type="button" data-act="clear-deck">ล้างทั้งหมด</button>
           </div>
           <div class="pages" id="pages"></div>
@@ -551,6 +632,45 @@
         <div class="deck-status" id="deck-status" role="status" aria-live="polite"></div>
       </form>
     </section>
+
+    <dialog class="editor" id="item-editor" aria-labelledby="editor-title">
+      <form id="item-form" autocomplete="off" novalidate>
+        <header class="editor-head">
+          <div>
+            <h3 id="editor-title">แก้ไขสินค้า</h3>
+            <p class="sub" id="editor-source"></p>
+          </div>
+          <button class="icon-btn" type="button" data-ed="close" aria-label="ปิด">✕</button>
+        </header>
+        <div class="editor-body">
+          <p class="field-label">รูปสินค้าในงานนำเสนอ</p>
+          <div class="img-pick" id="ed-images"></div>
+          <div class="visual-actions">
+            <label class="btn-sm">อัปโหลดรูปเอง<input class="visually-hidden" type="file" accept="image/*" id="ed-upload"></label>
+          </div>
+          <div class="fields ed-fields">
+            <label class="field field--wide"><span>ชื่อสินค้า *</span><input name="ed_name" required></label>
+            <label class="field"><span>รหัสสินค้า</span><input name="ed_sku"></label>
+            <label class="field"><span>ยี่ห้อ</span><input name="ed_brand"></label>
+            <label class="field"><span>หน่วยนับ</span><input name="ed_unit" placeholder="เช่น ชิ้น, แผ่น, ตร.ม."></label>
+            <label class="field"><span>ราคาขาย (บาท)</span><input name="ed_price" inputmode="decimal"></label>
+            <label class="field"><span>ราคาปกติ (บาท)</span><input name="ed_regular" inputmode="decimal" placeholder="ใส่เมื่อมีส่วนลด"></label>
+            <label class="field"><span>สี</span><input name="ed_color"></label>
+            <label class="field"><span>ขนาด</span><input name="ed_size"></label>
+            <label class="field"><span>วัสดุ</span><input name="ed_material"></label>
+            <label class="field"><span>จุดใช้งาน</span><input name="ed_usage" placeholder="เช่น ห้องนอน 1, 2"></label>
+            <label class="field field--wide"><span>ข้อมูลเพิ่มเติม (บรรทัดละ 1 ข้อ เช่น “รับประกัน: 2 ปี”)</span><textarea name="ed_extra" rows="3"></textarea></label>
+            <label class="field field--wide"><span>ลิงก์สินค้า (ไม่บังคับ)</span><input name="ed_url" type="url" placeholder="https://"></label>
+            <label class="field field--wide" id="ed-page-field"><span>ใส่ในหน้า</span><select name="ed_page"></select></label>
+          </div>
+          <p class="ed-error" id="ed-error" role="alert"></p>
+        </div>
+        <footer class="editor-foot">
+          <button class="btn-ghost" type="button" data-ed="close">ยกเลิก</button>
+          <button class="btn" type="submit">บันทึก</button>
+        </footer>
+      </form>
+    </dialog>
   </main>
 
   <footer class="site">
@@ -562,15 +682,48 @@
 (() => {
   'use strict';
 
-  const API = 'https://www.boonthavorn.com/graphql';
-  const SITE = 'https://www.boonthavorn.com/';
-  const STORE = 'th';
-  const CHUNK = 20;
+  // ---------- Sources ----------
+  const BTV_API = 'https://www.boonthavorn.com/graphql';
+  const BTV_STORE = 'th';
+  const HP_SITE = 'https://www.homepro.co.th/';
+  const WOO_BASE = { traphet: 'https://traphet.com', ecodoor: 'https://www.eco-door.net' };
+  const SOURCES = {
+    btv: { label: 'บุญถาวร', by: 'code' },
+    homepro: { label: 'HomePro', by: 'code' },
+    traphet: { label: 'ตราเพชร', by: 'name' },
+    ecodoor: { label: 'Eco door', by: 'name' },
+    custom: { label: 'ใส่เอง', by: 'none' },
+  };
+  const SOURCE_UI = {
+    btv: {
+      label: 'รหัสสินค้าบุญถาวร', placeholder: 'เช่น 1015431',
+      hint: 'ใส่ได้หลายรหัส คั่นด้วยเว้นวรรค จุลภาค หรือขึ้นบรรทัดใหม่ (Shift+Enter) · วางลิงก์หน้าสินค้าก็ได้',
+      examples: [['1015431', '1015431'], ['หลายรหัส', '1015431, 1068468, 1252051']],
+    },
+    homepro: {
+      label: 'รหัสสินค้า HomePro', placeholder: 'เช่น 1310224',
+      hint: 'รหัสสินค้าจากหน้าสินค้า HomePro ใส่ได้หลายรหัส · วางลิงก์หน้าสินค้าก็ได้',
+      examples: [['1310224', '1310224']],
+    },
+    traphet: {
+      label: 'ชื่อสินค้าตราเพชร', placeholder: 'เช่น ครอบสันโค้ง',
+      hint: 'เว็บนี้ไม่มีรหัสสินค้า ค้นหาด้วยชื่อแทน · ค้นหาหลายชื่อได้โดยขึ้นบรรทัดใหม่ (Shift+Enter) แล้วกด “เพิ่มลงงานนำเสนอ” ที่สินค้าที่ต้องการ',
+      examples: [['ครอบสันโค้ง', 'ครอบสันโค้ง'], ['กระเบื้องลอนคู่', 'กระเบื้องลอนคู่']],
+    },
+    ecodoor: {
+      label: 'ชื่อสินค้า Eco door', placeholder: 'เช่น ประตูไฟเบอร์กลาส',
+      hint: 'เว็บนี้ไม่มีรหัสสินค้า ค้นหาด้วยชื่อแทน · ค้นหาหลายชื่อได้โดยขึ้นบรรทัดใหม่ (Shift+Enter) แล้วกด “เพิ่มลงงานนำเสนอ” ที่สินค้าที่ต้องการ',
+      examples: [['ประตูห้องน้ำ', 'ประตูห้องน้ำ'], ['วงกบ', 'วงกบ']],
+    },
+  };
+  const BTV_CHUNK = 20;
   const MAX_CODES = 200;
+  const MAX_NAMES = 10;
+  const NAME_RESULTS = 12;
   // Attributes already shown elsewhere on the card, or boilerplate on every product.
   const HIDDEN_ATTRS = new Set(['sku', 'brand', 'remark']);
 
-  const FIELDS = `items {
+  const BTV_FIELDS = `items {
     sku name url_key url_suffix stock_status qty_in_stock ready_to_ship
     brand_items { title }
     categories { name url_path }
@@ -584,10 +737,10 @@
       discount { percent_off amount_off }
     } }
   }`;
-  const buildQuery = (field) =>
-    `query ($v: [String]) { products(filter: { ${field}: { in: $v } }, pageSize: ${CHUNK}) { ${FIELDS} } }`.replace(/\s+/g, ' ');
-  const QUERY_BY_SKU = buildQuery('sku');
-  const QUERY_BY_KEY = buildQuery('url_key');
+  const btvQuery = (field) =>
+    `query ($v: [String]) { products(filter: { ${field}: { in: $v } }, pageSize: ${BTV_CHUNK}) { ${BTV_FIELDS} } }`.replace(/\s+/g, ' ');
+  const BTV_BY_SKU = btvQuery('sku');
+  const BTV_BY_KEY = btvQuery('url_key');
 
   const $ = (sel) => document.querySelector(sel);
   const form = $('#search-form');
@@ -599,29 +752,120 @@
   const resultsEl = $('#results');
   const exportBtn = $('#export');
   const toDeckBtn = $('#to-deck');
+  const connEl = $('#conn');
+  const sourceNoteEl = $('#source-note');
+  const proxyInput = $('#proxy-input');
 
-  let lastResults = [];
+  let currentSource = 'btv';
+  let lastGroups = [];               // [{ query, views }] from the latest search
+  const viewsByKey = new Map();      // every product seen this session, for the add buttons
   let requestId = 0;
 
   const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) =>
     ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const numFmt = new Intl.NumberFormat('th-TH', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
-  const money = (v) => (v == null ? '-' : numFmt.format(v));
+  const satangFmt = new Intl.NumberFormat('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const money = (v) => (v == null ? '-' : Number.isInteger(v) ? numFmt.format(v) : satangFmt.format(v));
+  const priceText = (v) => `${v.priceFrom ? 'เริ่มต้น ' : ''}${money(v.final)} บาท${v.unit ? ' / ' + v.unit : ''}`;
+
+  function plainText(html) {
+    const doc = new DOMParser().parseFromString('<div>' + String(html ?? '') + '</div>', 'text/html');
+    return (doc.body.textContent || '').replace(/\s+/g, ' ').trim();
+  }
+
+  // ---------- Helper / proxy ----------
+  // HomePro pages, ตราเพชร's store API and the WordPress images don't allow cross-site reads,
+  // so those go through start.bat's local helper (or a proxy URL the user sets).
+  const PROXY_KEY = 'btv-proxy-v1';
+  const LOCAL_PROXY = /^https?:$/.test(location.protocol) && /^(localhost|127\.0\.0\.1)$/.test(location.hostname)
+    ? location.origin + '/proxy?url=' : '';
+  let proxyBase = '';
+  let proxyKind = 'none';
+
+  async function initProxy() {
+    let custom = '';
+    try { custom = localStorage.getItem(PROXY_KEY) || ''; } catch (_) { custom = ''; }
+    proxyInput.value = custom;
+    proxyBase = '';
+    proxyKind = 'none';
+    if (LOCAL_PROXY) {
+      try {
+        const res = await fetch(location.origin + '/proxy-status', { cache: 'no-store' });
+        if (res.ok) { proxyBase = LOCAL_PROXY; proxyKind = 'local'; }
+      } catch (_) { /* plain static server */ }
+    }
+    if (!proxyBase && custom) { proxyBase = custom; proxyKind = 'custom'; }
+    renderConn();
+    renderSourceNote();
+  }
+  let proxyReady = initProxy();
+  const viaProxy = (url) => proxyBase + encodeURIComponent(url);
+
+  function renderConn() {
+    const text = {
+      local: 'เชื่อมต่อโปรแกรมช่วย (start.bat) แล้ว ดึงข้อมูลและรูปได้ครบทุกเว็บ',
+      custom: 'ใช้ Proxy ที่ตั้งไว้สำหรับ HomePro / ตราเพชร / Eco door',
+      none: 'เปิดไฟล์โดยตรง: บุญถาวรใช้ได้ครบ · HomePro และรูปจากตราเพชร/Eco door ต้องเปิดผ่าน start.bat',
+    }[proxyKind];
+    connEl.querySelector('.conn-text').textContent = text;
+    connEl.dataset.kind = proxyKind;
+  }
+
+  function renderSourceNote() {
+    let note = '';
+    if (!proxyBase) {
+      if (currentSource === 'homepro') note = 'HomePro ไม่อนุญาตให้เว็บอื่นดึงข้อมูลโดยตรง ต้องเปิดหน้านี้ผ่านไฟล์ start.bat (ดับเบิลคลิก) ก่อนจึงจะค้นหาได้';
+      if (currentSource === 'traphet') note = 'ยังไม่ได้เปิดผ่าน start.bat: จะได้ชื่อ รูป และรายละเอียด แต่ไม่มีราคา และรูปจะใส่ในไฟล์ .pptx ไม่ได้ (อัปโหลดรูปเองได้)';
+      if (currentSource === 'ecodoor') note = 'ยังไม่ได้เปิดผ่าน start.bat: รูปสินค้าจะใส่ในไฟล์ .pptx ไม่ได้ (อัปโหลดรูปเองได้)';
+    }
+    sourceNoteEl.textContent = note;
+    sourceNoteEl.hidden = !note;
+  }
+
+  function httpError(status) {
+    const err = new Error(`เซิร์ฟเวอร์ตอบกลับ HTTP ${status}`);
+    err.status = status;
+    return err;
+  }
+  async function getJSON(url) {
+    const res = await fetch(url, { headers: { Accept: 'application/json' } });
+    if (!res.ok) throw httpError(res.status);
+    return res.json();
+  }
+  async function getText(url) {
+    const res = await fetch(url);
+    if (!res.ok) throw httpError(res.status);
+    return res.text();
+  }
+  // Direct first; through the helper when the site blocks cross-site reads.
+  async function getJSONFlexible(url) {
+    try {
+      return await getJSON(url);
+    } catch (err) {
+      if (!(err instanceof TypeError) || !proxyBase) throw err;
+      return getJSON(viaProxy(url));
+    }
+  }
 
   // ---------- Input parsing ----------
-  function parseInput(text) {
+  function parseCodes(text, source) {
     const seen = new Set();
     const out = [];
     for (const raw of text.split(/[\s,;]+/)) {
       const t = raw.trim();
       if (!t) continue;
       let entry = null;
-      if (/^https?:\/\//i.test(t) || /boonthavorn\.com/i.test(t)) {
+      if (/^https?:\/\//i.test(t) || /\.(com|co\.th|net)(\/|$)/i.test(t)) {
         try {
           const u = new URL(/^https?:/i.test(t) ? t : 'https://' + t);
-          const seg = u.pathname.split('/').filter(Boolean).pop() || '';
-          const key = decodeURIComponent(seg).replace(/\.html?$/i, '');
-          if (key) entry = { input: t, kind: 'key', value: key };
+          if (source === 'homepro') {
+            const m = /\/p\/(\d+)/.exec(u.pathname);
+            if (m) entry = { input: t, kind: 'sku', value: m[1] };
+          } else {
+            const seg = u.pathname.split('/').filter(Boolean).pop() || '';
+            const key = decodeURIComponent(seg).replace(/\.html?$/i, '');
+            if (key) entry = { input: t, kind: 'key', value: key };
+          }
         } catch (_) { /* not a usable URL */ }
       } else {
         entry = { input: t, kind: 'sku', value: t };
@@ -635,26 +879,34 @@
     return out;
   }
 
-  // ---------- Data fetching ----------
-  async function gql(query, values) {
-    // GET + ?store= keeps this a "simple" CORS request (no preflight); the API answers with Access-Control-Allow-Origin: *.
-    const params = new URLSearchParams({ query, variables: JSON.stringify({ v: values }), store: STORE });
-    const res = await fetch(`${API}?${params}`, { headers: { Accept: 'application/json' } });
-    if (!res.ok) throw new Error(`เซิร์ฟเวอร์ตอบกลับ HTTP ${res.status}`);
-    const json = await res.json();
+  function parseNames(text) {
+    const seen = new Set();
+    return text.split(/\r?\n/).map((s) => s.trim()).filter((s) => {
+      const k = s.toLowerCase();
+      if (!s || seen.has(k)) return false;
+      seen.add(k);
+      return true;
+    }).map((s) => ({ input: s, kind: 'name', value: s }));
+  }
+
+  // ---------- บุญถาวร (Magento GraphQL, open to cross-site reads) ----------
+  async function btvGql(query, values) {
+    // GET + ?store= keeps this a "simple" CORS request (no preflight).
+    const params = new URLSearchParams({ query, variables: JSON.stringify({ v: values }), store: BTV_STORE });
+    const json = await getJSON(`${BTV_API}?${params}`);
     const items = json && json.data && json.data.products && json.data.products.items;
     if (!items) throw new Error((json && json.errors && json.errors[0] && json.errors[0].message) || 'รูปแบบข้อมูลที่ได้รับไม่ถูกต้อง');
     return items;
   }
 
-  async function fetchAll(query, values) {
+  async function btvAll(query, values) {
     if (!values.length) return [];
     const chunks = [];
-    for (let i = 0; i < values.length; i += CHUNK) chunks.push(values.slice(i, i + CHUNK));
-    return (await Promise.all(chunks.map((c) => gql(query, c)))).flat();
+    for (let i = 0; i < values.length; i += BTV_CHUNK) chunks.push(values.slice(i, i + BTV_CHUNK));
+    return (await Promise.all(chunks.map((c) => btvGql(query, c)))).flat();
   }
 
-  async function lookup(entries) {
+  async function lookupBtv(entries) {
     const bySku = new Map();
     const byKey = new Map();
     const index = (items) => items.forEach((p) => {
@@ -664,53 +916,43 @@
     const find = (e) => (e.kind === 'sku' ? bySku.get(e.value.toLowerCase()) || byKey.get(e.value.toLowerCase()) : byKey.get(e.value.toLowerCase()));
 
     const [a, b] = await Promise.all([
-      fetchAll(QUERY_BY_SKU, entries.filter((e) => e.kind === 'sku').map((e) => e.value)),
-      fetchAll(QUERY_BY_KEY, entries.filter((e) => e.kind === 'key').map((e) => e.value)),
+      btvAll(BTV_BY_SKU, entries.filter((e) => e.kind === 'sku').map((e) => e.value)),
+      btvAll(BTV_BY_KEY, entries.filter((e) => e.kind === 'key').map((e) => e.value)),
     ]);
     index(a);
     index(b);
-
     // A bare URL key like "bosch-1015431" won't match as a SKU; retry those as URL keys.
     const retry = entries.filter((e) => e.kind === 'sku' && !find(e) && /^[a-z0-9]+(-[a-z0-9]+)+$/i.test(e.value));
-    if (retry.length) index(await fetchAll(QUERY_BY_KEY, retry.map((e) => e.value)));
+    if (retry.length) index(await btvAll(BTV_BY_KEY, retry.map((e) => e.value)));
 
     return entries.map((e) => {
       const p = find(e);
-      return { entry: e, view: p ? normalize(p) : null };
+      return { query: e.input, views: p ? [fromBtv(p)] : [] };
     });
   }
 
-  function normalize(p) {
+  function fromBtv(p) {
     const attrs = (p.attributes || []).filter((x) => x && x.value != null && String(x.value).trim() !== '');
     const attr = (code) => (attrs.find((x) => x.code === code) || {}).value;
     const mp = (p.price_range && p.price_range.minimum_price) || {};
-    const final = mp.final_price ? mp.final_price.value : null;
-    const regular = mp.regular_price ? mp.regular_price.value : null;
-    const pct = (mp.discount && mp.discount.percent_off) || 0;
-
     const images = (p.media_gallery || [])
       .filter((m) => m && m.url && !m.disabled)
       .sort((x, y) => (x.position || 0) - (y.position || 0))
       .map((m) => m.url);
     if (!images.length && p.small_image && p.small_image.url) images.push(p.small_image.url);
-
-    const cats = (p.categories || []).filter((c) => c && c.url_path);
-    const deepest = cats.reduce((d, c) => (!d || c.url_path.length > d.url_path.length ? c : d), null);
-    const crumbs = deepest
-      ? cats.filter((c) => deepest.url_path === c.url_path || deepest.url_path.startsWith(c.url_path + '/'))
-          .sort((x, y) => x.url_path.length - y.url_path.length)
-          .map((c) => c.name)
-      : [];
-
+    const crumbs = categoryTrail(p.categories || []);
     const brandItem = Array.isArray(p.brand_items) ? p.brand_items[0] : p.brand_items;
     return {
+      key: 'btv:' + p.sku,
+      source: 'btv',
       sku: p.sku,
       name: p.name,
       brand: (brandItem && brandItem.title) || attr('brand') || '',
-      url: SITE + (p.url_key || '') + (p.url_suffix || ''),
-      final,
-      regular,
-      pct,
+      url: 'https://www.boonthavorn.com/' + (p.url_key || '') + (p.url_suffix || ''),
+      final: mp.final_price ? mp.final_price.value : null,
+      regular: mp.regular_price ? mp.regular_price.value : null,
+      pct: (mp.discount && mp.discount.percent_off) || 0,
+      priceFrom: false,
       unit: attr('unit') || '',
       inStock: p.stock_status === 'IN_STOCK',
       qty: p.qty_in_stock,
@@ -723,7 +965,218 @@
     };
   }
 
-  // ---------- HTML sanitizing (product descriptions come from the remote site) ----------
+  function categoryTrail(categories) {
+    const cats = categories.filter((c) => c && c.url_path);
+    const deepest = cats.reduce((d, c) => (!d || c.url_path.length > d.url_path.length ? c : d), null);
+    return deepest
+      ? cats.filter((c) => deepest.url_path === c.url_path || deepest.url_path.startsWith(c.url_path + '/'))
+          .sort((x, y) => x.url_path.length - y.url_path.length)
+          .map((c) => c.name)
+      : [];
+  }
+
+  // ---------- HomePro (product page HTML, read through the helper) ----------
+  function needHelper(site) {
+    return new Error(`${site} ต้องเปิดหน้านี้ผ่านไฟล์ start.bat (โปรแกรมช่วยในเครื่อง) ก่อน`);
+  }
+
+  async function lookupHomepro(entries) {
+    if (!proxyBase) throw needHelper('HomePro');
+    return Promise.all(entries.map(async (e) => {
+      if (!/^\d{4,10}$/.test(e.value)) return { query: e.input, views: [] };
+      try {
+        const html = await getText(viaProxy(HP_SITE + 'p/' + e.value));
+        const view = fromHomepro(html, e.value);
+        return { query: e.input, views: view ? [view] : [] };
+      } catch (err) {
+        if (err.status === 404) return { query: e.input, views: [] };
+        throw err;
+      }
+    }));
+  }
+
+  // Map common spec labels onto the attribute codes the presentation fields use.
+  function specCode(label, fallback) {
+    if (/^สี/.test(label)) return 'color';
+    if (/วัสดุ/.test(label)) return 'material';
+    if (/^น้ำหนัก/.test(label)) return 'weight_unit';
+    if (/ประเภท/.test(label)) return 'btv_product_type';
+    if (/^ขนาด/.test(label)) return 'dimension_unit';
+    return fallback;
+  }
+
+  function fromHomepro(html, code) {
+    const doc = new DOMParser().parseFromString(html, 'text/html');
+    const gtm = (name) => { const el = doc.getElementById(`${name}-${code}`); return el ? el.value.trim() : ''; };
+    const meta = (prop) => { const el = doc.querySelector(`meta[property="${prop}"]`); return el ? el.content.trim() : ''; };
+    const name = gtm('gtmName') || meta('og:title');
+    if (!name) return null;
+
+    let ld = null;
+    for (const s of doc.querySelectorAll('script[type="application/ld+json"]')) {
+      try {
+        const j = JSON.parse(s.textContent);
+        const found = (Array.isArray(j) ? j : [j]).find((x) => x && x['@type'] === 'Product');
+        if (found) ld = found;
+      } catch (_) { /* malformed block */ }
+    }
+    const num = (s) => { const n = parseFloat(String(s || '').replace(/,/g, '')); return isFinite(n) && n > 0 ? n : null; };
+    const final = num(gtm('gtmNetPrice')) ?? num(gtm('gtmPrice')) ?? num(ld && ld.offers && ld.offers.price);
+    const regular = num(gtm('gtmPriceOriginal')) ?? final;
+
+    // Gallery: every image of this article, upgraded to the largest size.
+    const images = [];
+    const seen = new Set();
+    const re = new RegExp(`https://statice\\.homepro\\.co\\.th/homepro/ARTICLE_IMAGE/[^"'\\s)]*/${code}/[^"'\\s)]+`, 'g');
+    for (const m of html.matchAll(re)) {
+      const url = m[0].replace(/&amp;/g, '&').replace(/\/\d+x\d+\//, '/1000x1000/');
+      const file = url.split('/').pop();
+      if (seen.has(file)) continue;
+      seen.add(file);
+      images.push(url);
+    }
+    if (!images.length && meta('og:image')) images.push(meta('og:image'));
+
+    // Spec table: the first table made of label/value rows.
+    const specs = [];
+    const dims = {};
+    for (const table of doc.querySelectorAll('table')) {
+      const rows = [...table.rows].filter((r) => r.cells.length === 2);
+      if (rows.length < 3) continue;
+      rows.forEach((r, i) => {
+        const label = r.cells[0].textContent.replace(/\s+/g, ' ').trim();
+        const value = r.cells[1].textContent.replace(/\s+/g, ' ').trim();
+        if (!label || !value || /^แบรนด์|^brand/i.test(label)) return;
+        if (/^ความกว้าง/.test(label)) dims.w = value;
+        else if (/^ความลึก/.test(label)) dims.d = value;
+        else if (/^ความสูง/.test(label)) dims.h = value;
+        else specs.push({ label, value, code: specCode(label, 'hp_' + i) });
+      });
+      break;
+    }
+    if (dims.w || dims.d || dims.h) specs.unshift({ label: 'ขนาด (กxลxส)', value: `${dims.w || '-'} x ${dims.d || '-'} x ${dims.h || '-'} ซม.`, code: 'dimension_unit' });
+
+    let description = '';
+    const h2 = doc.querySelector('table h2');
+    if (h2) {
+      const cell = h2.closest('td') || h2.parentElement;
+      h2.remove();
+      description = cell.innerHTML;
+    }
+
+    let crumbs = [...doc.querySelectorAll('.breadcrumb .section')].map((e) => e.textContent.trim())
+      .filter((t) => t && t !== name && !/^(หน้าแรก|home)$/i.test(t));
+    if (!crumbs.length) crumbs = [gtm('gtmCategory1'), gtm('gtmCategory2'), gtm('gtmCategory3')].filter(Boolean);
+    const availability = ld && ld.offers && ld.offers.availability;
+    return {
+      key: 'homepro:' + code,
+      source: 'homepro',
+      sku: code,
+      name,
+      brand: gtm('gtmBrand') || (ld && ld.brand && ld.brand.name) || '',
+      url: HP_SITE + 'p/' + code,
+      final,
+      regular,
+      pct: final && regular && regular > final ? (1 - final / regular) * 100 : 0,
+      priceFrom: false,
+      unit: '',
+      inStock: availability ? /InStock/i.test(availability) : null,
+      qty: null,
+      readyToShip: false,
+      images,
+      crumbs,
+      specs,
+      description,
+      defaultGroup: crumbs[0] || 'รายการวัสดุ',
+    };
+  }
+
+  // ---------- ตราเพชร / Eco door (WooCommerce, searched by name) ----------
+  async function lookupWoo(source, entries) {
+    const base = WOO_BASE[source];
+    return Promise.all(entries.map(async (e) => {
+      const q = encodeURIComponent(e.value);
+      // Eco door's store API is open to cross-site reads; ตราเพชร's needs the helper.
+      if (source === 'ecodoor' || proxyBase) {
+        const list = await getJSONFlexible(`${base}/wp-json/wc/store/v1/products?search=${q}&per_page=${NAME_RESULTS}`);
+        return { query: e.input, views: list.map((p) => fromWoo(p, source)) };
+      }
+      // ตราเพชร without the helper: WordPress' own API is readable but carries no prices.
+      const list = await getJSON(`${base}/wp-json/wp/v2/product?search=${q}&per_page=${NAME_RESULTS}&_embed=wp:featuredmedia,wp:term`);
+      return { query: e.input, views: list.map((p) => fromWpPost(p, source)) };
+    }));
+  }
+
+  function fromWoo(p, source) {
+    const pr = p.prices || {};
+    const div = 10 ** (Number(pr.currency_minor_unit) || 0);
+    const num = (s) => (s === '' || s == null || !Number(s) ? null : Number(s) / div);
+    const range = pr.price_range;
+    const priceFrom = !!(range && range.min_amount !== range.max_amount);
+    const final = num(range ? range.min_amount : pr.price);
+    const regular = priceFrom ? final : (num(pr.regular_price) || final);
+    const specs = (p.attributes || []).map((a, i) => {
+      const label = plainText(a.name);
+      return { label, value: (a.terms || []).map((t) => plainText(t.name)).join(', '), code: specCode(label, 'woo_' + i) };
+    }).filter((s) => s.value);
+    const given = (s) => { const t = plainText(s); return t && !/^(n\/?a|ไม่ระบุ|-)$/i.test(t) ? t : ''; };
+    const dims = given(p.formatted_dimensions);
+    if (dims && !specs.some((s) => s.code === 'dimension_unit')) specs.push({ label: 'ขนาด', value: dims, code: 'dimension_unit' });
+    const weight = given(p.formatted_weight);
+    if (weight) specs.push({ label: 'น้ำหนัก', value: weight, code: 'weight_unit' });
+    const crumbs = (p.categories || []).map((c) => plainText(c.name)).filter(Boolean);
+    const brand = Array.isArray(p.brands) && p.brands[0] ? plainText(p.brands[0].name) : '';
+    return {
+      key: `${source}:${p.id}`,
+      source,
+      sku: '',
+      name: plainText(p.name),
+      brand,
+      url: p.permalink || WOO_BASE[source],
+      final,
+      regular,
+      pct: final && regular && regular > final ? (1 - final / regular) * 100 : 0,
+      priceFrom,
+      unit: '',
+      inStock: typeof p.is_in_stock === 'boolean' ? p.is_in_stock : null,
+      qty: null,
+      readyToShip: false,
+      images: (p.images || []).map((i) => i.src).filter(Boolean),
+      crumbs,
+      specs,
+      description: p.description || p.short_description || '',
+      defaultGroup: crumbs[0] || SOURCES[source].label,
+    };
+  }
+
+  function fromWpPost(p, source) {
+    const emb = p._embedded || {};
+    const media = (emb['wp:featuredmedia'] || [])[0];
+    const crumbs = (emb['wp:term'] || []).flat().filter((t) => t && t.taxonomy === 'product_cat').map((t) => plainText(t.name));
+    return {
+      key: `${source}:${p.id}`,
+      source,
+      sku: '',
+      name: plainText(p.title && p.title.rendered),
+      brand: '',
+      url: p.link || WOO_BASE[source],
+      final: null,
+      regular: null,
+      pct: 0,
+      priceFrom: false,
+      unit: '',
+      inStock: null,
+      qty: null,
+      readyToShip: false,
+      images: media && media.source_url ? [media.source_url] : [],
+      crumbs,
+      specs: [],
+      description: (p.content && p.content.rendered) || (p.excerpt && p.excerpt.rendered) || '',
+      defaultGroup: crumbs[0] || SOURCES[source].label,
+    };
+  }
+
+  // ---------- HTML sanitizing (product descriptions come from remote sites) ----------
   const DROP_TAGS = new Set(['SCRIPT', 'STYLE', 'OBJECT', 'EMBED', 'FORM', 'INPUT', 'BUTTON', 'SELECT', 'TEXTAREA', 'LINK', 'META', 'SVG', 'MATH', 'TEMPLATE', 'NOSCRIPT']);
   const KEEP_TAGS = new Set(['P', 'BR', 'B', 'STRONG', 'I', 'EM', 'U', 'UL', 'OL', 'LI', 'TABLE', 'THEAD', 'TBODY', 'TR', 'TD', 'TH', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'A', 'IMG', 'SUB', 'SUP', 'HR']);
 
@@ -770,8 +1223,8 @@
         child.loading = 'lazy';
         child.referrerPolicy = 'no-referrer';
       }
-      // Drop spacer paragraphs (the site uses lots of <p>&nbsp;</p>).
-      if (tag === 'P' && !child.textContent.replace(/[\s ]+/g, '') && !child.querySelector('img,a')) child.remove();
+      // Drop spacer paragraphs (lots of <p>&nbsp;</p> on these sites).
+      if (tag === 'P' && !child.textContent.replace(/[\s\u00a0]+/g, '') && !child.querySelector('img,a')) child.remove();
     }
   }
 
@@ -785,19 +1238,18 @@
   }
 
   // ---------- Rendering ----------
-  function renderMissing(r) {
+  function renderMissing(query) {
+    const byName = SOURCES[currentSource].by === 'name';
     return `<article class="card card--missing">
       <div class="missing-icon" aria-hidden="true">?</div>
       <div>
         <p class="missing-title">ไม่พบสินค้า</p>
-        <p class="muted">ไม่พบข้อมูลสำหรับ <code>${esc(r.entry.input)}</code> ลองตรวจสอบรหัสสินค้าอีกครั้ง</p>
+        <p class="muted">ไม่พบข้อมูลสำหรับ <code>${esc(query)}</code> บน${esc(SOURCES[currentSource].label)} ${byName ? 'ลองใช้คำที่สั้นลง' : 'ลองตรวจสอบรหัสสินค้าอีกครั้ง'}</p>
       </div>
     </article>`;
   }
 
-  function renderCard(r, open) {
-    if (!r.view) return renderMissing(r);
-    const v = r.view;
+  function renderCard(v, open) {
     const mainImg = v.images[0];
     const media = `<div class="media">
       <a class="main-img" href="${esc(v.url)}" target="_blank" rel="noopener noreferrer" aria-label="เปิดหน้าสินค้า">
@@ -809,12 +1261,12 @@
 
     const hasDiscount = v.pct > 0 && v.regular != null && v.final != null && v.regular > v.final;
     const price = v.final == null
-      ? '<span class="price" style="font-size:1.1rem">ไม่ระบุราคา</span>'
-      : `<span class="price">${money(v.final)}<small>บาท${v.unit ? ' / ' + esc(v.unit) : ''}</small></span>
+      ? '<span class="price price--none">ไม่ระบุราคา</span>'
+      : `<span class="price">${v.priceFrom ? '<small class="from">เริ่มต้น</small>' : ''}${money(v.final)}<small>บาท${v.unit ? ' / ' + esc(v.unit) : ''}</small></span>
          ${hasDiscount ? `<span class="was">${money(v.regular)} บาท</span><span class="off">-${Math.round(v.pct)}%</span>` : ''}`;
 
     const pills = [
-      v.inStock ? '<span class="pill pill--ok">มีสินค้า</span>' : '<span class="pill pill--bad">สินค้าหมด</span>',
+      v.inStock === true ? '<span class="pill pill--ok">มีสินค้า</span>' : v.inStock === false ? '<span class="pill pill--bad">สินค้าหมด</span>' : '',
       v.inStock && v.qty != null ? `<span class="pill">คงเหลือ ${numFmt.format(v.qty)} ${esc(v.unit || 'ชิ้น')}</span>` : '',
       v.readyToShip ? '<span class="pill pill--info">พร้อมส่ง</span>' : '',
     ].join('');
@@ -829,15 +1281,17 @@
       ${media}
       <div class="info">
         <div class="meta-top">
-          <span class="tag">รหัส <strong>${esc(v.sku)}</strong></span>
+          <span class="tag tag--src">${esc(SOURCES[v.source].label)}</span>
+          ${v.sku ? `<span class="tag">รหัส <strong>${esc(v.sku)}</strong></span>` : ''}
           ${v.brand ? `<span class="brand">${esc(v.brand)}</span>` : ''}
         </div>
         <h2 class="name">${esc(v.name)}</h2>
         ${v.crumbs.length ? `<p class="crumbs">${v.crumbs.map(esc).join(' › ')}</p>` : ''}
         <div class="price-row">${price}</div>
-        <div class="pills">${pills}</div>
+        ${pills ? `<div class="pills">${pills}</div>` : ''}
         <div class="actions">
-          <a class="btn-ghost" href="${esc(v.url)}" target="_blank" rel="noopener noreferrer">ดูบนเว็บไซต์บุญถาวร ↗</a>
+          <button class="btn-ghost add-btn" type="button" data-add="${esc(v.key)}"></button>
+          <a class="btn-ghost" href="${esc(v.url)}" target="_blank" rel="noopener noreferrer">ดูบนเว็บไซต์${esc(SOURCES[v.source].label)} ↗</a>
         </div>
       </div>
       <details class="more"${open ? ' open' : ''}>
@@ -848,6 +1302,27 @@
         </div>
       </details>
     </article>`;
+  }
+
+  function renderResults(groups, byName) {
+    if (byName) {
+      resultsEl.innerHTML = groups.map((g) => `<section class="result-group">
+        <h3 class="group-title">ผลการค้นหา “${esc(g.query)}” <span>${g.views.length} รายการ</span></h3>
+        ${g.views.length ? g.views.map((v) => renderCard(v, false)).join('') : renderMissing(g.query)}
+      </section>`).join('');
+    } else {
+      resultsEl.innerHTML = groups.map((g) => (g.views.length ? renderCard(g.views[0], groups.length === 1) : renderMissing(g.query))).join('');
+    }
+    refreshAddButtons();
+  }
+
+  function refreshAddButtons() {
+    resultsEl.querySelectorAll('[data-add]').forEach((btn) => {
+      const added = pool.has(btn.dataset.add);
+      btn.classList.toggle('is-added', added);
+      btn.textContent = added ? '✓ อยู่ในงานนำเสนอ (นำออก)' : '+ เพิ่มลงงานนำเสนอ';
+      btn.setAttribute('aria-pressed', String(added));
+    });
   }
 
   function renderSkeleton(n) {
@@ -868,16 +1343,45 @@
     statusEl.innerHTML = `<div class="error">${esc(msg)}</div>`;
   }
 
+  // ---------- Source picker ----------
+  function setSource(src) {
+    if (!SOURCE_UI[src]) src = 'btv';
+    currentSource = src;
+    const radio = form.querySelector(`input[name="source"][value="${src}"]`);
+    if (radio) radio.checked = true;
+    const ui = SOURCE_UI[src];
+    $('#codes-label').textContent = ui.label;
+    input.placeholder = ui.placeholder;
+    $('#search-hint').textContent = ui.hint;
+    $('#examples').innerHTML = '<span>ลองตัวอย่าง:</span>' + ui.examples.map(([label, value]) =>
+      `<button class="chip" type="button" data-example="${esc(value)}">${esc(label)}</button>`).join('');
+    renderSourceNote();
+  }
+
+  function setHash(src, text) {
+    try {
+      history.replaceState(null, '', '#' + encodeURIComponent((src === 'btv' ? '' : src + ':') + text));
+    } catch (_) { /* file:// in some browsers */ }
+  }
+
   // ---------- Search flow ----------
   async function run(text) {
-    const entries = parseInput(text);
+    await proxyReady;
+    const src = currentSource;
+    const byName = SOURCES[src].by === 'name';
+    const entries = byName ? parseNames(text) : parseCodes(text, src);
     if (!entries.length) {
-      showError('กรุณาใส่รหัสสินค้าอย่างน้อย 1 รหัส');
+      showError(byName ? 'กรุณาใส่ชื่อสินค้าที่ต้องการค้นหา' : 'กรุณาใส่รหัสสินค้าอย่างน้อย 1 รหัส');
       input.focus();
       return;
     }
-    if (entries.length > MAX_CODES) {
-      showError(`ค้นหาได้ครั้งละไม่เกิน ${MAX_CODES} รหัส (ใส่มา ${entries.length} รหัส)`);
+    const max = byName ? MAX_NAMES : MAX_CODES;
+    if (entries.length > max) {
+      showError(`ค้นหาได้ครั้งละไม่เกิน ${max} ${byName ? 'ชื่อ' : 'รหัส'} (ใส่มา ${entries.length})`);
+      return;
+    }
+    if (src === 'homepro' && !proxyBase) {
+      showError(needHelper('HomePro').message);
       return;
     }
 
@@ -887,28 +1391,32 @@
     submitBtn.disabled = true;
     submitBtn.textContent = 'กำลังค้นหา…';
     renderSkeleton(entries.length);
-    try {
-      history.replaceState(null, '', '#' + encodeURIComponent(entries.map((e) => e.input).join(',')));
-    } catch (_) { /* file:// in some browsers */ }
+    setHash(src, entries.map((e) => e.input).join(byName ? '\n' : ','));
 
     try {
-      const results = await lookup(entries);
+      const groups = src === 'btv' ? await lookupBtv(entries)
+        : src === 'homepro' ? await lookupHomepro(entries)
+        : await lookupWoo(src, entries);
       if (id !== requestId) return;
-      lastResults = results;
-      const found = results.filter((r) => r.view).length;
-      resultsEl.innerHTML = results.map((r) => renderCard(r, results.length === 1)).join('');
-      summaryEl.innerHTML = `พบ <strong>${found}</strong> จาก ${results.length} รายการ`;
+      lastGroups = groups;
+      const views = groups.flatMap((g) => g.views);
+      for (const v of views) viewsByKey.set(v.key, v);
+      renderResults(groups, byName);
+      summaryEl.innerHTML = byName
+        ? `พบ <strong>${views.length}</strong> รายการจาก ${groups.length} คำค้น · กด “เพิ่มลงงานนำเสนอ” ที่สินค้าที่ต้องการ`
+        : `พบ <strong>${views.length}</strong> จาก ${groups.length} รายการ`;
       toolbar.hidden = false;
-      exportBtn.hidden = found === 0;
-      addResults(results);
+      exportBtn.hidden = views.length === 0;
+      // Codes are exact matches, so they go straight into the presentation.
+      if (!byName) addViews(views);
       toDeckBtn.hidden = pool.size === 0;
     } catch (err) {
       if (id !== requestId) return;
       resultsEl.innerHTML = '';
-      const offline = err instanceof TypeError;
-      showError(offline
-        ? 'เชื่อมต่อ boonthavorn.com ไม่ได้ ตรวจสอบการเชื่อมต่ออินเทอร์เน็ต หรือเว็บไซต์อาจจำกัดการเรียกข้อมูลชั่วคราว ลองใหม่อีกครั้งในอีกสักครู่'
-        : 'ดึงข้อมูลไม่สำเร็จ: ' + err.message);
+      const label = SOURCES[src].label;
+      showError(err instanceof TypeError
+        ? `เชื่อมต่อ${label}ไม่ได้ ตรวจสอบการเชื่อมต่ออินเทอร์เน็ต${proxyKind === 'local' ? ' และหน้าต่างโปรแกรมช่วย (start.bat) ยังเปิดอยู่' : ''} แล้วลองใหม่อีกครั้ง`
+        : `ดึงข้อมูลจาก${label}ไม่สำเร็จ: ${err.message}`);
     } finally {
       if (id === requestId) {
         submitBtn.disabled = false;
@@ -918,27 +1426,29 @@
   }
 
   // ---------- CSV export ----------
-  function toCSV(results) {
-    const head = ['รหัสที่ค้นหา', 'รหัสสินค้า', 'ชื่อสินค้า', 'ยี่ห้อ', 'ราคาขาย (บาท)', 'ราคาปกติ (บาท)', 'ส่วนลด (%)', 'หน่วยนับ', 'สถานะ', 'คงเหลือ', 'พร้อมส่ง', 'หมวดหมู่', 'ลิงก์'];
-    const rows = results.map((r) => {
-      const v = r.view;
-      if (!v) return [r.entry.input, '', 'ไม่พบสินค้า', '', '', '', '', '', '', '', '', '', ''];
-      return [r.entry.input, v.sku, v.name, v.brand, v.final ?? '', v.regular ?? '', v.pct ? v.pct.toFixed(2) : '0',
-        v.unit, v.inStock ? 'มีสินค้า' : 'สินค้าหมด', v.qty ?? '', v.readyToShip ? 'ใช่' : '', v.crumbs.join(' > '), v.url];
-    });
+  function toCSV(groups) {
+    const head = ['แหล่งข้อมูล', 'คำค้น', 'รหัสสินค้า', 'ชื่อสินค้า', 'ยี่ห้อ', 'ราคาขาย (บาท)', 'ราคาปกติ (บาท)', 'ส่วนลด (%)', 'หน่วยนับ', 'สถานะ', 'หมวดหมู่', 'ลิงก์'];
+    const rows = [];
+    for (const g of groups) {
+      if (!g.views.length) { rows.push([SOURCES[currentSource].label, g.query, '', 'ไม่พบสินค้า']); continue; }
+      for (const v of g.views) {
+        rows.push([SOURCES[v.source].label, g.query, v.sku, v.name, v.brand, v.final ?? '', v.regular ?? '', v.pct ? v.pct.toFixed(2) : '0',
+          v.unit, v.inStock === true ? 'มีสินค้า' : v.inStock === false ? 'สินค้าหมด' : '', v.crumbs.join(' > '), v.url]);
+      }
+    }
     const cell = (x) => {
       const s = String(x ?? '');
       return /[",\r\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
     };
-    return '﻿' + [head, ...rows].map((row) => row.map(cell).join(',')).join('\r\n');
+    return '\uFEFF' + [head, ...rows].map((row) => row.map(cell).join(',')).join('\r\n');
   }
 
   function download() {
-    if (!lastResults.length) return;
-    const blob = new Blob([toCSV(lastResults)], { type: 'text/csv;charset=utf-8' });
+    if (!lastGroups.length) return;
+    const blob = new Blob([toCSV(lastGroups)], { type: 'text/csv;charset=utf-8' });
     const d = new Date();
     const pad = (n) => String(n).padStart(2, '0');
-    const name = `boonthavorn-${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}-${pad(d.getHours())}${pad(d.getMinutes())}.csv`;
+    const name = `products-${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}-${pad(d.getHours())}${pad(d.getMinutes())}.csv`;
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
     a.download = name;
@@ -956,7 +1466,7 @@
   const DEFAULT_COMPANY = 'KS HOME';
   const DEFAULT_LOGO = { data: 'data:image/png;base64,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', w: 129, h: 164 };
   const MAX_ITEMS = { image: 8, full: 12 };
-  // Optional product attributes the user can show; `attr` is the Boonthavorn attribute code.
+  // Optional product attributes the user can show; `attr` is the attribute code on the product.
   const ATTR_FIELDS = [
     { key: 'color', label: 'สี', attr: 'color' },
     { key: 'size', label: 'ขนาด', attr: 'dimension_unit' },
@@ -972,8 +1482,11 @@
     { key: 'price', label: 'ราคา', on: true },
     { key: 'usage', label: 'จุดใช้งาน', on: true },
     ...ATTR_FIELDS.map((d) => ({ key: d.key, label: d.label, on: false })),
+    { key: 'source', label: 'แหล่งที่มา', on: false },
     { key: 'specs', label: 'สเปกอื่น ๆ (หน้าสินค้าเดี่ยว)', on: true },
   ];
+  // Fields the product editor writes back as attributes.
+  const EDIT_ATTRS = [['color', 'ed_color', 'สี'], ['dimension_unit', 'ed_size', 'ขนาด'], ['material', 'ed_material', 'วัสดุ']];
   const POINTER_COLORS = { red: 'D0312D', navy: '13234B', gold: 'B8935A', black: '1F1F1F' };
   const POINTER_STYLES = ['number', 'arrow', 'both'];
 
@@ -984,34 +1497,42 @@
   const deckCountEl = $('#deck-count');
   const deckStatus = $('#deck-status');
   const deckBtn = $('#deck-generate');
+  const editor = $('#item-editor');
+  const edForm = $('#item-form');
+  const edImages = $('#ed-images');
+  const edError = $('#ed-error');
 
-  const pool = new Map();   // sku -> { view, usage }, grows with every search
-  let pages = [];           // { id, title, withImage, image, skus, marks: { sku: { x, y } } }
+  // key -> { view, usage, image, edited }; image: null (site's first picture) | {kind:'url',url} | {kind:'data',img} | {kind:'none'}
+  const pool = new Map();
+  let pages = [];           // { id, title, note, withImage, image, keys, marks: { key: { x, y } } }
   let nextPageId = 1;
-  let placing = null;       // { pageId, sku } while the user picks a point on a page image
+  let placing = null;       // { pageId, key } while the user picks a point on a page image
   let logoMode = 'default'; // 'default' | 'custom' | 'none'
   let customLogo = null;
   let coverImage = null;
+  let editing = null;       // product editor state
 
   const pad2 = (n) => String(n).padStart(2, '0');
   const thaiDate = (d) => `${pad2(d.getDate())}/${pad2(d.getMonth() + 1)}/${d.getFullYear() + 543}`;
   const clip = (s, n) => { s = String(s || ''); return s.length > n ? s.slice(0, n - 1) + '…' : s; };
   const splitLines = (s) => String(s || '').split(/\r?\n/).map((x) => x.trim()).filter(Boolean);
-  const priceText = (v) => `${money(v.final)} บาท${v.unit ? ' / ' + v.unit : ''}`;
   const maxFor = (p) => (p.withImage ? MAX_ITEMS.image : MAX_ITEMS.full);
   const pageById = (id) => pages.find((p) => p.id === Number(id));
-  const pageOf = (sku) => pages.find((p) => p.skus.includes(sku));
-  const unassigned = () => [...pool.keys()].filter((sku) => !pageOf(sku));
+  const pageOf = (key) => pages.find((p) => p.keys.includes(key));
+  const unassigned = () => [...pool.keys()].filter((key) => !pageOf(key));
   const currentLogo = () => (logoMode === 'custom' ? customLogo : logoMode === 'default' ? DEFAULT_LOGO : null);
-  const newPage = (title, withImage = true) => ({ id: nextPageId++, title, withImage, image: null, skus: [], marks: {} });
+  const newPage = (title, withImage = true) => ({ id: nextPageId++, title, note: '', withImage, image: null, keys: [], marks: {} });
 
-  function plainText(html) {
-    const doc = new DOMParser().parseFromString('<div>' + String(html ?? '') + '</div>', 'text/html');
-    return (doc.body.textContent || '').replace(/\s+/g, ' ').trim();
-  }
   function attrOf(v, code) {
     const a = v.specs.find((s) => s.code === code);
     return a ? plainText(a.value) : '';
+  }
+  // The picture the user chose for a product ('' = none).
+  function chosenImage(it) {
+    if (!it.image) return it.view.images[0] || '';
+    if (it.image.kind === 'data') return it.image.img.data;
+    if (it.image.kind === 'url') return it.image.url;
+    return '';
   }
   function showDeckNote(kind, html) {
     deckStatus.innerHTML = `<div class="note note--${kind}">${html}</div>`;
@@ -1077,19 +1598,40 @@
   }
 
   // ---------- Pages model ----------
-  // New products from a search join the last page with the same heading, or start a new page.
-  function addResults(results) {
+  // New products join the last page with the same heading, or start a new page.
+  function addViews(views) {
     const per = autoPer();
-    for (const r of results) {
-      if (!r.view) continue;
-      const v = r.view;
-      if (pool.has(v.sku)) { pool.get(v.sku).view = v; continue; }
-      pool.set(v.sku, { view: v, usage: '' });
-      let page = [...pages].reverse().find((p) => p.title === v.defaultGroup && p.skus.length < Math.min(per, maxFor(p)));
-      if (!page) { page = newPage(v.defaultGroup); pages.push(page); }
-      page.skus.push(v.sku);
+    for (const v of views) {
+      if (!v) continue;
+      const it = pool.get(v.key);
+      if (it) {
+        if (!it.edited) it.view = v; // refresh price etc., but keep the user's own edits
+        if (!pageOf(v.key)) placeKey(v.key, null, per);
+        continue;
+      }
+      pool.set(v.key, { view: v, usage: '', image: null, edited: false });
+      placeKey(v.key, null, per);
     }
     deckSection.hidden = pool.size === 0;
+    renderPages();
+  }
+
+  function placeKey(key, target, per = autoPer()) {
+    const v = pool.get(key).view;
+    let page = null;
+    if (target && target !== 'new') page = pageById(target);
+    if (!page && target !== 'new') page = [...pages].reverse().find((p) => p.title === v.defaultGroup && p.keys.length < Math.min(per, maxFor(p)));
+    if (!page || page.keys.length >= maxFor(page)) { page = newPage(v.defaultGroup); pages.push(page); }
+    page.keys.push(key);
+  }
+
+  function removeFromDeck(key) {
+    pool.delete(key);
+    for (const p of pages) {
+      p.keys = p.keys.filter((k) => k !== key);
+      delete p.marks[key];
+    }
+    if (placing && placing.key === key) placing = null;
     renderPages();
   }
 
@@ -1097,94 +1639,107 @@
   function autoLayout() {
     const per = autoPer();
     const groups = new Map();
-    const add = (title, sku, src) => {
-      if (!groups.has(title)) groups.set(title, { skus: [], image: null, withImage: src ? src.withImage : true, marks: {} });
+    const add = (title, key, src) => {
+      if (!groups.has(title)) groups.set(title, { keys: [], image: null, note: '', withImage: src ? src.withImage : true, marks: {} });
       const g = groups.get(title);
-      g.skus.push(sku);
+      g.keys.push(key);
       if (src && src.image && !g.image) g.image = src.image;
-      if (src && src.marks[sku] && src.image === g.image) g.marks[sku] = src.marks[sku];
+      if (src && src.note && !g.note) g.note = src.note;
+      if (src && src.marks[key] && src.image === g.image) g.marks[key] = src.marks[key];
     };
-    for (const p of pages) for (const sku of p.skus) add(p.title.trim() || 'รายการวัสดุ', sku, p);
-    for (const sku of unassigned()) add(pool.get(sku).view.defaultGroup, sku, null);
+    for (const p of pages) for (const key of p.keys) add(p.title.trim() || 'รายการวัสดุ', key, p);
+    for (const key of unassigned()) add(pool.get(key).view.defaultGroup, key, null);
     const next = [];
     for (const [title, g] of groups) {
       const cap = Math.min(per, g.withImage ? MAX_ITEMS.image : MAX_ITEMS.full);
-      for (let i = 0; i < g.skus.length; i += cap) {
+      for (let i = 0; i < g.keys.length; i += cap) {
         const p = newPage(title, g.withImage);
         p.image = g.image;
-        p.skus = g.skus.slice(i, i + cap);
-        for (const sku of p.skus) if (g.marks[sku]) p.marks[sku] = g.marks[sku];
+        p.note = i === 0 ? g.note : '';
+        p.keys = g.keys.slice(i, i + cap);
+        for (const key of p.keys) if (g.marks[key]) p.marks[key] = g.marks[key];
         next.push(p);
       }
     }
-    pages = next;
+    // Pages without products (picture or text pages) stay where they are at the end.
+    pages = next.concat(pages.filter((p) => !p.keys.length));
     placing = null;
     renderPages();
   }
 
-  function moveSku(sku, target) {
-    const from = pageOf(sku);
+  function moveKey(key, target) {
+    const from = pageOf(key);
     let to = null;
     if (target === 'new') {
-      to = newPage(from ? from.title : pool.get(sku).view.defaultGroup, from ? from.withImage : true);
+      to = newPage(from ? from.title : pool.get(key).view.defaultGroup, from ? from.withImage : true);
       pages.splice(from ? pages.indexOf(from) + 1 : pages.length, 0, to);
     } else if (target !== 'tray') {
       to = pageById(target);
-      if (!to || to === from || to.skus.length >= maxFor(to)) { renderPages(); return; }
+      if (!to || to === from || to.keys.length >= maxFor(to)) { renderPages(); return; }
     }
     if (from) {
-      from.skus = from.skus.filter((s) => s !== sku);
-      delete from.marks[sku];
+      from.keys = from.keys.filter((k) => k !== key);
+      delete from.marks[key];
     }
-    if (to) to.skus.push(sku);
-    if (placing && placing.sku === sku) placing = null;
+    if (to) to.keys.push(key);
+    if (placing && placing.key === key) placing = null;
     renderPages();
   }
 
   // ---------- Pages UI ----------
-  const thumb = (v) => (v.images[0]
-    ? `<img class="pi-thumb" src="${esc(v.images[0])}" alt="" loading="lazy" referrerpolicy="no-referrer">`
-    : '<span class="pi-thumb"></span>');
+  function thumb(it) {
+    const src = chosenImage(it);
+    return src
+      ? `<img class="pi-thumb" src="${esc(src)}" alt="" loading="lazy" referrerpolicy="no-referrer">`
+      : '<span class="pi-thumb pi-thumb--empty">ไม่มีรูป</span>';
+  }
 
   function pageOptions(exceptId) {
     return pages.map((q, j) => {
       if (q.id === exceptId) return '';
-      const full = q.skus.length >= maxFor(q);
+      const full = q.keys.length >= maxFor(q);
       return `<option value="${q.id}"${full ? ' disabled' : ''}>หน้า ${j + 2}: ${esc(clip(q.title, 28))}${full ? ' (เต็ม)' : ''}</option>`;
     }).join('');
   }
 
+  function itemMeta(v) {
+    return [SOURCES[v.source].label, v.sku ? 'รหัส ' + v.sku : '', v.brand, v.final != null ? (v.priceFrom ? 'เริ่มต้น ' : '') + money(v.final) + ' บาท' : '']
+      .filter(Boolean).map(esc).join(' · ');
+  }
+
   function renderPages() {
-    const used = pages.reduce((n, p) => n + p.skus.length, 0);
     deckCountEl.innerHTML = `สินค้า <strong>${pool.size}</strong> รายการ · <strong>${pages.length}</strong> หน้า + ปก`;
     pagesEl.innerHTML = pages.map(renderPage).join('') || '<p class="sub">ยังไม่มีหน้า กด “+ เพิ่มหน้า”</p>';
-    renderTray(used);
+    renderTray();
+    refreshAddButtons();
+    toDeckBtn.hidden = pool.size === 0;
   }
 
   function renderPage(p, idx) {
     const max = maxFor(p);
     const isPlacing = placing && placing.pageId === p.id;
-    const items = p.skus.map((sku, n) => {
-      const it = pool.get(sku);
+    const items = p.keys.map((key, n) => {
+      const it = pool.get(key);
       const v = it.view;
-      const mark = p.marks[sku];
-      const picking = isPlacing && placing.sku === sku;
+      const mark = p.marks[key];
+      const picking = isPlacing && placing.key === key;
       const pointTools = p.withImage && p.image
         ? `<button class="btn-sm${picking ? ' is-on' : ''}" type="button" data-act="mark">${picking ? 'กำลังเลือกตำแหน่ง…' : mark ? 'ชี้ตำแหน่งใหม่' : 'ชี้ในภาพ'}</button>
            ${mark ? '<button class="btn-sm btn-sm--plain" type="button" data-act="unmark">ลบตัวชี้</button>' : ''}`
         : '';
-      return `<div class="pi" data-sku="${esc(sku)}">
+      return `<div class="pi" data-key="${esc(key)}">
         <span class="pi-no">${n + 1}</span>
-        ${thumb(v)}
+        ${thumb(it)}
         <div class="pi-main">
           <strong>${esc(v.name)}</strong>
-          <span class="pi-meta">รหัส ${esc(v.sku)}${v.brand ? ' · ' + esc(v.brand) : ''}${v.final != null ? ' · ' + money(v.final) + ' บาท' : ''}</span>
+          <span class="pi-meta">${itemMeta(v)}${it.edited ? ' · <em>แก้ไขแล้ว</em>' : ''}</span>
           <input class="pi-usage" data-act="usage" value="${esc(it.usage)}" placeholder="จุดใช้งาน เช่น ห้องนอน 1, 2" aria-label="จุดใช้งานของ ${esc(v.name)}">
           <div class="pi-tools">
+            <button class="btn-sm" type="button" data-act="edit">แก้ไข / เลือกรูป</button>
             ${pointTools}
             <span class="updown">
               <button class="icon-btn" type="button" data-act="item-up" aria-label="เลื่อนขึ้น"${n === 0 ? ' disabled' : ''}>↑</button>
-              <button class="icon-btn" type="button" data-act="item-down" aria-label="เลื่อนลง"${n === p.skus.length - 1 ? ' disabled' : ''}>↓</button>
+              <button class="icon-btn" type="button" data-act="item-down" aria-label="เลื่อนลง"${n === p.keys.length - 1 ? ' disabled' : ''}>↓</button>
             </span>
             <select class="mini-select" data-act="move" aria-label="ย้ายรายการ">
               <option value="">ย้ายไป…</option>${pageOptions(p.id)}
@@ -1196,19 +1751,19 @@
       </div>`;
     }).join('');
 
-    const addable = [...pool.keys()].filter((sku) => !p.skus.includes(sku));
-    const addSelect = addable.length && p.skus.length < max
+    const addable = [...pool.keys()].filter((key) => !p.keys.includes(key));
+    const addSelect = addable.length && p.keys.length < max
       ? `<select class="mini-select add-select" data-act="add-item" aria-label="เพิ่มสินค้าในหน้า ${idx + 2}">
-          <option value="">+ เพิ่มสินค้าในหน้านี้…</option>
-          ${addable.map((sku) => {
-            const q = pageOf(sku);
-            return `<option value="${esc(sku)}">${esc(clip(pool.get(sku).view.name, 44))}${q ? ` (อยู่หน้า ${pages.indexOf(q) + 2})` : ''}</option>`;
+          <option value="">+ เพิ่มสินค้าที่มีอยู่ในหน้านี้…</option>
+          ${addable.map((key) => {
+            const q = pageOf(key);
+            return `<option value="${esc(key)}">${esc(clip(pool.get(key).view.name, 44))}${q ? ` (อยู่หน้า ${pages.indexOf(q) + 2})` : ''}</option>`;
           }).join('')}
         </select>`
       : '';
 
-    const markers = p.image ? p.skus.map((sku, n) => {
-      const m = p.marks[sku];
+    const markers = p.image ? p.keys.map((key, n) => {
+      const m = p.marks[key];
       return m ? `<span class="mk" style="left:${(m.x * 100).toFixed(2)}%;top:${(m.y * 100).toFixed(2)}%">${n + 1}</span>` : '';
     }).join('') : '';
     const visual = p.withImage ? `<div class="page-visual">
@@ -1218,7 +1773,7 @@
             : '<p class="visual-empty">ยังไม่มีภาพ<br><span>ใส่ภาพแปลนหรือภาพ 3D เพื่อชี้ตำแหน่งสินค้า</span></p>'}
         </div>
         ${isPlacing
-          ? `<p class="visual-hint is-active">คลิกบนภาพเพื่อวางตำแหน่งของรายการที่ ${p.skus.indexOf(placing.sku) + 1} · กด Esc เพื่อยกเลิก</p>`
+          ? `<p class="visual-hint is-active">คลิกบนภาพเพื่อวางตำแหน่งของรายการที่ ${p.keys.indexOf(placing.key) + 1} · กด Esc เพื่อยกเลิก</p>`
           : p.image ? '<p class="visual-hint">กด “ชี้ในภาพ” ที่รายการ แล้วคลิกตำแหน่งบนภาพ</p>' : ''}
         <div class="visual-actions">
           <label class="btn-sm">${p.image ? 'เปลี่ยนรูป' : 'เลือกรูป'}<input class="visually-hidden" type="file" accept="image/*" data-act="page-image"></label>
@@ -1230,16 +1785,21 @@
       <header class="page-head">
         <span class="page-no">หน้า ${idx + 2}</span>
         <input class="page-title" data-act="title" value="${esc(p.title)}" placeholder="หัวข้อหน้า" aria-label="หัวข้อหน้า ${idx + 2}">
-        <span class="page-count${p.skus.length > max ? ' is-over' : ''}">${p.skus.length}/${max} รายการ</span>
+        <span class="page-count${p.keys.length > max ? ' is-over' : ''}">${p.keys.length}/${max} รายการ</span>
         <span class="page-tools">
           <button class="icon-btn" type="button" data-act="page-up" aria-label="เลื่อนหน้าขึ้น"${idx === 0 ? ' disabled' : ''}>↑</button>
           <button class="icon-btn" type="button" data-act="page-down" aria-label="เลื่อนหน้าลง"${idx === pages.length - 1 ? ' disabled' : ''}>↓</button>
           <button class="btn-sm btn-sm--plain" type="button" data-act="page-del">ลบหน้า</button>
         </span>
       </header>
+      <textarea class="page-note" data-act="note" rows="1" placeholder="ข้อความเพิ่มเติมใต้หัวข้อ (ไม่บังคับ)" aria-label="ข้อความเพิ่มเติมหน้า ${idx + 2}">${esc(p.note)}</textarea>
       <div class="page-body${p.withImage ? '' : ' no-image'}">
         ${visual}
-        <div class="page-items">${items || '<p class="sub">ยังไม่มีสินค้าในหน้านี้</p>'}${addSelect}</div>
+        <div class="page-items">
+          ${items || '<p class="sub">ยังไม่มีสินค้าในหน้านี้ · หน้าที่มีแต่รูปหรือข้อความก็ใส่ในไฟล์ได้</p>'}
+          ${addSelect}
+          ${p.keys.length < max ? '<button class="btn-sm add-custom" type="button" data-act="add-custom-here">+ เพิ่มสินค้าเอง (ไม่มีในเว็บ)</button>' : ''}
+        </div>
       </div>
       <label class="check check--sm"><input type="checkbox" data-act="with-image"${p.withImage ? ' checked' : ''}><span>มีภาพประกอบด้านซ้าย (แปลน / ภาพ 3D)</span></label>
     </article>`;
@@ -1249,12 +1809,13 @@
     const list = unassigned();
     trayEl.hidden = list.length === 0;
     if (!list.length) { trayEl.innerHTML = ''; return; }
-    trayEl.innerHTML = `<h3>สินค้าที่ยังไม่อยู่ในหน้าใด (${list.length}) <span>จะไม่ถูกใส่ในไฟล์</span></h3>` + list.map((sku) => {
-      const v = pool.get(sku).view;
-      return `<div class="tray-item" data-sku="${esc(sku)}">
-        ${thumb(v)}
-        <div class="pi-main"><strong>${esc(v.name)}</strong><span class="pi-meta">รหัส ${esc(v.sku)}</span></div>
+    trayEl.innerHTML = `<h3>สินค้าที่ยังไม่อยู่ในหน้าใด (${list.length}) <span>จะไม่ถูกใส่ในไฟล์</span></h3>` + list.map((key) => {
+      const it = pool.get(key);
+      return `<div class="tray-item" data-key="${esc(key)}">
+        ${thumb(it)}
+        <div class="pi-main"><strong>${esc(it.view.name)}</strong><span class="pi-meta">${itemMeta(it.view)}</span></div>
         <div class="pi-tools">
+          <button class="btn-sm" type="button" data-act="edit">แก้ไข</button>
           <select class="mini-select" data-act="tray-add" aria-label="ใส่ในหน้า">
             <option value="">ใส่ในหน้า…</option>${pageOptions(null)}<option value="new">หน้าใหม่</option>
           </select>
@@ -1263,6 +1824,131 @@
       </div>`;
     }).join('');
   }
+
+  // ---------- Product editor (edit details, pick a picture, or add a product by hand) ----------
+  function openEditor(key, targetPageId) {
+    const it = key ? pool.get(key) : null;
+    const v = it ? it.view : null;
+    const f = edForm.elements;
+    editing = {
+      key,
+      images: v ? v.images.slice() : [],
+      uploaded: it && it.image && it.image.kind === 'data' ? it.image.img : null,
+      choice: it ? (it.image ? (it.image.kind === 'data' ? 'data' : it.image.kind === 'url' ? it.image.url : '') : (v.images[0] || '')) : '',
+    };
+    $('#editor-title').textContent = key ? 'แก้ไขสินค้า / เลือกรูป' : 'เพิ่มสินค้าเอง';
+    $('#editor-source').textContent = v ? `ข้อมูลจาก ${SOURCES[v.source].label}${v.source !== 'custom' ? ' · แก้ไขแล้วจะไม่ถูกเขียนทับเมื่อค้นหาซ้ำ' : ''}` : 'สำหรับสินค้าที่ไม่มีในเว็บไซต์ ใส่ข้อมูลและรูปเองได้ทั้งหมด';
+    f.ed_name.value = v ? v.name : '';
+    f.ed_sku.value = v ? v.sku : '';
+    f.ed_brand.value = v ? v.brand : '';
+    f.ed_price.value = v && v.final != null ? v.final : '';
+    f.ed_regular.value = v && v.regular != null && v.regular !== v.final ? v.regular : '';
+    f.ed_unit.value = v ? v.unit : '';
+    for (const [code, field] of EDIT_ATTRS) f[field].value = v ? attrOf(v, code) : '';
+    f.ed_usage.value = it ? it.usage : '';
+    f.ed_extra.value = v ? v.specs.filter((s) => s.code.startsWith('custom_')).map((s) => `${s.label}: ${plainText(s.value)}`).join('\n') : '';
+    f.ed_url.value = v ? v.url : '';
+    $('#ed-page-field').hidden = !!key;
+    if (!key) {
+      const open = pages.filter((p) => p.keys.length < maxFor(p));
+      f.ed_page.innerHTML = pageOptions(null) + '<option value="new">หน้าใหม่</option><option value="tray">ยังไม่ใส่ในหน้า</option>';
+      f.ed_page.value = targetPageId ? String(targetPageId) : open.length ? String(open[open.length - 1].id) : 'new';
+    }
+    edError.textContent = '';
+    renderEditorImages();
+    editor.showModal();
+    f.ed_name.focus();
+  }
+
+  function renderEditorImages() {
+    const opts = [];
+    if (editing.uploaded) opts.push({ id: 'data', src: editing.uploaded.data, label: 'รูปที่อัปโหลด' });
+    editing.images.forEach((url, i) => opts.push({ id: url, src: url, label: `รูปที่ ${i + 1} จากเว็บไซต์` }));
+    const pick = (o) => `<button type="button" class="pick${editing.choice === o.id ? ' is-on' : ''}" data-pick="${esc(o.id)}" aria-pressed="${editing.choice === o.id}" title="${esc(o.label)}">
+        <img src="${esc(o.src)}" alt="${esc(o.label)}" referrerpolicy="no-referrer"></button>`;
+    edImages.innerHTML = opts.map(pick).join('') +
+      `<button type="button" class="pick pick--none${editing.choice === '' ? ' is-on' : ''}" data-pick="" aria-pressed="${editing.choice === ''}">ไม่ใช้รูป</button>`;
+  }
+
+  function saveEditor() {
+    const f = edForm.elements;
+    const name = f.ed_name.value.trim();
+    if (!name) { edError.textContent = 'กรุณาใส่ชื่อสินค้า'; f.ed_name.focus(); return; }
+    const old = editing.key ? pool.get(editing.key) : null;
+    const base = old ? old.view : {
+      key: 'custom:' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+      source: 'custom', images: [], crumbs: [], specs: [], description: '',
+      inStock: null, qty: null, readyToShip: false, priceFrom: false, defaultGroup: 'รายการวัสดุ',
+    };
+    const num = (s) => { const n = parseFloat(String(s).replace(/[,\s]/g, '')); return isFinite(n) && n > 0 ? n : null; };
+    const final = num(f.ed_price.value);
+    const regular = num(f.ed_regular.value) || final;
+    const edited = [];
+    for (const [code, field, label] of EDIT_ATTRS) {
+      const value = f[field].value.trim();
+      const orig = base.specs.find((s) => s.code === code);
+      if (value) edited.push({ code, label: orig ? orig.label : label, value });
+    }
+    const editedCodes = new Set(EDIT_ATTRS.map(([code]) => code));
+    const rest = base.specs.filter((s) => !editedCodes.has(s.code) && !s.code.startsWith('custom_'));
+    const extra = splitLines(f.ed_extra.value).map((line, i) => {
+      const m = /^(.+?)\s*[:：=]\s*(.+)$/.exec(line);
+      return m ? { code: 'custom_' + i, label: m[1], value: m[2] } : { code: 'custom_' + i, label: 'รายละเอียด', value: line };
+    });
+    const view = {
+      ...base,
+      name,
+      sku: f.ed_sku.value.trim(),
+      brand: f.ed_brand.value.trim(),
+      unit: f.ed_unit.value.trim(),
+      final,
+      regular,
+      pct: final && regular && regular > final ? (1 - final / regular) * 100 : 0,
+      priceFrom: !!base.priceFrom && final === base.final,
+      specs: [...edited, ...rest, ...extra],
+      url: f.ed_url.value.trim(),
+    };
+    const choice = editing.choice;
+    const image = choice === 'data' && editing.uploaded ? { kind: 'data', img: editing.uploaded }
+      : choice === '' ? { kind: 'none' }
+      : choice && choice !== view.images[0] ? { kind: 'url', url: choice }
+      : null;
+    if (old) {
+      Object.assign(old, { view, usage: f.ed_usage.value.trim(), image, edited: true });
+    } else {
+      pool.set(view.key, { view, usage: f.ed_usage.value.trim(), image, edited: true });
+      if (f.ed_page.value !== 'tray') placeKey(view.key, f.ed_page.value || 'new');
+    }
+    editor.close();
+    deckSection.hidden = false;
+    renderPages();
+  }
+
+  edImages.addEventListener('click', (e) => {
+    const b = e.target.closest('[data-pick]');
+    if (!b) return;
+    editing.choice = b.dataset.pick;
+    renderEditorImages();
+  });
+  $('#ed-upload').addEventListener('change', async (e) => {
+    const file = e.target.files && e.target.files[0];
+    e.target.value = '';
+    if (!file) return;
+    try {
+      editing.uploaded = await prepImage(file, { maxSide: 1200 });
+      editing.choice = 'data';
+      renderEditorImages();
+    } catch (_) {
+      edError.textContent = 'อ่านไฟล์รูปไม่ได้ ลองใช้ไฟล์ JPG หรือ PNG';
+    }
+  });
+  edForm.addEventListener('click', (e) => {
+    if (e.target.closest('[data-ed="close"]')) editor.close();
+  });
+  edForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    saveEditor();
+  });
 
   // ---------- Images ----------
   function loadImageEl(src) {
@@ -1302,8 +1988,15 @@
     }
   }
 
+  // Product pictures: direct when the site allows it, otherwise through the helper.
   async function fetchImage(url) {
-    const res = await fetch(url);
+    let res;
+    try {
+      res = await fetch(url);
+    } catch (err) {
+      if (!proxyBase) throw err;
+      res = await fetch(viaProxy(url));
+    }
     if (!res.ok) throw new Error('HTTP ' + res.status);
     return prepImage(await res.blob(), { maxSide: 900 });
   }
@@ -1422,14 +2115,18 @@
       x: 0.5, y: 0.3, w: 8, h: 0.65, fontFace: FONT_HEAD, fontSize: 24, bold: true, color: COL.ink,
       underline: { style: 'sng' }, margin: 0, valign: 'middle',
     });
+    const note = (page.note || '').trim();
+    if (note) {
+      s.addText(note, { x: 0.5, y: 0.98, w: SW - 1, h: 0.32, fontFace: FONT_BODY, fontSize: 11, color: COL.muted, margin: 0, valign: 'top' });
+    }
 
     const f = opts.fields;
     const items = page.items;
-    const top = CONTENT_TOP;
+    const top = note ? CONTENT_TOP + 0.25 : CONTENT_TOP;
     const bottom = CONTENT_BOTTOM;
 
     if (!items.length) {
-      // Picture-only page.
+      // Picture (or text) only page.
       if (page.image) s.addImage({ data: page.image.data, ...fitBox(page.image, 0.5, top, SW - 1, bottom - top) });
       addFooter(s, S, info, opts);
       return;
@@ -1498,7 +2195,7 @@
   function detailRows(it, f, usageRow) {
     const v = it.view;
     const rows = [];
-    if (f.sku) rows.push(['รหัสสินค้า', v.sku]);
+    if (f.sku && v.sku) rows.push(['รหัสสินค้า', v.sku]);
     if (f.brand && v.brand) rows.push(['ยี่ห้อ', v.brand]);
     if (f.price && v.final != null) rows.push(['ราคา', priceText(v)]);
     for (const d of ATTR_FIELDS) {
@@ -1514,6 +2211,7 @@
       }
     }
     if (usageRow && f.usage && it.usage) rows.push(['จุดใช้งาน', it.usage]);
+    if (f.source && v.source !== 'custom') rows.push(['แหล่งที่มา', SOURCES[v.source].label]);
     return rows;
   }
 
@@ -1537,7 +2235,7 @@
     }
     const color = f.color ? attrOf(v, 'color') : '';
     if (color) {
-      s.addText(color.startsWith('สี') ? color : 'สี' + color, { x, y, w, h: 0.38, fontFace: FONT_HEAD, fontSize: 13, bold: true, color: COL.ink, align: 'center', valign: 'middle', margin: 0 });
+      s.addText(clip(color.startsWith('สี') ? color : 'สี' + color, 60), { x, y, w, h: 0.38, fontFace: FONT_HEAD, fontSize: 13, bold: true, color: COL.ink, align: 'center', valign: 'middle', margin: 0 });
       y += 0.5;
     }
     const rowH = 0.27;
@@ -1560,7 +2258,11 @@
     const v = it.view;
     const lines = [];
     if (f.name) lines.push({ text: clip(v.name, 80), kind: 'name' });
-    const id = [f.sku ? 'รหัสสินค้า ' + v.sku : '', f.brand && v.brand ? v.brand : ''].filter(Boolean).join(' · ');
+    const id = [
+      f.sku && v.sku ? 'รหัสสินค้า ' + v.sku : '',
+      f.brand && v.brand ? v.brand : '',
+      f.source && v.source !== 'custom' ? 'จาก ' + SOURCES[v.source].label : '',
+    ].filter(Boolean).join(' · ');
     if (id) lines.push({ text: id, kind: 'meta' });
     if (f.price && v.final != null) lines.push({ text: 'ราคา ' + priceText(v), kind: 'price' });
     const extra = ATTR_FIELDS
@@ -1593,6 +2295,7 @@
     const bs = rowH < 0.85 ? 0.26 : 0.3;
     const anchors = [];
     items.forEach((it, i) => {
+      // Fill left-to-right so a short list spreads across both columns.
       const cx = x + (i % cols) * (colW + gap);
       const ry = top + Math.floor(i / cols) * rowH;
       s.addText(String((page.start || 0) + i + 1), {
@@ -1702,15 +2405,15 @@
     const out = [];
     for (const p of list) {
       const max = maxFor(p);
-      for (let i = 0; i < Math.max(p.skus.length, 1); i += max) out.push({ ...p, skus: p.skus.slice(i, i + max), start: i });
+      for (let i = 0; i < Math.max(p.keys.length, 1); i += max) out.push({ ...p, keys: p.keys.slice(i, i + max), start: i, note: i ? '' : p.note });
     }
     return out;
   }
 
   async function generateDeck() {
-    const used = pages.filter((p) => p.skus.length || p.image);
+    const used = pages.filter((p) => p.keys.length || p.image || (p.note || '').trim());
     if (!used.length) {
-      showDeckNote('bad', 'ยังไม่มีหน้าที่มีสินค้า เพิ่มสินค้าในหน้าก่อน');
+      showDeckNote('bad', 'ยังไม่มีหน้าที่มีเนื้อหา เพิ่มสินค้าหรือรูปในหน้าก่อน');
       return;
     }
     deckBtn.disabled = true;
@@ -1718,13 +2421,17 @@
     try {
       showDeckNote('info', 'กำลังโหลดเครื่องมือสร้างไฟล์…');
       const PptxGenJS = await loadPptx();
-      const skus = [...new Set(used.flatMap((p) => p.skus))];
-      showDeckNote('info', `กำลังเตรียมรูปสินค้า ${skus.length} รายการ…`);
-      const imgs = await Promise.all(skus.map((sku) => {
-        const url = pool.get(sku).view.images[0];
-        return url ? fetchImage(url).catch(() => null) : null;
+      const keys = [...new Set(used.flatMap((p) => p.keys))];
+      showDeckNote('info', `กำลังเตรียมรูปสินค้า ${keys.length} รายการ…`);
+      const failed = [];
+      const imgs = await Promise.all(keys.map(async (key) => {
+        const it = pool.get(key);
+        if (it.image && it.image.kind === 'data') return it.image.img;
+        const url = chosenImage(it);
+        if (!url) return null;
+        try { return await fetchImage(url); } catch (_) { failed.push(it.view); return null; }
       }));
-      const imgBySku = new Map(skus.map((sku, i) => [sku, imgs[i]]));
+      const imgByKey = new Map(keys.map((key, i) => [key, imgs[i]]));
       const f = deckForm.elements;
       const opts = {
         fields: readFields(),
@@ -1735,16 +2442,22 @@
       };
       const slidePages = expandPages(used).map((p) => ({
         ...p,
-        items: p.skus.map((sku) => ({ view: pool.get(sku).view, usage: pool.get(sku).usage, img: imgBySku.get(sku), mark: p.marks[sku] || null })),
+        items: p.keys.map((key) => {
+          const it = pool.get(key);
+          return { view: it.view, usage: it.usage, img: imgByKey.get(key), mark: p.marks[key] || null };
+        }),
       }));
       const info = readProject();
       const { pptx, slides } = buildDeck(PptxGenJS, info, slidePages, opts);
       const fileName = deckFileName(info);
       await pptx.writeFile({ fileName });
-      const missing = skus.filter((sku, i) => !imgs[i] && pool.get(sku).view.images[0]).length;
       const left = unassigned().length;
+      const failedNote = failed.length
+        ? `<br>ใส่รูปสินค้าไม่ได้ ${failed.length} รายการ (${failed.slice(0, 3).map((v) => esc(clip(v.name, 30))).join(', ')}${failed.length > 3 ? ' …' : ''})
+           ${proxyBase ? '' : ' — เว็บต้นทางไม่อนุญาตให้ดึงรูป เปิดหน้านี้ผ่าน start.bat หรือกด “แก้ไข / เลือกรูป” แล้วอัปโหลดรูปเอง'}`
+        : '';
       showDeckNote('ok', `<strong>ดาวน์โหลด “${esc(fileName)}” แล้ว (${slides} หน้า)</strong>
-        ${missing ? `<br>โหลดรูปสินค้าไม่ได้ ${missing} รายการ เว้นที่ไว้ให้ใส่รูปเองใน Canva` : ''}
+        ${failedNote}
         ${left ? `<br>สินค้า ${left} รายการยังไม่อยู่ในหน้าใด จึงไม่อยู่ในไฟล์` : ''}
         <ol>
           <li>เปิด <a href="https://www.canva.com/" target="_blank" rel="noopener noreferrer">Canva</a> แล้วลากไฟล์ .pptx ไปวางบนหน้าแรก หรือกด “สร้างงานออกแบบ” → “นำเข้าไฟล์” (Import file)</li>
@@ -1773,14 +2486,15 @@
     if (e.key === 'Enter' && e.target.tagName === 'INPUT' && e.target.type !== 'checkbox' && e.target.type !== 'radio') e.preventDefault();
   });
   document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && placing) { placing = null; renderPages(); }
+    if (e.key === 'Escape' && placing && !editor.open) { placing = null; renderPages(); }
   });
 
   deckForm.addEventListener('input', (e) => {
     const t = e.target;
     if (PERSIST_FIELDS.includes(t.name) || t.name === 'autoPer') { saveProject(); return; }
     if (t.dataset.act === 'title') { pageById(t.closest('.page').dataset.page).title = t.value; return; }
-    if (t.dataset.act === 'usage') pool.get(t.closest('[data-sku]').dataset.sku).usage = t.value;
+    if (t.dataset.act === 'note') { pageById(t.closest('.page').dataset.page).note = t.value; return; }
+    if (t.dataset.act === 'usage') pool.get(t.closest('[data-key]').dataset.key).usage = t.value;
   });
 
   deckForm.addEventListener('change', async (e) => {
@@ -1821,11 +2535,11 @@
       return;
     }
     if (act === 'move' || act === 'tray-add') {
-      if (t.value) moveSku(t.closest('[data-sku]').dataset.sku, t.value);
+      if (t.value) moveKey(t.closest('[data-key]').dataset.key, t.value);
       return;
     }
     if (act === 'add-item') {
-      if (t.value) moveSku(t.value, page.id);
+      if (t.value) moveKey(t.value, page.id);
       return;
     }
     if (t.name && (t.name.startsWith('f_') || t.name === 'pointer' || t.name === 'pointerColor')) saveProject();
@@ -1837,14 +2551,14 @@
     const act = el.dataset.act;
     const pageEl = el.closest('.page');
     const page = pageEl ? pageById(pageEl.dataset.page) : null;
-    const row = el.closest('[data-sku]');
-    const sku = row ? row.dataset.sku : null;
+    const row = el.closest('[data-key]');
+    const key = row ? row.dataset.key : null;
 
     switch (act) {
       case 'visual': {
         if (!placing || placing.pageId !== page.id) return;
         const r = el.querySelector('img').getBoundingClientRect();
-        page.marks[placing.sku] = {
+        page.marks[placing.key] = {
           x: Math.min(1, Math.max(0, (e.clientX - r.left) / r.width)),
           y: Math.min(1, Math.max(0, (e.clientY - r.top) / r.height)),
         };
@@ -1852,17 +2566,26 @@
         break;
       }
       case 'mark':
-        placing = placing && placing.pageId === page.id && placing.sku === sku ? null : { pageId: page.id, sku };
+        placing = placing && placing.pageId === page.id && placing.key === key ? null : { pageId: page.id, key };
         break;
       case 'unmark':
-        delete page.marks[sku];
+        delete page.marks[key];
         break;
+      case 'edit':
+        openEditor(key);
+        return;
+      case 'add-custom':
+        openEditor(null);
+        return;
+      case 'add-custom-here':
+        openEditor(null, page.id);
+        return;
       case 'item-up':
       case 'item-down': {
-        const i = page.skus.indexOf(sku);
+        const i = page.keys.indexOf(key);
         const j = act === 'item-up' ? i - 1 : i + 1;
-        if (j < 0 || j >= page.skus.length) return;
-        [page.skus[i], page.skus[j]] = [page.skus[j], page.skus[i]];
+        if (j < 0 || j >= page.keys.length) return;
+        [page.keys[i], page.keys[j]] = [page.keys[j], page.keys[i]];
         break;
       }
       case 'page-up':
@@ -1886,9 +2609,9 @@
         const p = newPage('หัวข้อใหม่');
         pages.push(p);
         renderPages();
-        const input = pagesEl.querySelector(`.page[data-page="${p.id}"] .page-title`);
-        input.focus();
-        input.select();
+        const titleInput = pagesEl.querySelector(`.page[data-page="${p.id}"] .page-title`);
+        titleInput.focus();
+        titleInput.select();
         return;
       }
       case 'auto-layout':
@@ -1902,7 +2625,7 @@
         deckStatus.innerHTML = '';
         break;
       case 'tray-remove':
-        pool.delete(sku);
+        pool.delete(key);
         break;
       case 'logo-default':
       case 'logo-none':
@@ -1921,10 +2644,15 @@
   });
 
   toDeckBtn.addEventListener('click', () => deckSection.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+  $('#open-deck').addEventListener('click', () => {
+    deckSection.hidden = false;
+    renderPages();
+    deckSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
   loadProject();
   renderCover();
 
-  // ---------- Events ----------
+  // ---------- Search events ----------
   function autoGrow() {
     input.style.height = 'auto';
     input.style.height = Math.min(input.scrollHeight + 3, 200) + 'px';
@@ -1941,6 +2669,12 @@
     }
   });
   input.addEventListener('input', autoGrow);
+  form.addEventListener('change', (e) => {
+    if (e.target.name === 'source') {
+      setSource(e.target.value);
+      input.focus();
+    }
+  });
   form.addEventListener('click', (e) => {
     const chip = e.target.closest('[data-example]');
     if (!chip) return;
@@ -1948,27 +2682,48 @@
     autoGrow();
     run(input.value);
   });
+  $('#proxy-save').addEventListener('click', async () => {
+    const value = proxyInput.value.trim();
+    try {
+      if (value) localStorage.setItem(PROXY_KEY, value);
+      else localStorage.removeItem(PROXY_KEY);
+    } catch (_) { /* storage unavailable: applies to this visit only */ }
+    proxyReady = initProxy();
+    await proxyReady;
+    if (!LOCAL_PROXY && value) { proxyBase = value; proxyKind = 'custom'; renderConn(); renderSourceNote(); }
+  });
   resultsEl.addEventListener('click', (e) => {
-    const thumb = e.target.closest('.thumb');
-    if (!thumb) return;
-    const card = thumb.closest('.card');
+    const add = e.target.closest('[data-add]');
+    if (add) {
+      const key = add.dataset.add;
+      if (pool.has(key)) removeFromDeck(key);
+      else addViews([viewsByKey.get(key)]);
+      return;
+    }
+    const thumbBtn = e.target.closest('.thumb');
+    if (!thumbBtn) return;
+    const card = thumbBtn.closest('.card');
     const main = card.querySelector('.main-img img');
-    if (main) main.src = thumb.dataset.src;
-    card.querySelectorAll('.thumb').forEach((t) => t.setAttribute('aria-pressed', String(t === thumb)));
+    if (main) main.src = thumbBtn.dataset.src;
+    card.querySelectorAll('.thumb').forEach((t) => t.setAttribute('aria-pressed', String(t === thumbBtn)));
   });
   exportBtn.addEventListener('click', download);
 
-  // Restore a search from the URL hash, e.g. index.html#1015431,1068468
+  // Restore a search from the URL hash, e.g. index.html#1015431,1068468 or #homepro:1310224
   function runFromHash() {
-    let codes = '';
-    try { codes = decodeURIComponent(location.hash.slice(1)); } catch (_) { codes = location.hash.slice(1); }
-    if (!codes) return false;
-    input.value = codes.split(',').join(', ');
+    let raw = '';
+    try { raw = decodeURIComponent(location.hash.slice(1)); } catch (_) { raw = location.hash.slice(1); }
+    if (!raw) return false;
+    const m = /^(homepro|traphet|ecodoor):([\s\S]*)$/.exec(raw);
+    setSource(m ? m[1] : 'btv');
+    const text = m ? m[2] : raw;
+    input.value = SOURCES[currentSource].by === 'name' ? text : text.split(',').join(', ');
     autoGrow();
-    run(codes);
+    run(input.value);
     return true;
   }
   window.addEventListener('hashchange', runFromHash);
+  setSource('btv');
   if (!runFromHash()) input.focus();
 })();
 </script>
