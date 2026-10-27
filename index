@@ -55,6 +55,7 @@
   }
 
   * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
   html { -webkit-text-size-adjust: 100%; }
   body {
     margin: 0;
@@ -244,6 +245,103 @@
 
   footer.site { padding: 8px 0 40px; font-size: .8rem; color: var(--muted); }
 
+  .toolbar-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+  .btn-ghost--accent { color: var(--accent); border-color: var(--accent); }
+
+  /* Presentation builder */
+  .deck {
+    margin: 8px 0 32px;
+    padding: 24px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    scroll-margin-top: 16px;
+  }
+  .deck[hidden] { display: none; }
+  .deck h2 { margin: 0; font-size: 1.3rem; line-height: 1.35; }
+  .deck .lede { margin-top: 4px; font-size: .95rem; }
+  .deck fieldset { border: 0; padding: 0; margin: 28px 0 0; min-width: 0; }
+  .deck legend { padding: 0; margin-bottom: 4px; font-weight: 700; font-size: 1rem; }
+  .deck .sub { margin: 0 0 12px; font-size: .875rem; color: var(--muted); }
+  .fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px 16px; }
+  .field { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+  .field > span { font-size: .85rem; color: var(--muted); }
+  .field input, .field textarea {
+    width: 100%;
+    padding: 9px 12px;
+    font: inherit; font-size: .95rem;
+    color: var(--text); background: var(--surface);
+    border: 1.5px solid var(--border); border-radius: 10px;
+    outline: none;
+  }
+  .field textarea { resize: vertical; min-height: 64px; }
+  .field input:focus, .field textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+  .field--wide { grid-column: 1 / -1; }
+
+  .uploads { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px 16px; margin-top: 14px; }
+  .upload {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 12px; min-height: 64px;
+    border: 1.5px dashed var(--border); border-radius: 12px;
+    background: var(--surface-2);
+  }
+  .upload-preview {
+    flex: none; width: 56px; height: 42px; border-radius: 6px;
+    background: var(--surface) center / contain no-repeat;
+    border: 1px solid var(--border);
+  }
+  .upload-preview:not([style*="url"]) { display: none; }
+  .upload-text { flex: 1; min-width: 0; font-size: .875rem; }
+  .upload-text strong { display: block; font-weight: 600; overflow-wrap: anywhere; }
+  .upload-text span { color: var(--muted); font-size: .8rem; }
+  .upload-actions { display: flex; gap: 6px; flex: none; }
+  .btn-sm {
+    display: inline-flex; align-items: center;
+    padding: 5px 10px;
+    font: inherit; font-size: .8rem; font-weight: 600;
+    color: var(--accent); background: var(--surface);
+    border: 1px solid var(--border); border-radius: 8px; cursor: pointer;
+  }
+  .btn-sm:hover { border-color: var(--accent); }
+  .btn-sm:focus-within, .btn-sm:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+  .btn-sm--plain { color: var(--muted); }
+  .visually-hidden { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+
+  .deck-items { border-top: 1px solid var(--border); }
+  .deck-item {
+    display: grid;
+    grid-template-columns: auto 52px minmax(0, 1.5fr) minmax(0, 1fr) minmax(0, 1fr);
+    gap: 12px;
+    align-items: center;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .deck-item.is-off { opacity: .5; }
+  .deck-item input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--accent); margin: 0; }
+  .deck-thumb { width: 52px; height: 52px; border-radius: 8px; background: #fff; border: 1px solid var(--border); object-fit: contain; }
+  .deck-name { min-width: 0; font-size: .9rem; line-height: 1.4; }
+  .deck-name strong { display: block; font-weight: 600; overflow-wrap: anywhere; }
+  .deck-name span { color: var(--muted); font-size: .8rem; }
+  .deck-item .field > span { font-size: .75rem; }
+  .deck-item .field input { padding: 7px 10px; font-size: .9rem; }
+
+  .checks { display: grid; gap: 10px; }
+  .check { display: flex; align-items: flex-start; gap: 10px; font-size: .95rem; cursor: pointer; }
+  .check input { width: 18px; height: 18px; margin: 3px 0 0; accent-color: var(--accent); flex: none; }
+  .check small { display: block; color: var(--muted); font-size: .8rem; }
+
+  .deck-actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-top: 28px; }
+  .deck-status { margin-top: 14px; }
+  .deck-status:empty { display: none; }
+  .note { padding: 14px 16px; border-radius: 12px; font-size: .92rem; }
+  .note--info { background: var(--info-soft); color: var(--info); }
+  .note--ok { background: var(--ok-soft); color: var(--text); }
+  .note--ok strong { color: var(--ok); }
+  .note--bad { background: var(--bad-soft); color: var(--bad); }
+  .note ol { margin: 8px 0 0; padding-left: 1.3em; }
+  .note li { margin: 2px 0; }
+
   @media (max-width: 680px) {
     header.site { padding-top: 28px; }
     .card { grid-template-columns: 1fr; gap: 16px; padding: 16px; }
@@ -251,6 +349,9 @@
     .more-grid { grid-template-columns: 1fr; }
     .search-row { flex-direction: column; }
     .btn { width: 100%; }
+    .deck { padding: 16px; }
+    .deck-item { grid-template-columns: auto 48px minmax(0, 1fr); }
+    .deck-item .field { grid-column: 1 / -1; }
   }
 </style>
 </head>
@@ -281,10 +382,79 @@
 
     <div class="toolbar" id="toolbar" hidden>
       <p class="summary" id="summary"></p>
-      <button class="btn-ghost" id="export" type="button">ดาวน์โหลด CSV</button>
+      <div class="toolbar-actions">
+        <button class="btn-ghost btn-ghost--accent" id="to-deck" type="button">สร้างงานนำเสนอ Canva ↓</button>
+        <button class="btn-ghost" id="export" type="button">ดาวน์โหลด CSV</button>
+      </div>
     </div>
 
     <div class="results" id="results"></div>
+
+    <section class="deck" id="deck" hidden aria-labelledby="deck-title">
+      <h2 id="deck-title">สร้างงานนำเสนอ Material Selection Confirmation</h2>
+      <p class="lede">จัดหน้าตามแบบเทมเพลตใน Canva (หน้าปก หน้ารายการวัสดุ และกรอบท้ายกระดาษ) จากสินค้าที่ค้นหา แล้วนำเข้า Canva เพื่อแก้ไขต่อได้ทุกข้อความและรูปภาพ</p>
+
+      <form id="deck-form" autocomplete="off" novalidate>
+        <fieldset>
+          <legend>ข้อมูลโครงการ</legend>
+          <p class="sub">แสดงบนหน้าปกและกรอบท้ายทุกหน้า ระบบจำค่าไว้ในเครื่องนี้ให้ใช้ครั้งถัดไป</p>
+          <div class="fields">
+            <label class="field"><span>ชื่อโครงการ</span><input name="project" placeholder="เช่น บ้านพักอาศัยคุณ..."></label>
+            <label class="field"><span>เจ้าของ (OWNER)</span><input name="owner" placeholder="ชื่อลูกค้า"></label>
+            <label class="field"><span>วันที่จัดทำ</span><input name="date" placeholder="วว/ดด/ปปปป"></label>
+            <label class="field field--wide"><span>ที่อยู่โครงการ (ADDRESS)</span><textarea name="address" rows="2" placeholder="ตำบล อำเภอ จังหวัด"></textarea></label>
+            <label class="field"><span>ผู้จัดทำ</span><input name="preparer"></label>
+            <label class="field"><span>เบอร์โทร (TEL)</span><input name="tel" inputmode="tel"></label>
+            <label class="field"><span>ชื่อบริษัท (แสดงเมื่อไม่มีโลโก้)</span><input name="company" placeholder="เช่น KS HOME"></label>
+          </div>
+          <div class="uploads">
+            <div class="upload" data-slot="logo">
+              <div class="upload-preview"></div>
+              <div class="upload-text"><strong>โลโก้บริษัท</strong><span>PNG พื้นใส ใช้บนหน้าปกและกรอบท้าย</span></div>
+              <div class="upload-actions">
+                <label class="btn-sm">เลือกรูป<input class="visually-hidden" type="file" accept="image/*" data-upload="logo"></label>
+                <button class="btn-sm btn-sm--plain" type="button" data-clear="logo" hidden>ลบ</button>
+              </div>
+            </div>
+            <div class="upload" data-slot="cover">
+              <div class="upload-preview"></div>
+              <div class="upload-text"><strong>รูปหน้าปก</strong><span>ภาพบ้านหรือภาพ 3D ของโครงการ</span></div>
+              <div class="upload-actions">
+                <label class="btn-sm">เลือกรูป<input class="visually-hidden" type="file" accept="image/*" data-upload="cover"></label>
+                <button class="btn-sm btn-sm--plain" type="button" data-clear="cover" hidden>ลบ</button>
+              </div>
+            </div>
+          </div>
+        </fieldset>
+
+        <fieldset>
+          <legend>รายการวัสดุในงานนำเสนอ</legend>
+          <p class="sub">สินค้าที่มี “หัวข้อหน้า” เดียวกันจะอยู่หน้าเดียวกัน (เช่น ไฟฟ้า, สีหลังคา, กระเบื้องห้องน้ำ) · ติ๊กออกเพื่อไม่ใส่ในไฟล์</p>
+          <div class="deck-items" id="deck-items"></div>
+          <datalist id="group-options"></datalist>
+        </fieldset>
+
+        <fieldset id="group-images-set">
+          <legend>ภาพประกอบแต่ละหน้า <span style="font-weight:400;color:var(--muted)">(ไม่บังคับ)</span></legend>
+          <p class="sub">ภาพแปลนหรือภาพ 3D ที่แสดงด้านซ้ายของหน้า ถ้าไม่ใส่จะเว้นกรอบไว้ให้วางรูปใน Canva ภายหลัง</p>
+          <div class="uploads" id="group-images"></div>
+        </fieldset>
+
+        <fieldset>
+          <legend>ตัวเลือก</legend>
+          <div class="checks">
+            <label class="check"><input type="checkbox" name="showPrice" checked><span>แสดงราคาสินค้า<small>ราคาขายจากบุญถาวร ณ เวลาที่ค้นหา</small></span></label>
+            <label class="check"><input type="checkbox" name="leftPanel" checked><span>เว้นพื้นที่ด้านซ้ายสำหรับภาพแปลน / ภาพ 3D<small>แบบเดียวกับเทมเพลต ถ้าไม่เลือก รายการสินค้าจะเต็มหน้า 2 คอลัมน์</small></span></label>
+          </div>
+        </fieldset>
+
+        <div class="deck-actions">
+          <button class="btn" id="deck-generate" type="submit">สร้างไฟล์สำหรับ Canva (.pptx)</button>
+          <a class="btn-ghost" href="https://www.canva.com/" target="_blank" rel="noopener noreferrer">เปิด Canva ↗</a>
+        </div>
+        <div class="deck-status" id="deck-status" role="status" aria-live="polite"></div>
+      </form>
+    </section>
   </main>
 
   <footer class="site">
@@ -332,6 +502,7 @@
   const summaryEl = $('#summary');
   const resultsEl = $('#results');
   const exportBtn = $('#export');
+  const toDeckBtn = $('#to-deck');
 
   let lastResults = [];
   let requestId = 0;
@@ -452,6 +623,7 @@
       crumbs,
       specs: attrs.filter((x) => !HIDDEN_ATTRS.has(x.code)),
       description: p.description ? p.description.html : '',
+      defaultGroup: crumbs[0] || attr('btv_product_type') || 'รายการวัสดุ',
     };
   }
 
@@ -616,6 +788,7 @@
     const id = ++requestId;
     statusEl.innerHTML = '';
     toolbar.hidden = true;
+    deckSection.hidden = true;
     submitBtn.disabled = true;
     submitBtn.textContent = 'กำลังค้นหา…';
     renderSkeleton(entries.length);
@@ -632,6 +805,8 @@
       summaryEl.innerHTML = `พบ <strong>${found}</strong> จาก ${results.length} รายการ`;
       toolbar.hidden = false;
       exportBtn.hidden = found === 0;
+      toDeckBtn.hidden = found === 0;
+      updateDeck(results);
     } catch (err) {
       if (id !== requestId) return;
       resultsEl.innerHTML = '';
@@ -677,6 +852,581 @@
     a.remove();
     setTimeout(() => URL.revokeObjectURL(a.href), 1000);
   }
+
+  // ---------- Presentation builder (PPTX that Canva imports as an editable design) ----------
+  const PPTX_SRC = 'https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js';
+  const PPTX_SRI = 'sha384-Cck14aA9cifjYolcnjebXRfWGkz5ltHMBiG4px/j8GS+xQcb7OhNQWZYyWjQ+UwQ';
+  const STORE_KEY = 'btv-deck-project-v1';
+  const PERSIST_FIELDS = ['project', 'owner', 'address', 'preparer', 'tel', 'company'];
+  const GROUP_SUGGESTIONS = ['สีหลังคา', 'ไฟฟ้า', 'สุขภัณฑ์', 'กระเบื้องห้องทั่วไป', 'กระเบื้องห้องน้ำ', 'ประตู-หน้าต่าง', 'สีภายนอก', 'สีภายใน'];
+
+  const deckSection = $('#deck');
+  const deckForm = $('#deck-form');
+  const deckItemsEl = $('#deck-items');
+  const groupImagesEl = $('#group-images');
+  const groupImagesSet = $('#group-images-set');
+  const groupOptions = $('#group-options');
+  const deckStatus = $('#deck-status');
+  const deckBtn = $('#deck-generate');
+
+  let deckItems = [];            // { view, include, group, usage }
+  const itemPrefs = new Map();   // sku -> { include, group, usage }, kept across searches
+  const uploads = { logo: null, cover: null };
+  const groupImages = new Map(); // page title -> image
+
+  const pad2 = (n) => String(n).padStart(2, '0');
+  const thaiDate = (d) => `${pad2(d.getDate())}/${pad2(d.getMonth() + 1)}/${d.getFullYear() + 543}`;
+  const clip = (s, n) => { s = String(s || ''); return s.length > n ? s.slice(0, n - 1) + '…' : s; };
+  const splitLines = (s) => String(s || '').split(/\r?\n/).map((x) => x.trim()).filter(Boolean);
+  const groupTitle = (it) => (it.group || '').trim() || 'รายการวัสดุ';
+  const priceText = (v) => `${money(v.final)} บาท${v.unit ? ' / ' + v.unit : ''}`;
+
+  function plainText(html) {
+    const doc = new DOMParser().parseFromString('<div>' + String(html ?? '') + '</div>', 'text/html');
+    return (doc.body.textContent || '').replace(/\s+/g, ' ').trim();
+  }
+
+  function showDeckNote(kind, html) {
+    deckStatus.innerHTML = `<div class="note note--${kind}">${html}</div>`;
+  }
+
+  // Project fields are remembered per browser so the next deck starts pre-filled.
+  function loadProject() {
+    let saved = {};
+    try { saved = JSON.parse(localStorage.getItem(STORE_KEY) || '{}') || {}; } catch (_) { saved = {}; }
+    for (const k of PERSIST_FIELDS) if (typeof saved[k] === 'string') deckForm.elements[k].value = saved[k];
+    deckForm.elements.date.value = thaiDate(new Date());
+    if (saved.logo && saved.logo.data) setUpload('logo', saved.logo);
+  }
+
+  function saveProject() {
+    const data = {};
+    for (const k of PERSIST_FIELDS) data[k] = deckForm.elements[k].value;
+    if (uploads.logo) data.logo = uploads.logo;
+    try {
+      localStorage.setItem(STORE_KEY, JSON.stringify(data));
+    } catch (_) {
+      try { delete data.logo; localStorage.setItem(STORE_KEY, JSON.stringify(data)); } catch (__) { /* storage unavailable */ }
+    }
+  }
+
+  function readProject() {
+    const f = deckForm.elements;
+    const get = (k) => f[k].value.trim();
+    return { project: get('project'), owner: get('owner'), date: get('date'), address: f.address.value, preparer: get('preparer'), tel: get('tel'), company: get('company') };
+  }
+
+  function setUpload(slot, img) {
+    uploads[slot] = img;
+    const box = deckForm.querySelector(`.upload[data-slot="${slot}"]`);
+    box.querySelector('.upload-preview').style.backgroundImage = img ? `url("${img.data}")` : '';
+    box.querySelector('[data-clear]').hidden = !img;
+  }
+
+  function updateDeck(results) {
+    const seen = new Set();
+    deckItems = [];
+    for (const r of results) {
+      if (!r.view || seen.has(r.view.sku)) continue;
+      seen.add(r.view.sku);
+      const pref = itemPrefs.get(r.view.sku);
+      deckItems.push({
+        view: r.view,
+        include: pref ? pref.include : true,
+        group: pref ? pref.group : r.view.defaultGroup,
+        usage: pref ? pref.usage : '',
+      });
+    }
+    deckSection.hidden = deckItems.length === 0;
+    deckStatus.innerHTML = '';
+    renderDeckItems();
+  }
+
+  function renderDeckItems() {
+    deckItemsEl.innerHTML = deckItems.map((it, i) => {
+      const v = it.view;
+      return `<div class="deck-item${it.include ? '' : ' is-off'}" data-i="${i}">
+        <input type="checkbox" data-f="include"${it.include ? ' checked' : ''} aria-label="ใส่ ${esc(v.name)} ในงานนำเสนอ">
+        ${v.images[0] ? `<img class="deck-thumb" src="${esc(v.images[0])}" alt="" loading="lazy" referrerpolicy="no-referrer">` : '<span class="deck-thumb"></span>'}
+        <div class="deck-name"><strong>${esc(v.name)}</strong><span>รหัส ${esc(v.sku)}${v.brand ? ' · ' + esc(v.brand) : ''}</span></div>
+        <label class="field"><span>หัวข้อหน้า</span><input data-f="group" value="${esc(it.group)}" list="group-options"></label>
+        <label class="field"><span>จุดใช้งาน</span><input data-f="usage" value="${esc(it.usage)}" placeholder="เช่น ห้องนอน 1, 2"></label>
+      </div>`;
+    }).join('');
+    renderGroupImages();
+  }
+
+  function currentGroups() {
+    const out = [];
+    for (const it of deckItems) {
+      const g = groupTitle(it);
+      if (it.include && !out.includes(g)) out.push(g);
+    }
+    return out;
+  }
+
+  function renderGroupImages() {
+    const groups = currentGroups();
+    groupImagesEl.innerHTML = groups.map((g) => {
+      const img = groupImages.get(g);
+      return `<div class="upload">
+        <div class="upload-preview"${img ? ` style="background-image:url('${img.data}')"` : ''}></div>
+        <div class="upload-text"><strong>${esc(g)}</strong><span>${img ? 'ใส่รูปแล้ว' : 'ยังไม่มีรูป'}</span></div>
+        <div class="upload-actions">
+          <label class="btn-sm">เลือกรูป<input class="visually-hidden" type="file" accept="image/*" data-group="${esc(g)}"></label>
+          ${img ? `<button class="btn-sm btn-sm--plain" type="button" data-clear-group="${esc(g)}">ลบ</button>` : ''}
+        </div>
+      </div>`;
+    }).join('') || '<p class="sub">ยังไม่ได้เลือกสินค้า</p>';
+    groupOptions.innerHTML = [...new Set([...groups, ...GROUP_SUGGESTIONS])].map((g) => `<option value="${esc(g)}">`).join('');
+  }
+
+  function syncItem(el, typing) {
+    const row = el.closest('.deck-item');
+    const it = deckItems[Number(row.dataset.i)];
+    if (el.dataset.f === 'include') {
+      it.include = el.checked;
+      row.classList.toggle('is-off', !el.checked);
+    } else {
+      it[el.dataset.f] = el.value;
+    }
+    itemPrefs.set(it.view.sku, { include: it.include, group: it.group, usage: it.usage });
+    if (!typing) renderGroupImages();
+  }
+
+  // ---------- Images ----------
+  function loadImageEl(src) {
+    return new Promise((resolve, reject) => {
+      const im = new Image();
+      im.onload = () => resolve(im);
+      im.onerror = () => reject(new Error('อ่านรูปไม่ได้'));
+      im.src = src;
+    });
+  }
+
+  // Re-encode through a canvas: normalizes WebP/HEIC-ish inputs to JPEG/PNG, shrinks big
+  // photos so the file stays small, and optionally center-crops to an aspect ratio.
+  async function prepImage(source, { maxSide = 1600, keepAlpha = false, crop = 0 } = {}) {
+    const isBlob = typeof source !== 'string';
+    const src = isBlob ? URL.createObjectURL(source) : source;
+    try {
+      const im = await loadImageEl(src);
+      let sx = 0, sy = 0, sw = im.naturalWidth, sh = im.naturalHeight;
+      if (!sw || !sh) throw new Error('อ่านขนาดรูปไม่ได้');
+      if (crop) {
+        if (sw / sh > crop) { const nw = sh * crop; sx = (sw - nw) / 2; sw = nw; }
+        else { const nh = sw / crop; sy = (sh - nh) / 2; sh = nh; }
+      }
+      const scale = Math.min(1, maxSide / Math.max(sw, sh));
+      const w = Math.max(1, Math.round(sw * scale));
+      const h = Math.max(1, Math.round(sh * scale));
+      const canvas = document.createElement('canvas');
+      canvas.width = w;
+      canvas.height = h;
+      const ctx = canvas.getContext('2d');
+      if (!keepAlpha) { ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, w, h); }
+      ctx.drawImage(im, sx, sy, sw, sh, 0, 0, w, h);
+      return { data: keepAlpha ? canvas.toDataURL('image/png') : canvas.toDataURL('image/jpeg', 0.9), w, h };
+    } finally {
+      if (isBlob) URL.revokeObjectURL(src);
+    }
+  }
+
+  async function fetchImage(url) {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    return prepImage(await res.blob(), { maxSide: 900 });
+  }
+
+  // ---------- Slide layout (A4 landscape, inches) ----------
+  const SW = 11.69;
+  const SH = 8.27;
+  const COVER_BAR_Y = 6.75;
+  const COVER_PHOTO_X = 3.4;
+  const COVER_ASPECT = (SW - COVER_PHOTO_X) / COVER_BAR_Y;
+  const COL = { navy: '13234B', navy2: '22365F', gold: 'B8935A', goldLight: 'DCC08A', red: 'D0312D', ink: '1F1F1F', muted: '5C5C5C', rule: '7F7F7F', soft: 'F4F1EA', price: 'D9541E' };
+  const FONT_HEAD = 'Kanit';
+  const FONT_BODY = 'Sarabun';
+  const LONG_ATTRS = new Set(['features', 'maintenance', 'care_warning_instruction']);
+  const COVER_NOTE = [
+    'เอกสารสรุปและยืนยันรายการวัสดุเบื้องต้นตามที่ลูกค้าได้เลือกไว้',
+    'ยังไม่ถือเป็นการสั่งซื้อและการจองสินค้า',
+    'การสั่งซื้อจะดำเนินการตามขั้นตอนของบริษัทฯ',
+    'เมื่อถึงกำหนดสั่งซื้อจริง',
+  ];
+  const DISCLAIMER = [
+    'รายการวัสดุในเอกสารฉบับนี้จัดทำขึ้นเพื่อสรุปและยืนยันรายการวัสดุเบื้องต้นตามที่ได้เลือกไว้เท่านั้น ยังไม่ถือเป็นการสั่งซื้อหรือการจองสินค้า',
+    'การสั่งซื้อจะดำเนินการตามขั้นตอนของบริษัทเมื่อถึงกำหนดสั่งซื้อจริง ทั้งนี้ รุ่น สี ขนาด ราคา และความพร้อมของสินค้าอาจมีการเปลี่ยนแปลง ณ วันที่สั่งซื้อจริง',
+  ];
+
+  function fitBox(img, x, y, w, h, align = 'center') {
+    const r = Math.min(w / img.w, h / img.h);
+    const iw = img.w * r;
+    const ih = img.h * r;
+    return { x: align === 'left' ? x : x + (w - iw) / 2, y: y + (h - ih) / 2, w: iw, h: ih };
+  }
+
+  // Runs joined into separate lines (PptxGenJS breaks a line after a run with breakLine).
+  const asLines = (runs) => runs.map((r, i) => ({ text: r.text, options: { ...(r.options || {}), breakLine: i < runs.length - 1 } }));
+
+  function paginate(items, perPage) {
+    const groups = new Map();
+    for (const it of items) {
+      const title = groupTitle(it);
+      if (!groups.has(title)) groups.set(title, []);
+      groups.get(title).push(it);
+    }
+    const pages = [];
+    for (const [title, list] of groups) {
+      for (let i = 0; i < list.length; i += perPage) {
+        pages.push({ title, items: list.slice(i, i + perPage), start: i, cont: i > 0, single: list.length === 1 });
+      }
+    }
+    return pages;
+  }
+
+  function buildDeck(PptxGenJS, info, items, opts) {
+    const pptx = new PptxGenJS();
+    pptx.defineLayout({ name: 'A4L', width: SW, height: SH });
+    pptx.layout = 'A4L';
+    pptx.theme = { headFontFace: FONT_HEAD, bodyFontFace: FONT_BODY };
+    pptx.title = 'Material Selection Confirmation' + (info.project ? ' - ' + info.project : '');
+    if (info.preparer) pptx.author = info.preparer;
+    if (info.company) pptx.company = info.company;
+    const S = pptx.ShapeType;
+
+    addCover(pptx, S, info, opts);
+    const pages = paginate(items, opts.leftPanel ? 5 : 10);
+    for (const page of pages) addMaterialSlide(pptx, S, info, page, opts);
+    return { pptx, slides: pages.length + 1 };
+  }
+
+  function addCover(pptx, S, info, opts) {
+    const s = pptx.addSlide();
+    s.background = { color: COL.navy };
+    const px = COVER_PHOTO_X;
+    const by = COVER_BAR_Y;
+
+    if (opts.cover) {
+      s.addImage({ data: opts.cover.data, x: px, y: 0, w: SW - px, h: by });
+    } else {
+      s.addText('ใส่รูปภาพโครงการ', {
+        shape: S.rect, x: px, y: 0, w: SW - px, h: by, fill: { color: COL.navy2 }, line: { type: 'none' },
+        align: 'center', valign: 'middle', fontFace: FONT_BODY, fontSize: 14, color: COL.goldLight,
+      });
+    }
+
+    // White panel with a diagonal right edge, edged in gold.
+    s.addShape(S.rect, { x: 0, y: 0, w: px, h: by, fill: { color: 'FFFFFF' }, line: { type: 'none' } });
+    s.addShape(S.rtTriangle, { x: px - 0.01, y: 0, w: 2.9, h: by, flipV: true, fill: { color: 'FFFFFF' }, line: { type: 'none' } });
+    s.addShape(S.line, { x: px, y: 0, w: 2.9, h: by, flipH: true, line: { color: COL.gold, width: 7 } });
+    s.addShape(S.line, { x: px + 0.3, y: 0, w: 2.9, h: by, flipH: true, line: { color: COL.goldLight, width: 1.5 } });
+    // Gold-edged wedge in the bottom-left corner.
+    s.addShape(S.rtTriangle, { x: 0, y: by - 0.78, w: 2.7, h: 0.78, fill: { color: COL.gold }, line: { type: 'none' } });
+    s.addShape(S.rtTriangle, { x: 0, y: by - 0.62, w: 2.5, h: 0.62, fill: { color: COL.navy }, line: { type: 'none' } });
+
+    const tx = 0.55;
+    if (opts.logo) {
+      s.addImage({ data: opts.logo.data, ...fitBox(opts.logo, tx, 0.4, 1.7, 1.0, 'left') });
+    } else if (info.company) {
+      s.addText(info.company, { x: tx, y: 0.5, w: 2.8, h: 0.6, fontFace: FONT_HEAD, fontSize: 18, bold: true, color: COL.navy, margin: 0 });
+    }
+
+    const heading = { fontFace: FONT_HEAD, bold: true, margin: 0, valign: 'middle' };
+    s.addText('MATERIAL', { ...heading, x: tx, y: 1.55, w: 4.4, h: 0.68, fontSize: 40, color: COL.navy });
+    s.addText('SELECTION', { ...heading, x: tx, y: 2.17, w: 4.4, h: 0.68, fontSize: 40, color: COL.navy });
+    s.addText('CONFIRMATION', { ...heading, x: tx, y: 2.83, w: 4.0, h: 0.52, fontSize: 27, color: COL.gold });
+    s.addShape(S.line, { x: tx, y: 3.5, w: 0.9, h: 0, line: { color: COL.gold, width: 2.5 } });
+    s.addText('รายการเลือกและยืนยันวัสดุ', { x: tx, y: 3.6, w: 3.6, h: 0.45, fontFace: FONT_BODY, fontSize: 16, color: COL.navy, margin: 0, valign: 'middle' });
+    s.addText(COVER_NOTE.join('\n'), { x: tx, y: 4.15, w: 3.35, h: 1.15, fontFace: FONT_BODY, fontSize: 9.5, color: COL.muted, margin: 0, valign: 'top' });
+
+    const blocks = [['โครงการ :', info.project], ['ที่อยู่ :', splitLines(info.address).join(' ')], ['วันที่จัดทำ :', info.date]];
+    const bx = 3.75;
+    const bw = (SW - 0.35 - bx) / blocks.length;
+    blocks.forEach(([label, value], i) => {
+      const x = bx + i * bw;
+      if (i) s.addShape(S.line, { x: x - 0.12, y: by + 0.35, w: 0, h: 0.82, line: { color: COL.goldLight, width: 0.75 } });
+      s.addText(asLines([
+        { text: label, options: { bold: true, color: COL.goldLight } },
+        { text: value || '-', options: { color: 'FFFFFF' } },
+      ]), { x, y: by + 0.22, w: bw - 0.3, h: 1.08, fontFace: FONT_BODY, fontSize: 11, valign: 'middle', margin: 0 });
+    });
+  }
+
+  function addMaterialSlide(pptx, S, info, page, opts) {
+    const s = pptx.addSlide();
+    s.background = { color: 'FFFFFF' };
+    s.addText(page.title + (page.cont ? ' (ต่อ)' : ''), {
+      x: 0.5, y: 0.3, w: 7.5, h: 0.65, fontFace: FONT_HEAD, fontSize: 24, bold: true, color: COL.ink,
+      underline: { style: 'sng' }, margin: 0, valign: 'middle',
+    });
+
+    const top = 1.15;
+    const bottom = 6.6;
+    let x0 = 0.5;
+    if (opts.leftPanel) {
+      const lx = 0.5;
+      const lw = 5.25;
+      let ly = top;
+      if (page.single && page.items[0].usage) {
+        s.addText(page.items[0].usage, { x: lx, y: top, w: lw, h: 0.4, fontFace: FONT_HEAD, fontSize: 14, bold: true, color: COL.ink, margin: 0, valign: 'middle' });
+        ly = top + 0.5;
+      }
+      const img = opts.groupImages.get(page.title);
+      if (img) {
+        s.addImage({ data: img.data, ...fitBox(img, lx, ly, lw, bottom - ly) });
+      } else {
+        s.addText('วางภาพแปลน / ภาพ 3D ของโครงการ', {
+          shape: S.rect, x: lx, y: ly, w: lw, h: bottom - ly,
+          fill: { color: 'F5F5F3' }, line: { color: 'BDBDBD', width: 1, dashType: 'dash' },
+          align: 'center', valign: 'middle', fontFace: FONT_BODY, fontSize: 13, color: '9A9A9A',
+        });
+      }
+      x0 = 6.05;
+    }
+
+    const w = SW - 0.5 - x0;
+    if (page.single && opts.leftPanel) addDetail(s, page.items[0], x0, top, w, bottom, opts);
+    else addList(s, S, page, x0, top, w, bottom, opts);
+    addFooter(s, S, info, opts);
+  }
+
+  function specRows(v, opts) {
+    const rows = [['รหัสสินค้า', v.sku]];
+    if (v.brand) rows.push(['ยี่ห้อ', v.brand]);
+    if (opts.showPrice && v.final != null) rows.push(['ราคา', priceText(v)]);
+    for (const a of v.specs) {
+      if (LONG_ATTRS.has(a.code)) continue;
+      const val = plainText(a.value);
+      if (val && val.length <= 60) rows.push([a.label, val]);
+    }
+    return rows;
+  }
+
+  // One product on the page: big picture, name, colour and a spec table (like the roof page).
+  function addDetail(s, it, x, top, w, bottom, opts) {
+    const v = it.view;
+    s.addText(clip(v.name, 90), { x, y: top, w, h: 0.75, fontFace: FONT_HEAD, fontSize: 15, bold: true, color: COL.ink, align: 'center', valign: 'middle', margin: 0 });
+    if (it.img) s.addImage({ data: it.img.data, ...fitBox(it.img, x + (w - 2.4) / 2, top + 0.85, 2.4, 2.0) });
+
+    let ty = top + 2.95;
+    const color = (v.specs.find((a) => a.code === 'color') || {}).value;
+    if (color) {
+      const c = plainText(color);
+      s.addText(c.startsWith('สี') ? c : 'สี' + c, { x, y: ty, w, h: 0.38, fontFace: FONT_HEAD, fontSize: 13, bold: true, color: COL.ink, align: 'center', valign: 'middle', margin: 0 });
+    }
+    ty += 0.5;
+
+    const rowH = 0.27;
+    const maxRows = Math.max(1, Math.floor((bottom - ty) / rowH));
+    const rows = specRows(v, opts).slice(0, maxRows).map(([k, val]) => [
+      { text: k, options: { color: COL.muted, fill: { color: COL.soft } } },
+      { text: clip(val, 60), options: { color: k === 'ราคา' ? COL.price : COL.ink, bold: k === 'ราคา' } },
+    ]);
+    s.addTable(rows, {
+      x, y: ty, w, colW: [1.55, w - 1.55], rowH,
+      fontFace: FONT_BODY, fontSize: 9.5, valign: 'middle',
+      border: { type: 'solid', pt: 0.5, color: 'D9D9D9' },
+    });
+  }
+
+  // Several products: numbered rows with picture, name, code, price and where it is used.
+  function addList(s, S, page, x, top, w, bottom, opts) {
+    const cols = opts.leftPanel ? 1 : 2;
+    const gap = 0.3;
+    const colW = (w - gap * (cols - 1)) / cols;
+    const rowH = (bottom - top) / 5;
+    const isz = rowH - 0.15;
+    page.items.forEach((it, i) => {
+      const v = it.view;
+      // Fill left-to-right so a short list spreads across both columns.
+      const cx = x + (i % cols) * (colW + gap);
+      const ry = top + Math.floor(i / cols) * rowH;
+      s.addText(String(page.start + i + 1), {
+        shape: S.ellipse, x: cx, y: ry + 0.04, w: 0.3, h: 0.3, fill: { color: COL.navy }, line: { type: 'none' },
+        color: 'FFFFFF', fontFace: FONT_BODY, fontSize: 9, bold: true, align: 'center', valign: 'middle', margin: 0,
+      });
+      if (it.img) s.addImage({ data: it.img.data, ...fitBox(it.img, cx + 0.4, ry, isz, isz) });
+      const tx = cx + 0.4 + isz + 0.15;
+      const runs = [
+        { text: clip(v.name, 80), options: { bold: true, fontSize: 11, color: COL.ink } },
+        { text: `รหัสสินค้า ${v.sku}${v.brand ? ' · ' + v.brand : ''}`, options: { fontSize: 9, color: COL.muted } },
+      ];
+      if (opts.showPrice && v.final != null) runs.push({ text: 'ราคา ' + priceText(v), options: { fontSize: 9, bold: true, color: COL.price } });
+      if (it.usage) runs.push({ text: 'จุดใช้งาน : ' + it.usage, options: { fontSize: 9, color: COL.ink } });
+      s.addText(asLines(runs), { x: tx, y: ry, w: colW - (tx - cx), h: isz, fontFace: FONT_BODY, valign: 'middle', margin: 0 });
+    });
+  }
+
+  // Title block at the foot of every material page, same cells as the template.
+  function addFooter(s, S, info, opts) {
+    const fx = 0.25;
+    const fy = 6.85;
+    const fw = SW - 0.5;
+    const fh = 1.2;
+    const topH = 0.78;
+    const cw = [1.25, 3.35, 4.1];
+    cw.push(fw - cw[0] - cw[1] - cw[2]);
+    const xs = [fx];
+    for (let i = 0; i < 3; i++) xs.push(xs[i] + cw[i]);
+    const rule = { color: COL.rule, width: 0.75 };
+
+    s.addShape(S.rect, { x: fx, y: fy, w: fw, h: fh, fill: { color: 'FFFFFF' }, line: rule });
+    s.addShape(S.line, { x: xs[1], y: fy, w: 0, h: fh, line: rule });
+    s.addShape(S.line, { x: xs[2], y: fy, w: 0, h: fh, line: rule });
+    s.addShape(S.line, { x: xs[3], y: fy, w: 0, h: topH, line: rule });
+    s.addShape(S.line, { x: xs[2], y: fy + topH, w: cw[2] + cw[3], h: 0, line: rule });
+
+    if (opts.logo) {
+      s.addImage({ data: opts.logo.data, ...fitBox(opts.logo, xs[0] + 0.12, fy + 0.12, cw[0] - 0.24, fh - 0.24) });
+    } else if (info.company) {
+      s.addText(info.company, { x: xs[0], y: fy, w: cw[0], h: fh, align: 'center', valign: 'middle', fontFace: FONT_HEAD, fontSize: 11, bold: true, color: COL.navy, margin: 2 });
+    }
+
+    const addr = splitLines(info.address);
+    s.addText([
+      { text: 'OWNER : ', options: { bold: true } },
+      { text: info.owner || ' ', options: { breakLine: true } },
+      { text: 'ADDRESS : ', options: { bold: true } },
+      ...(addr.length ? addr : [' ']).map((t, i, a) => ({ text: t, options: { breakLine: i < a.length - 1 } })),
+    ], { x: xs[1] + 0.1, y: fy + 0.1, w: cw[1] - 0.2, h: fh - 0.2, fontFace: FONT_BODY, fontSize: 9, color: COL.ink, valign: 'top', margin: 0 });
+
+    s.addText([
+      { text: 'MATERIAL SELECTION CONFIRMATION', options: { bold: true, color: COL.red, align: 'center', breakLine: true } },
+      { text: 'ผู้ยืนยันรายการวัสดุ..................................................................', options: { align: 'left', breakLine: true } },
+      { text: 'วันที่....................เดือน........................................ปี....................', options: { align: 'left' } },
+    ], { x: xs[2] + 0.1, y: fy + 0.04, w: cw[2] - 0.2, h: topH - 0.08, fontFace: FONT_BODY, fontSize: 8.5, color: COL.ink, valign: 'middle', margin: 0 });
+
+    s.addText([
+      { text: 'ผู้จัดทำ : ', options: { bold: true } },
+      { text: info.preparer || ' ', options: { breakLine: true } },
+      { text: 'TEL : ', options: { bold: true } },
+      { text: info.tel || ' ' },
+    ], { x: xs[3] + 0.1, y: fy + 0.04, w: cw[3] - 0.2, h: topH - 0.08, fontFace: FONT_BODY, fontSize: 9, color: COL.ink, valign: 'middle', margin: 0 });
+
+    s.addText(asLines(DISCLAIMER.map((t) => ({ text: '• ' + t }))), {
+      x: xs[2] + 0.08, y: fy + topH + 0.02, w: cw[2] + cw[3] - 0.16, h: fh - topH - 0.04,
+      fontFace: FONT_BODY, fontSize: 6.5, color: COL.red, valign: 'middle', margin: 0,
+    });
+  }
+
+  let pptxPromise = null;
+  function loadPptx() {
+    if (window.PptxGenJS) return Promise.resolve(window.PptxGenJS);
+    if (!pptxPromise) {
+      pptxPromise = new Promise((resolve, reject) => {
+        const el = document.createElement('script');
+        el.src = PPTX_SRC;
+        el.integrity = PPTX_SRI;
+        el.crossOrigin = 'anonymous';
+        el.onload = () => (window.PptxGenJS ? resolve(window.PptxGenJS) : reject(new Error('โหลดเครื่องมือสร้างไฟล์ไม่สำเร็จ')));
+        el.onerror = () => { pptxPromise = null; el.remove(); reject(new Error('โหลดเครื่องมือสร้างไฟล์ไม่ได้ ตรวจสอบการเชื่อมต่ออินเทอร์เน็ต')); };
+        document.head.appendChild(el);
+      });
+    }
+    return pptxPromise;
+  }
+
+  function deckFileName(info) {
+    const name = ('Material Selection ' + (info.project || ''))
+      .replace(/[\\/:*?"<>|\r\n]+/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 80);
+    return name + '.pptx';
+  }
+
+  async function generateDeck() {
+    const items = deckItems.filter((it) => it.include);
+    if (!items.length) {
+      showDeckNote('bad', 'กรุณาเลือกสินค้าอย่างน้อย 1 รายการ');
+      return;
+    }
+    deckBtn.disabled = true;
+    deckBtn.textContent = 'กำลังสร้างไฟล์…';
+    try {
+      showDeckNote('info', 'กำลังโหลดเครื่องมือสร้างไฟล์…');
+      const PptxGenJS = await loadPptx();
+      showDeckNote('info', `กำลังเตรียมรูปสินค้า ${items.length} รายการ…`);
+      const imgs = await Promise.all(items.map((it) => (it.view.images[0] ? fetchImage(it.view.images[0]).catch(() => null) : null)));
+      const info = readProject();
+      const opts = {
+        showPrice: deckForm.elements.showPrice.checked,
+        leftPanel: deckForm.elements.leftPanel.checked,
+        logo: uploads.logo,
+        cover: uploads.cover ? await prepImage(uploads.cover.data, { maxSide: 2000, crop: COVER_ASPECT }) : null,
+        groupImages,
+      };
+      const { pptx, slides } = buildDeck(PptxGenJS, info, items.map((it, i) => ({ ...it, img: imgs[i] })), opts);
+      const fileName = deckFileName(info);
+      await pptx.writeFile({ fileName });
+      const missing = imgs.filter((img, i) => !img && items[i].view.images[0]).length;
+      showDeckNote('ok', `<strong>ดาวน์โหลด “${esc(fileName)}” แล้ว (${slides} หน้า)</strong>
+        ${missing ? `<br>โหลดรูปสินค้าไม่ได้ ${missing} รายการ เว้นที่ไว้ให้ใส่รูปเองใน Canva` : ''}
+        <ol>
+          <li>เปิด <a href="https://www.canva.com/" target="_blank" rel="noopener noreferrer">Canva</a> แล้วลากไฟล์ .pptx ไปวางบนหน้าแรก หรือกด “สร้างงานออกแบบ” → “นำเข้าไฟล์” (Import file)</li>
+          <li>Canva จะแปลงเป็นงานนำเสนอที่แก้ไขได้ทุกข้อความ รูปภาพ และตาราง</li>
+          <li>กรอบ “วางภาพแปลน / ภาพ 3D” ลบออกแล้ววางรูปของโครงการแทนได้เลย</li>
+        </ol>`);
+    } catch (err) {
+      showDeckNote('bad', 'สร้างไฟล์ไม่สำเร็จ: ' + esc((err && err.message) || String(err)));
+    } finally {
+      deckBtn.disabled = false;
+      deckBtn.textContent = 'สร้างไฟล์สำหรับ Canva (.pptx)';
+    }
+  }
+
+  deckForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    generateDeck();
+  });
+  // Enter in a one-line field shouldn't fire the (slow) file generation.
+  deckForm.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && e.target.tagName === 'INPUT' && e.target.type !== 'checkbox') e.preventDefault();
+  });
+  deckForm.addEventListener('input', (e) => {
+    const t = e.target;
+    if (PERSIST_FIELDS.includes(t.name)) saveProject();
+    else if (t.closest('.deck-item') && t.type !== 'checkbox') syncItem(t, true);
+  });
+  deckForm.addEventListener('change', async (e) => {
+    const t = e.target;
+    if (t.type === 'file') {
+      const file = t.files && t.files[0];
+      const slot = t.dataset.upload;
+      const group = t.dataset.group;
+      t.value = '';
+      if (!file) return;
+      try {
+        const img = await prepImage(file, slot === 'logo' ? { maxSide: 800, keepAlpha: true } : { maxSide: 2000 });
+        if (slot) {
+          setUpload(slot, img);
+          if (slot === 'logo') saveProject();
+        } else if (group != null) {
+          groupImages.set(group, img);
+          renderGroupImages();
+        }
+        deckStatus.innerHTML = '';
+      } catch (_) {
+        showDeckNote('bad', 'อ่านไฟล์รูปไม่ได้ ลองใช้ไฟล์ JPG หรือ PNG');
+      }
+      return;
+    }
+    if (t.closest('.deck-item')) syncItem(t, false);
+    else if (t.name === 'leftPanel') groupImagesSet.hidden = !t.checked;
+  });
+  deckForm.addEventListener('click', (e) => {
+    const clear = e.target.closest('[data-clear]');
+    if (clear) {
+      setUpload(clear.dataset.clear, null);
+      if (clear.dataset.clear === 'logo') saveProject();
+      return;
+    }
+    const clearGroup = e.target.closest('[data-clear-group]');
+    if (clearGroup) {
+      groupImages.delete(clearGroup.dataset.clearGroup);
+      renderGroupImages();
+    }
+  });
+  toDeckBtn.addEventListener('click', () => deckSection.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+  loadProject();
 
   // ---------- Events ----------
   function autoGrow() {
