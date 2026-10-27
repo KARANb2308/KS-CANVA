@@ -132,6 +132,9 @@ function Handle-Projects($ctx, [string]$path) {
     [IO.File]::WriteAllBytes($tmp, $buffer.ToArray())
     [IO.File]::Copy($tmp, $target, $true)
     [IO.File]::Delete($tmp)
+    # The page sends the project's summary in a header with each save.
+    $metaHeader = $ctx.Request.Headers['X-KS-Meta']
+    if ($metaHeader -and $target -eq $dataFile) { [IO.File]::WriteAllText($metaFile, [Uri]::UnescapeDataString($metaHeader), $utf8) }
     Send-Text $ctx 200 'saved' $false
     return
   }
