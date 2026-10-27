@@ -411,6 +411,8 @@
   .conn-dot { width: 8px; height: 8px; border-radius: 50%; background: #c9a227; flex: none; }
   .conn[data-kind="local"] .conn-dot, .conn[data-kind="custom"] .conn-dot { background: var(--ok); }
   .conn-more { flex-basis: 100%; }
+  .conn-help { font-weight: 600; color: var(--accent); }
+  .source-note a { color: inherit; font-weight: 600; }
   .conn-more summary { cursor: pointer; color: var(--accent); width: max-content; }
   .conn-more p { margin: 6px 0; max-width: 70ch; }
   .proxy-row { display: flex; gap: 8px; max-width: 520px; }
@@ -554,6 +556,7 @@
       <div class="conn" id="conn" data-kind="none">
         <span class="conn-dot" aria-hidden="true"></span>
         <span class="conn-text"></span>
+        <a class="conn-help" href="คู่มือการใช้งาน.html#open" target="_blank" rel="noopener" hidden>วิธีเปิดผ่าน start.bat (ทีละขั้นตอน) ↗</a>
         <details class="conn-more">
           <summary>ตั้งค่า Proxy</summary>
           <p>ปกติไม่ต้องตั้ง: ดับเบิลคลิกไฟล์ <code>start.bat</code> แล้วหน้านี้จะเปิดผ่านโปรแกรมช่วยในเครื่องเอง ช่องนี้ใช้เมื่อเปิดจากเว็บ (เช่น GitHub Pages) พร้อม Proxy ของตัวเอง เช่น Cloudflare Worker จากไฟล์ <code>proxy-worker.js</code></p>
@@ -848,6 +851,7 @@
     }[proxyKind];
     connEl.querySelector('.conn-text').textContent = text;
     connEl.dataset.kind = proxyKind;
+    connEl.querySelector('.conn-help').hidden = proxyKind !== 'none';
   }
 
   function renderSourceNote() {
@@ -857,7 +861,9 @@
       if (currentSource === 'traphet') note = 'ยังไม่ได้เปิดผ่าน start.bat: จะได้ชื่อ รูป และรายละเอียด แต่ไม่มีราคา และรูปจะใส่ในไฟล์ .pptx ไม่ได้ (อัปโหลดรูปเองได้)';
       if (currentSource === 'ecodoor') note = 'ยังไม่ได้เปิดผ่าน start.bat: รูปสินค้าจะใส่ในไฟล์ .pptx ไม่ได้ (อัปโหลดรูปเองได้)';
     }
-    sourceNoteEl.textContent = note;
+    sourceNoteEl.innerHTML = note
+      ? `${esc(note)} · <a href="คู่มือการใช้งาน.html#open" target="_blank" rel="noopener">ดูวิธีเปิดทีละขั้นตอน ↗</a>`
+      : '';
     sourceNoteEl.hidden = !note;
   }
 
