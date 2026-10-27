@@ -1,0 +1,8 @@
+{
+  "name": "ks-home",
+  "main": "worker.js",
+  "compatibility_date": "2026-04-09",
+  "kv_namespaces": [
+    { "binding": "PROJECTS", "id": "a97e8d0619564c35af1bc894f35219bb" }
+  ]
+}
