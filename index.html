@@ -505,8 +505,39 @@
   #item-form[data-mode="set"] .ed-product-only, #item-form:not([data-mode="set"]) .ed-set-only { display: none !important; }
   .ed-members-label { margin-top: 18px; }
   .ed-members-label span { font-weight: 400; font-size: .85rem; color: var(--muted); }
-  .ed-member { display: grid; grid-template-columns: 48px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 8px 0; border-top: 1px solid var(--border); }
+  .ed-member { display: grid; grid-template-columns: 56px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 8px 0; border-top: 1px solid var(--border); }
   .ed-ungroup { margin-right: auto; color: var(--bad); }
+  .ed-mimg {
+    width: 56px; height: 56px; padding: 2px; cursor: pointer; font: inherit; font-size: .65rem; color: #8a8880;
+    background: #fff; border: 1.5px solid var(--border); border-radius: 8px;
+  }
+  .ed-mimg:hover { border-color: var(--accent); }
+  .ed-mimg img { width: 100%; height: 100%; object-fit: contain; display: block; }
+  .ed-mtools { display: flex; flex-direction: column; gap: 6px; align-items: stretch; }
+  .ed-style { margin-top: 14px; }
+  .ed-member em, .sm-main { font-style: normal; font-weight: 600; color: var(--accent); }
+  .sm-main { display: block; font-size: .72rem; }
+  .role-input {
+    width: 100%; max-width: 280px; margin: 0 0 3px; padding: 4px 8px; font: inherit; font-size: .8rem; color: var(--text);
+    background: var(--surface); border: 1.5px dashed var(--border); border-radius: 8px; outline: none;
+  }
+  .role-input:focus { border-style: solid; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+
+  /* Combined pictures (a product with its accessories, e.g. a door and its handle) */
+  .pi-combo { position: relative; display: block; width: 48px; height: 48px; }
+  .tray-item .pi-combo { width: 40px; height: 40px; }
+  .pi-combo .pi-thumb { display: block; }
+  .pi-acc {
+    position: absolute; bottom: -4px; width: 24px; height: 24px; object-fit: contain;
+    background: #fff; border: 1px solid var(--border); border-radius: 6px; box-shadow: 0 1px 3px rgba(0, 0, 0, .2);
+  }
+  .pick--combo { position: relative; flex-direction: column; gap: 2px; padding: 4px 4px 2px; }
+  .pick-combo { position: relative; display: block; width: 100%; flex: 1; min-height: 0; }
+  .pick-combo img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
+  .pick-combo img + img {
+    inset: auto 0 0 auto; width: 46%; height: 46%; background: #fff; border: 1px solid var(--border); border-radius: 6px;
+  }
+  .pick--combo small { font-size: .7rem; color: var(--accent); font-weight: 600; }
 
   /* Sets & numbering */
   .pi { grid-template-columns: 18px 24px 48px minmax(0, 1fr); }
@@ -554,6 +585,9 @@
   .badge-ok { color: var(--ok); background: var(--ok-soft); }
   .badge-info { color: var(--info); background: var(--info-soft); }
   .trim-fields { margin: 16px 0 12px; max-width: 260px; }
+  .trim-pair { max-width: 520px; margin-bottom: 16px; }
+  .add-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+  .add-row .add-custom { margin-top: 0; }
 
   .page-opts { display: flex; flex-wrap: wrap; gap: 4px 24px; }
   .page-opts .check--sm { margin-top: 12px; }
@@ -780,7 +814,9 @@
           <button class="icon-btn" type="button" data-tr="close" aria-label="ปิด">✕</button>
         </header>
         <div class="editor-body">
+          <label class="field trim-pair" id="trim-pair-field"><span>ใช้คู่กับ</span><select name="tr_pair"></select></label>
           <p class="field-label">สีบัว PVC <span class="field-note">ตามคำแนะนำของ dbp.co.th</span></p>
+          <p class="sub" id="trim-loading" hidden>กำลังโหลดรายการบัวจาก dbp.co.th…</p>
           <div class="trim-colors" id="trim-colors"></div>
           <p class="field-label trim-size-label">ขนาดบัว (ก × ย × น ซม.)</p>
           <div class="toggles" id="trim-sizes"></div>
@@ -813,7 +849,12 @@
             <label class="btn-sm">อัปโหลดรูปเอง<input class="visually-hidden" type="file" accept="image/*" id="ed-upload"></label>
           </div>
           <div class="ed-set-only">
-            <p class="field-label ed-members-label">รายการในชุด <span>แก้ชื่อรุ่น / ขนาด ที่จะแสดงได้</span></p>
+            <p class="field-label ed-style">รูปแบบชุด</p>
+            <div class="toggles" role="radiogroup" aria-label="รูปแบบชุด">
+              <label class="toggle"><input type="radio" name="ed_style" value="combo"><span>สินค้าหลัก + อุปกรณ์ประกอบ (รวมรูป) เช่น ประตู + มือจับ, กระเบื้อง + ยาแนว</span></label>
+              <label class="toggle"><input type="radio" name="ed_style" value="variants"><span>รุ่นเดียวกันหลายขนาด เช่น กระเบื้องหลายไซซ์</span></label>
+            </div>
+            <p class="field-label ed-members-label">รายการในชุด <span>กดที่รูปเพื่อเปลี่ยนรูปของแต่ละรายการ · แก้ชื่อที่จะแสดงได้</span></p>
             <div id="ed-members"></div>
           </div>
           <div class="fields ed-fields">
@@ -1625,6 +1666,8 @@
         ${pills ? `<div class="pills">${pills}</div>` : ''}
         <div class="actions">
           <button class="btn-ghost add-btn" type="button" data-add="${esc(v.key)}"></button>
+          <button class="btn-ghost" type="button" data-dup="${esc(v.key)}" hidden></button>
+          ${v.trims ? `<button class="btn-ghost btn-ghost--accent" type="button" data-trim-for="${esc(v.key)}">+ เลือกบัวสำหรับพื้นนี้</button>` : ''}
           <a class="btn-ghost" href="${esc(v.url)}" target="_blank" rel="noopener noreferrer">ดูบนเว็บไซต์${esc(SOURCES[v.source].label)} ↗</a>
         </div>
       </div>
@@ -1642,7 +1685,7 @@
   // The site's skirting-colour recommendations, shown on the search result.
   function trimsCard(t) {
     return `<section class="trim-card">
-      <h3>บัว PVC ที่ใช้คู่กัน <span>เลือกได้ด้วยปุ่ม “เลือกบัว” ในส่วนงานนำเสนอ</span></h3>
+      <h3>บัว PVC ที่ใช้คู่กัน <span>กดปุ่ม “+ เลือกบัวสำหรับพื้นนี้” ด้านบน หรือ “+ เลือกบัว” ที่รายการในงานนำเสนอ</span></h3>
       <div class="trim-chips">${t.colors.map((c) => `<span class="trim-chip${c.match ? ' is-match' : ''}">
         ${c.image ? `<img src="${esc(c.image)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : ''}
         <span><strong>${esc(c.label)}</strong>${c.match ? ' · แนะนำสำหรับสีนี้' : c.forAll ? ' · เข้ากับพื้นทุกสี' : ''}</span>
@@ -1669,6 +1712,11 @@
       btn.classList.toggle('is-added', added);
       btn.textContent = added ? '✓ อยู่ในงานนำเสนอ (นำออก)' : '+ เพิ่มลงงานนำเสนอ';
       btn.setAttribute('aria-pressed', String(added));
+    });
+    resultsEl.querySelectorAll('[data-dup]').forEach((btn) => {
+      const n = copiesOf(btn.dataset.dup);
+      btn.hidden = n === 0;
+      btn.textContent = `+ ใช้ซ้ำอีกรายการ (ห้องอื่น)${n > 1 ? ` · มีแล้ว ${n} รายการ` : ''}`;
     });
   }
 
@@ -1879,8 +1927,23 @@
     const a = v.specs.find((s) => s.code === code);
     return a ? plainText(a.value) : '';
   }
+  // A set is either 'combo' (a main product with its accessories, e.g. a door and its handle,
+  // shown with a combined picture) or 'variants' (one product in several sizes). Older sets are variants.
+  const setStyle = (it) => (it.style === 'combo' ? 'combo' : 'variants');
+  const usesCombo = (it) => isSet(it) && (it.image ? it.image.kind === 'combo' : setStyle(it) === 'combo');
+  // The pictures a combined picture is made of: each product's own chosen picture, main product first.
+  const comboSources = (it) => it.members.map((m) => chosenImage(pool.get(m.key))).filter(Boolean);
+  // Accessories get a heading of their own in the file, e.g. "ยาแนวที่ใช้ : ...".
+  const ROLE_HINTS = [[/^ยาแนว/, 'ยาแนวที่ใช้'], [/^บัว/, 'บัวที่ใช้'], [/^(ปูนกาว|กาวซีเมนต์|กาวยาแนว)/, 'กาวที่ใช้']];
+  const autoRole = (name) => (ROLE_HINTS.find(([re]) => re.test(String(name || '').trim())) || [])[1] || '';
+  function fillRoles(set) {
+    if (setStyle(set) !== 'combo') return;
+    set.members.forEach((m, i) => { if (i && !m.role) m.role = autoRole(m.label); });
+  }
+
   // The picture the user chose for an item ('' = none).
   function chosenImage(it) {
+    if (usesCombo(it)) return comboSources(it)[0] || '';
     if (!it.image) return it.view.images[0] || '';
     if (it.image.kind === 'data') return it.image.img.data;
     if (it.image.kind === 'url') return it.image.url;
@@ -2061,6 +2124,7 @@
 
   function moveKey(key, target) {
     if (target.startsWith('set:')) { addToSet(target, key); renderPages(); return; }
+    if (target.startsWith('with:')) { combineWith(key, target.slice(5)); renderPages(); return; }
     const from = pageOf(key);
     let to = null;
     if (target === 'new') {
@@ -2127,7 +2191,9 @@
     };
   }
 
-  function mergeSelected(page) {
+  // `style` forces the kind of set; otherwise names that share most of their text (one tile in
+  // several sizes) make a 'variants' set, and different products (door + handle) a 'combo' set.
+  function mergeSelected(page, style) {
     const keys = page.keys.filter((k) => selection.keys.has(k));
     if (keys.length < 2) return;
     const members = [];
@@ -2139,21 +2205,26 @@
     }
     const names = members.map((m) => pool.get(m.key).view.name);
     const prefix = commonPrefix(names);
+    const similar = prefix.length >= 4 && prefix.length >= Math.min(...names.map((n) => n.length)) * 0.3;
 
     // Reuse a ticked set (keeps its name and picture), otherwise start a new one.
     let setKey = keys.find((k) => isSet(pool.get(k)));
     if (!setKey) {
+      const kind = style || (similar ? 'variants' : 'combo');
       setKey = uid('set:');
       pool.set(setKey, {
         kind: 'set',
-        name: prefix.length >= 4 ? prefix : names[0],
+        style: kind,
+        name: kind === 'variants' && prefix.length >= 4 ? prefix : names[0],
         members: [],
         usage: keys.map((k) => pool.get(k).usage).find(Boolean) || '',
         image: null,
       });
     }
     const set = pool.get(setKey);
+    if (style) set.style = style;
     set.members = members;
+    fillRoles(set);
     for (const m of members) pool.get(m.key).inSet = setKey;
     const mark = keys.map((k) => page.marks[k]).find(Boolean);
     for (const k of keys) {
@@ -2178,6 +2249,7 @@
       ? it.members
       : [{ key, label: it.setLabel || it.view.name, qty: it.qty || '', qtyUnit: it.qtyUnit || '' }];
     set.members = set.members.concat(added);
+    fillRoles(set);
     for (const m of added) pool.get(m.key).inSet = setKey;
     const from = pageOf(key);
     if (from) {
@@ -2190,12 +2262,73 @@
     refreshSet(setKey);
   }
 
-  // "รวมเข้าชุด" choices for the move menu: every set except the item itself.
-  function setOptions(key) {
-    const sets = deckKeys().filter((k) => k !== key && isSet(pool.get(k)));
-    return sets.length
+  // Make `otherKey` an accessory of `mainKey` (from any page), shown with a combined picture.
+  function combineWith(mainKey, otherKey) {
+    if (isSet(pool.get(mainKey))) { addToSet(mainKey, otherKey); return; }
+    const page = pageOf(mainKey);
+    if (!page || mainKey === otherKey) return;
+    for (const p of pages) {
+      p.keys = p.keys.filter((k) => k !== otherKey);
+      if (p !== page) delete p.marks[otherKey];
+    }
+    page.keys.splice(page.keys.indexOf(mainKey) + 1, 0, otherKey);
+    selection = { pageId: page.id, keys: new Set([mainKey, otherKey]) };
+    mergeSelected(page, 'combo');
+  }
+
+  // The same product (or set) again, e.g. the same tile in another room: its own usage and quantity.
+  // The copy goes right after the original, or onto page `pageId`.
+  function duplicateItem(key, pageId) {
+    const it = pool.get(key);
+    if (!it) return null;
+    const clone = (x) => JSON.parse(JSON.stringify(x));
+    const freeKey = (k) => {
+      const base = k.replace(/#\d+$/, '');
+      let n = 2;
+      while (pool.has(`${base}#${n}`)) n++;
+      return `${base}#${n}`;
+    };
+    const copy = clone(it);
+    copy.usage = '';
+    let newKey;
+    if (isSet(it)) {
+      newKey = uid('set:');
+      copy.members = it.members.map((m) => {
+        const k = freeKey(m.key);
+        pool.set(k, { ...clone(pool.get(m.key)), inSet: newKey });
+        return { ...clone(m), key: k, qty: '' };
+      });
+      pool.set(newKey, copy);
+      refreshSet(newKey);
+    } else {
+      newKey = freeKey(key);
+      delete copy.inSet;
+      copy.qty = '';
+      pool.set(newKey, copy);
+    }
+    const target = pageId ? pageById(pageId) : pageOf(key);
+    if (target && target.keys.length < maxFor(target)) {
+      const at = target.keys.indexOf(key);
+      target.keys.splice(at >= 0 ? at + 1 : target.keys.length, 0, newKey);
+    } else {
+      placeKey(newKey, null);
+    }
+    return newKey;
+  }
+  // How many times a product from the search results is in the project (copies included).
+  const copiesOf = (key) => [...pool.keys()].filter((k) => k === key || k.startsWith(key + '#')).length;
+
+  // Move-menu choices: put this item into a set, or bring another product in as its accessory.
+  function setOptions(key, withProducts = true) {
+    const others = deckKeys().filter((k) => k !== key);
+    const sets = others.filter((k) => isSet(pool.get(k)));
+    const products = withProducts ? others.filter((k) => !isSet(pool.get(k))) : [];
+    const where = (k) => { const q = pageOf(k); return q ? ` (หน้า ${pages.indexOf(q) + 2})` : ''; };
+    return (sets.length
       ? `<optgroup label="รวมเข้าชุด">${sets.map((k) => `<option value="${esc(k)}">รวมเข้าชุด: ${esc(clip(pool.get(k).name, 40))}</option>`).join('')}</optgroup>`
-      : '';
+      : '') + (products.length
+      ? `<optgroup label="เพิ่มเป็นอุปกรณ์ของรายการนี้ (รวมรูป)">${products.map((k) => `<option value="with:${esc(k)}">+ ${esc(clip(pool.get(k).view.name, 40))}${where(k)}</option>`).join('')}</optgroup>`
+      : '');
   }
 
   // Take products back out of a set (all of them, or just `only`), placing them
@@ -2227,36 +2360,94 @@
     if (placing && placing.key === setKey) placing = null;
   }
 
-  // ---------- Skirting (บัว) for floors from dbp.co.th ----------
+  // ---------- Skirting (บัว PVC ตราเพชร, from dbp.co.th) ----------
+  // For a dbp.co.th floor the site's own recommendations are used; for any other floor (or none)
+  // the skirting list comes from one dbp.co.th floor page.
   const trimDialog = $('#trim-dialog');
   const trimForm = $('#trim-form');
-  let trimState = null; // { floorKey, color, size } while the picker is open
+  const TRIM_CATALOG = 'spc-spc-flooring-plus-caramel';
+  const FLOOR_RE = /พื้น|SPC|ลามิเนต|laminate|ไวนิล|vinyl|ปาร์เก้/i;
+  let trimCatalog = null;
+  let trimState = null; // { rowKey, pageId, trims, color, size } while the picker is open
 
-  // The floor a row's "เลือกบัว" button belongs to: the product itself, or a floor inside a set.
+  // The dbp.co.th floor of a row: the product itself, or a floor inside a set.
   function trimFloorOf(it, key) {
     if (!isSet(it)) return it.view.trims ? key : '';
     const m = it.members.find((x) => pool.get(x.key).view.trims);
     return m ? m.key : '';
   }
+  // Rows that get a "เลือกบัว" button: dbp.co.th floors, and anything else that looks like a floor.
+  function wantsTrim(it, key) {
+    if (trimFloorOf(it, key)) return true;
+    const names = isSet(it) ? it.members.map((m) => pool.get(m.key).view.name) : [it.view.name];
+    return !names.some((n) => /^บัว/.test(n)) && names.some((n) => FLOOR_RE.test(n));
+  }
 
-  function openTrimDialog(floorKey) {
-    const floor = pool.get(floorKey);
-    if (!floor || !floor.view.trims) return;
-    const t = floor.view.trims;
-    // Start on the colour the site recommends for this floor, else the one that suits every floor.
-    let color = t.colors.findIndex((c) => c.match);
-    if (color < 0) color = t.colors.findIndex((c) => c.forAll);
-    trimState = { floorKey, color: Math.max(0, color), size: 0 };
-    $('#trim-for').textContent = 'สำหรับ ' + floor.view.name;
+  async function loadTrimCatalog() {
+    if (trimCatalog) return trimCatalog;
+    if (!proxyBase) throw needHelper(SOURCES.dbp.label);
+    const v = fromDbp(await getText(viaProxy(DBP_SITE + TRIM_CATALOG)), TRIM_CATALOG);
+    if (!v || !v.trims) throw new Error('อ่านรายการบัวจาก dbp.co.th ไม่ได้ ลองใหม่อีกครั้ง');
+    trimCatalog = { ...v.trims, floorColor: '', colors: v.trims.colors.map((c) => ({ ...c, match: false })), slug: TRIM_CATALOG };
+    return trimCatalog;
+  }
+
+  // rowKey: the item the skirting goes with ('' = none); pageId: the page it goes on.
+  // From a row the pairing is fixed; from the page button it can be chosen.
+  function openTrim(rowKey, pageId) {
+    trimState = { rowKey, pageId: pageId || (rowKey && pageOf(rowKey) ? pageOf(rowKey).id : null), trims: null, color: 0, size: 0 };
+    const pairField = $('#trim-pair-field');
+    pairField.hidden = !!rowKey;
+    if (!rowKey) {
+      const page = pageById(trimState.pageId);
+      const rows = page ? page.keys.filter((k) => !k.startsWith('dbptrim:')) : [];
+      trimForm.elements.tr_pair.innerHTML = '<option value="">ไม่ระบุ (เพิ่มบัวเป็นรายการใหม่ในหน้านี้)</option>' +
+        rows.map((k) => `<option value="${esc(k)}">${esc(clip(pool.get(k).view.name, 60))}</option>`).join('');
+      const floor = rows.find((k) => wantsTrim(pool.get(k), k));
+      trimForm.elements.tr_pair.value = floor || '';
+      trimState.rowKey = floor || '';
+    }
     trimForm.elements.tr_qty.value = '';
-    $('#trim-merge-row').hidden = !!floor.inSet; // already in a set: the skirting joins that set
     $('#trim-error').textContent = '';
-    renderTrimDialog();
     trimDialog.showModal();
+    useTrimsFor(trimState.rowKey);
+  }
+
+  async function useTrimsFor(rowKey) {
+    const st = trimState;
+    st.rowKey = rowKey;
+    const row = rowKey ? pool.get(rowKey) : null;
+    const floorKey = row ? trimFloorOf(row, rowKey) : '';
+    $('#trim-for').textContent = row ? 'สำหรับ ' + row.view.name : 'เพิ่มเป็นรายการใหม่ในหน้านี้';
+    // A set takes the skirting in; with nothing to pair with there is nothing to combine.
+    $('#trim-merge-row').hidden = !row || isSet(row);
+    $('#trim-error').textContent = '';
+    let trims = floorKey ? pool.get(floorKey).view.trims : null;
+    if (!trims) {
+      st.trims = null;
+      $('#trim-colors').innerHTML = '';
+      $('#trim-sizes').innerHTML = '';
+      $('#trim-loading').hidden = false;
+      try {
+        trims = await loadTrimCatalog();
+      } catch (err) {
+        if (trimState === st) $('#trim-error').textContent = err.message;
+        return;
+      } finally {
+        $('#trim-loading').hidden = true;
+      }
+      if (trimState !== st || st.rowKey !== rowKey) return; // the picker moved on meanwhile
+    }
+    // Start on the colour the site recommends for this floor, else the one that suits every floor.
+    let color = trims.colors.findIndex((c) => c.match);
+    if (color < 0) color = trims.colors.findIndex((c) => c.forAll);
+    Object.assign(st, { trims, floorKey, color: Math.max(0, color), size: 0 });
+    renderTrimDialog();
   }
 
   function renderTrimDialog() {
-    const t = pool.get(trimState.floorKey).view.trims;
+    const t = trimState.trims;
+    if (!t) return;
     $('#trim-colors').innerHTML = t.colors.map((c, i) => `<button type="button" class="trim-color${i === trimState.color ? ' is-on' : ''}" data-color="${i}" aria-pressed="${i === trimState.color}">
         ${c.image ? `<img src="${esc(c.image)}" alt="" referrerpolicy="no-referrer">` : '<span class="trim-noimg"></span>'}
         <strong>${esc(c.label)}</strong>
@@ -2270,12 +2461,15 @@
   }
 
   function addTrim() {
-    const floor = pool.get(trimState.floorKey);
-    const fv = floor.view;
-    const c = fv.trims.colors[trimState.color];
-    const sz = fv.trims.sizes[trimState.size] || null;
+    const st = trimState;
+    if (!st.trims) { $('#trim-error').textContent = 'ยังโหลดรายการบัวไม่เสร็จ'; return; }
+    const row = st.rowKey ? pool.get(st.rowKey) : null;
+    const floorView = st.floorKey ? pool.get(st.floorKey).view : null;
+    const c = st.trims.colors[st.color];
+    const sz = st.trims.sizes[st.size] || null;
     const qty = trimForm.elements.tr_qty.value.trim();
-    const key = 'dbptrim:' + fv.key.replace(/^dbp:/, '') + ':' + (c.label + '-' + (sz ? sz.size : '')).toLowerCase().replace(/[^a-z0-9]+/g, '-');
+    const page = row ? pageOf(st.rowKey) : pageById(st.pageId);
+    const key = 'dbptrim:' + (st.rowKey || 'page' + st.pageId) + ':' + (c.label + '-' + (sz ? sz.size : '')).toLowerCase().replace(/[^a-z0-9]+/g, '-');
     if (pool.has(key)) {
       // Same colour and size again: just update the quantity.
       const existing = pool.get(key);
@@ -2291,8 +2485,8 @@
       source: 'dbp',
       sku: '',
       name: `บัว PVC สี ${c.label}${sz ? ' ขนาด ' + sz.size + ' ซม.' : ''}`,
-      brand: fv.brand,
-      url: fv.url,
+      brand: 'ตราเพชร',
+      url: floorView ? floorView.url : DBP_SITE + st.trims.slug,
       final: null,
       regular: null,
       pct: 0,
@@ -2302,34 +2496,33 @@
       qty: null,
       readyToShip: false,
       images: c.image ? [c.image] : [],
-      crumbs: fv.crumbs,
+      crumbs: row ? row.view.crumbs : ['บัว'],
       specs: [
         { code: 'color', label: 'สี', value: c.label },
         ...(sz ? [
           { code: 'dimension_unit', label: 'ขนาด (ก × ย × น)', value: sz.size + ' ซม.' },
           ...(sz.weight ? [{ code: 'weight_unit', label: 'น้ำหนัก', value: sz.weight + ' กก./เส้น' }] : []),
         ] : []),
-        { code: 'custom_pair', label: 'ใช้คู่กับ', value: fv.name },
+        ...(row ? [{ code: 'custom_pair', label: 'ใช้คู่กับ', value: row.view.name }] : []),
       ],
       description: '',
-      defaultGroup: fv.defaultGroup,
+      defaultGroup: row ? row.view.defaultGroup : page ? page.title : 'บัว',
     };
-    pool.set(key, { kind: 'product', view, usage: floor.usage || '', image: null, edited: true, qty });
-    if (floor.inSet) {
-      addToSet(floor.inSet, key);
-      const m = pool.get(floor.inSet).members.find((x) => x.key === key);
+    pool.set(key, { kind: 'product', view, usage: row ? row.usage || '' : '', image: null, edited: true, qty });
+    if (row && isSet(row)) {
+      addToSet(st.rowKey, key);
+      const m = row.members.find((x) => x.key === key);
       if (m) m.qty = qty;
-    } else {
-      const page = pageOf(trimState.floorKey);
-      if (page) {
-        page.keys.splice(page.keys.indexOf(trimState.floorKey) + 1, 0, key);
-        if (trimForm.elements.tr_merge.checked) {
-          selection = { pageId: page.id, keys: new Set([trimState.floorKey, key]) };
-          mergeSelected(page);
-        }
-      } else {
-        placeKey(key, null);
+    } else if (row && page) {
+      page.keys.splice(page.keys.indexOf(st.rowKey) + 1, 0, key);
+      if (trimForm.elements.tr_merge.checked) {
+        selection = { pageId: page.id, keys: new Set([st.rowKey, key]) };
+        mergeSelected(page, 'combo');
       }
+    } else if (page && page.keys.length < maxFor(page)) {
+      page.keys.push(key);
+    } else {
+      placeKey(key, null);
     }
     trimDialog.close();
     renderPages();
@@ -2343,6 +2536,7 @@
   });
   trimForm.addEventListener('change', (e) => {
     if (e.target.name === 'tr_size') trimState.size = Number(e.target.value);
+    if (e.target.name === 'tr_pair') useTrimsFor(e.target.value);
   });
   trimForm.addEventListener('click', (e) => {
     if (e.target.closest('[data-tr="close"]')) trimDialog.close();
@@ -2354,6 +2548,11 @@
 
   // ---------- Pages UI ----------
   function thumb(it) {
+    const srcs = usesCombo(it) ? comboSources(it) : [];
+    if (srcs.length > 1) {
+      return `<span class="pi-combo"><img class="pi-thumb" src="${esc(srcs[0])}" alt="" loading="lazy" referrerpolicy="no-referrer">${srcs.slice(1, 3).map((src, i) =>
+        `<img class="pi-acc" style="right:${-4 + i * 18}px" src="${esc(src)}" alt="" loading="lazy" referrerpolicy="no-referrer">`).join('')}</span>`;
+    }
     const src = chosenImage(it);
     return src
       ? `<img class="pi-thumb" src="${esc(src)}" alt="" loading="lazy" referrerpolicy="no-referrer">`
@@ -2377,11 +2576,15 @@
   }
 
   // Every product of a set with its full name, code, price and its own quantity.
+  // In a combo set the first product is the main one; the others are its accessories, each with an optional heading.
   function setMembersUI(set) {
+    const combo = setStyle(set) === 'combo';
     return `<ol class="set-members">${set.members.map((m, i) => {
       const v = pool.get(m.key).view;
       const meta = [v.sku ? 'รหัส ' + v.sku : '', v.final != null ? priceText(v) : ''].filter(Boolean).join(' · ');
       return `<li data-mi="${i}">
+        ${combo && i === 0 ? '<span class="sm-main">สินค้าหลัก</span>' : ''}
+        ${combo && i > 0 ? `<input class="role-input" data-act="mrole" value="${esc(m.role || '')}" placeholder="หัวข้อ (ไม่บังคับ) เช่น ยาแนวที่ใช้, มือจับ" aria-label="หัวข้อของ ${esc(m.label)}">` : ''}
         <span class="sm-name">${esc(m.label)}</span>
         ${meta ? `<span class="pi-meta">${esc(meta)}</span>` : ''}
         ${qtyUI(m.qty, m.qtyUnit, v.unit, 'mqty', m.label)}
@@ -2433,7 +2636,8 @@
           <div class="pi-tools">
             <button class="btn-sm" type="button" data-act="edit">${set ? 'แก้ไขชุด / เลือกรูป' : 'แก้ไข / เลือกรูป'}</button>
             ${set ? '<button class="btn-sm btn-sm--plain" type="button" data-act="ungroup">แยกชุด</button>' : ''}
-            ${trimFloorOf(it, key) ? `<button class="btn-sm" type="button" data-act="trim" data-floor="${esc(trimFloorOf(it, key))}">เลือกบัว</button>` : ''}
+            ${wantsTrim(it, key) ? '<button class="btn-sm" type="button" data-act="trim">+ เลือกบัว</button>' : ''}
+            <button class="btn-sm btn-sm--plain" type="button" data-act="dup" title="เพิ่มสินค้านี้อีกรายการ เช่น ใช้ในห้องอื่น">ใช้ซ้ำ (ห้องอื่น)</button>
             ${pointTools}
             <span class="updown">
               <button class="icon-btn" type="button" data-act="item-up" aria-label="เลื่อนขึ้น"${n === 0 ? ' disabled' : ''}>↑</button>
@@ -2456,16 +2660,21 @@
           <button class="btn-sm is-on" type="button" data-act="merge"${selected.size < 2 ? ' disabled' : ''}>รวมเป็นชุดเดียว</button>
           <button class="btn-sm btn-sm--plain" type="button" data-act="clear-select">ยกเลิก</button>
         </div>`
-      : p.keys.length >= 2 ? '<p class="merge-hint">ติ๊กเลือกตั้งแต่ 2 รายการขึ้นไป เพื่อรวมเป็นชุดเดียว (เช่น กระเบื้องรุ่นเดียวหลายขนาด)</p>' : '';
+      : p.keys.length >= 2 ? '<p class="merge-hint">ติ๊กเลือกตั้งแต่ 2 รายการ แล้วกด “รวมเป็นชุดเดียว” เช่น ประตู + มือจับ, กระเบื้อง + ยาแนว (รวมรูปให้) หรือกระเบื้องรุ่นเดียวหลายขนาด · รายการแรกที่ติ๊กเป็นสินค้าหลัก</p>' : '';
 
     const addable = deckKeys().filter((key) => !p.keys.includes(key));
+    const elsewhere = addable.filter((key) => pageOf(key));
     const addSelect = addable.length && p.keys.length < max
       ? `<select class="mini-select add-select" data-act="add-item" aria-label="เพิ่มสินค้าในหน้า ${idx + 2}">
           <option value="">+ เพิ่มสินค้าที่มีอยู่ในหน้านี้…</option>
+          ${elsewhere.length ? `<optgroup label="ใช้ซ้ำ (เพิ่มอีกรายการในหน้านี้ เช่น ห้องอื่น)">${elsewhere.map((key) =>
+            `<option value="dup:${esc(key)}">${esc(clip(pool.get(key).view.name, 44))} (จากหน้า ${pages.indexOf(pageOf(key)) + 2})</option>`).join('')}</optgroup>` : ''}
+          <optgroup label="ย้ายมาหน้านี้">
           ${addable.map((key) => {
             const q = pageOf(key);
             return `<option value="${esc(key)}">${esc(clip(pool.get(key).view.name, 44))}${q ? ` (อยู่หน้า ${pages.indexOf(q) + 2})` : ''}</option>`;
           }).join('')}
+          </optgroup>
         </select>`
       : '';
 
@@ -2507,7 +2716,10 @@
           ${mergeBar}
           ${items || '<p class="sub">ยังไม่มีสินค้าในหน้านี้ · หน้าที่มีแต่รูปหรือข้อความก็ใส่ในไฟล์ได้</p>'}
           ${addSelect}
-          ${p.keys.length < max ? '<button class="btn-sm add-custom" type="button" data-act="add-custom-here">+ เพิ่มสินค้าเอง (ไม่มีในเว็บ)</button>' : ''}
+          ${p.keys.length < max ? `<div class="add-row">
+            <button class="btn-sm add-custom" type="button" data-act="add-custom-here">+ เพิ่มสินค้าเอง (ไม่มีในเว็บ)</button>
+            <button class="btn-sm" type="button" data-act="add-trim-here">+ เพิ่มบัว (ตราเพชร)</button>
+          </div>` : ''}
         </div>
       </div>
       <div class="page-opts">
@@ -2529,7 +2741,7 @@
         <div class="pi-tools">
           <button class="btn-sm" type="button" data-act="edit">แก้ไข</button>
           <select class="mini-select" data-act="tray-add" aria-label="ใส่ในหน้า">
-            <option value="">ใส่ในหน้า…</option>${pageOptions(null)}<option value="new">หน้าใหม่</option>${setOptions(key)}
+            <option value="">ใส่ในหน้า…</option>${pageOptions(null)}<option value="new">หน้าใหม่</option>${setOptions(key, false)}
           </select>
           <button class="btn-sm btn-sm--plain" type="button" data-act="tray-remove">ลบออก</button>
         </div>
@@ -2594,16 +2806,19 @@
     editing = {
       key,
       set: true,
+      style: setStyle(set),
       images: set.view.images.slice(),
       uploaded: set.image && set.image.kind === 'data' ? set.image.img : null,
-      choice: initialChoice(set),
-      members: set.members.map((m) => ({ ...m })),
+      choice: usesCombo(set) ? 'combo' : initialChoice(set),
+      // `img` is each product's own picture choice, used in the combined picture.
+      members: set.members.map((m) => ({ ...m, img: initialChoice(pool.get(m.key)) })),
       removed: [],
     };
     edForm.dataset.mode = 'set';
     $('#editor-title').textContent = 'แก้ไขชุดสินค้า / เลือกรูป';
     $('#ed-name-label').textContent = 'ชื่อชุด *';
     $('#editor-source').textContent = 'สินค้าหลายรายการ แสดงเป็นรายการเดียว (เลขเดียว) ในงานนำเสนอ';
+    edForm.querySelector(`input[name="ed_style"][value="${editing.style}"]`).checked = true;
     f.ed_name.value = set.name;
     f.ed_usage.value = set.usage;
     edError.textContent = '';
@@ -2613,31 +2828,50 @@
     f.ed_name.focus();
   }
 
+  // A set member's picture choice as an image address ('' = none).
+  function memberSrc(m) {
+    const it = pool.get(m.key);
+    return m.img === 'data' ? (it.image && it.image.kind === 'data' ? it.image.img.data : '') : m.img;
+  }
+
   function renderEditorImages() {
     const opts = [];
     if (editing.uploaded) opts.push({ id: 'data', src: editing.uploaded.data, label: 'รูปที่อัปโหลด' });
     editing.images.forEach((url, i) => opts.push({ id: url, src: url, label: `รูปที่ ${i + 1} จากเว็บไซต์` }));
     const pick = (o) => `<button type="button" class="pick${editing.choice === o.id ? ' is-on' : ''}" data-pick="${esc(o.id)}" aria-pressed="${editing.choice === o.id}" title="${esc(o.label)}">
         <img src="${esc(o.src)}" alt="${esc(o.label)}" referrerpolicy="no-referrer"></button>`;
-    edImages.innerHTML = opts.map(pick).join('') +
+    // A set can also show every product's picture together (main product large, accessories small).
+    const parts = editing.set ? editing.members.map(memberSrc).filter(Boolean) : [];
+    const combo = parts.length > 1
+      ? `<button type="button" class="pick pick--combo${editing.choice === 'combo' ? ' is-on' : ''}" data-pick="combo" aria-pressed="${editing.choice === 'combo'}" title="รวมรูปทุกรายการ">
+          <span class="pick-combo">${parts.slice(0, 2).map((src) => `<img src="${esc(src)}" alt="" referrerpolicy="no-referrer">`).join('')}</span>
+          <small>รวมรูป</small></button>`
+      : '';
+    edImages.innerHTML = combo + opts.map(pick).join('') +
       `<button type="button" class="pick pick--none${editing.choice === '' ? ' is-on' : ''}" data-pick="" aria-pressed="${editing.choice === ''}">ไม่ใช้รูป</button>`;
   }
 
   function renderEditorMembers() {
+    const combo = editing.style === 'combo';
     edMembers.innerHTML = editing.members.map((m, i) => {
       const it = pool.get(m.key);
       const v = it.view;
+      const src = memberSrc(m);
       return `<div class="ed-member">
-        ${thumb(it)}
+        <button type="button" class="ed-mimg" data-member-img="${i}" title="กดเพื่อเปลี่ยนรูปของรายการนี้">${src ? `<img src="${esc(src)}" alt="" referrerpolicy="no-referrer">` : 'ไม่มีรูป'}</button>
         <div class="pi-main">
-          <span class="pi-meta">${esc(v.name)}${v.sku ? ' · รหัส ' + esc(v.sku) : ''}${v.final != null ? ' · ' + esc(priceText(v)) : ''}</span>
+          <span class="pi-meta">${combo ? `<em>${i === 0 ? 'สินค้าหลัก' : 'อุปกรณ์ประกอบ'}</em> · ` : ''}${esc(v.name)}${v.sku ? ' · รหัส ' + esc(v.sku) : ''}${v.final != null ? ' · ' + esc(priceText(v)) : ''}</span>
+          ${combo && i > 0 ? `<input class="role-input" data-member="${i}" data-field="role" value="${esc(m.role || '')}" placeholder="หัวข้อ (ไม่บังคับ) เช่น ยาแนวที่ใช้, มือจับ" aria-label="หัวข้อของ ${esc(v.name)}">` : ''}
           <input class="pi-usage" data-member="${i}" data-field="label" value="${esc(m.label)}" placeholder="ชื่อที่จะแสดง" aria-label="ชื่อที่แสดงของ ${esc(v.name)}">
           <span class="qty-row">
             <label>จำนวน <input class="qty-input" data-member="${i}" data-field="qty" value="${esc(m.qty || '')}" inputmode="decimal" aria-label="จำนวนของ ${esc(v.name)}"></label>
             <input class="unit-input" data-member="${i}" data-field="qtyUnit" value="${esc(m.qtyUnit || '')}" placeholder="${esc(v.unit || 'หน่วย')}" aria-label="หน่วยของ ${esc(v.name)}">
           </span>
         </div>
-        <button class="btn-sm btn-sm--plain" type="button" data-member-out="${i}">แยกออก</button>
+        <span class="ed-mtools">
+          ${i > 0 ? `<button class="btn-sm" type="button" data-member-up="${i}" title="เลื่อนขึ้น${combo && i === 1 ? ' (เป็นสินค้าหลัก)' : ''}">↑ เลื่อนขึ้น</button>` : ''}
+          <button class="btn-sm btn-sm--plain" type="button" data-member-out="${i}">แยกออก</button>
+        </span>
       </div>`;
     }).join('') + (editing.members.length < 2
       ? '<p class="ed-error">ชุดต้องมีอย่างน้อย 2 รายการ เมื่อบันทึก สินค้าจะถูกแยกกลับเป็นรายการเดี่ยว</p>' : '');
@@ -2702,9 +2936,22 @@
     const set = pool.get(editing.key);
     set.name = name;
     set.usage = f.ed_usage.value.trim();
-    set.image = imageFromChoice(set.view.images[0]);
-    set.members = editing.members.map((m) => ({ ...m, label: m.label.trim() || pool.get(m.key).view.name, qty: String(m.qty || '').trim() }))
-      .concat(editing.removed);
+    set.style = editing.style;
+    const c = editing.choice;
+    // A combo set shows the combined picture by default; any single picture is stored as chosen.
+    set.image = c === 'combo' ? (set.style === 'combo' ? null : { kind: 'combo' })
+      : c === 'data' && editing.uploaded ? { kind: 'data', img: editing.uploaded }
+      : c === '' ? { kind: 'none' }
+      : set.style === 'variants' && c === set.view.images[0] ? null
+      : { kind: 'url', url: c };
+    // Each product keeps the picture picked for it here.
+    for (const m of editing.members) {
+      const it = pool.get(m.key);
+      if (m.img === 'data') continue;
+      it.image = m.img === '' ? { kind: 'none' } : m.img === it.view.images[0] ? null : { kind: 'url', url: m.img };
+    }
+    const clean = ({ img, ...m }) => ({ ...m, label: String(m.label || '').trim() || pool.get(m.key).view.name, qty: String(m.qty || '').trim(), role: String(m.role || '').trim() });
+    set.members = editing.members.map(clean).concat(editing.removed.map(clean));
     if (editing.removed.length) ungroup(editing.key, editing.removed.map((m) => m.key));
     refreshSet(editing.key);
     editor.close();
@@ -2738,6 +2985,26 @@
     if (out) {
       editing.removed.push(...editing.members.splice(Number(out.dataset.memberOut), 1));
       renderEditorMembers();
+      renderEditorImages();
+      return;
+    }
+    const up = e.target.closest('[data-member-up]');
+    if (up) {
+      const i = Number(up.dataset.memberUp);
+      [editing.members[i - 1], editing.members[i]] = [editing.members[i], editing.members[i - 1]];
+      renderEditorMembers();
+      renderEditorImages();
+      return;
+    }
+    // Clicking a product's picture steps through its pictures (and "no picture").
+    const pic = e.target.closest('[data-member-img]');
+    if (pic) {
+      const m = editing.members[Number(pic.dataset.memberImg)];
+      const it = pool.get(m.key);
+      const choices = [...(it.image && it.image.kind === 'data' ? ['data'] : []), ...it.view.images, ''];
+      m.img = choices[(choices.indexOf(m.img) + 1) % choices.length];
+      renderEditorMembers();
+      renderEditorImages();
       return;
     }
     const btn = e.target.closest('[data-ed]');
@@ -2747,6 +3014,12 @@
       renderPages();
     }
     editor.close();
+  });
+  edForm.addEventListener('change', (e) => {
+    if (e.target.name !== 'ed_style' || !editing || !editing.set) return;
+    editing.style = e.target.value;
+    if (editing.style === 'combo') editing.members.forEach((m, i) => { if (i && !m.role) m.role = autoRole(m.label); });
+    renderEditorMembers();
   });
   edForm.addEventListener('submit', (e) => {
     e.preventDefault();
@@ -2791,6 +3064,42 @@
     }
   }
 
+  // Crops the plain white margin around a product photo (shops often put a small product on a big
+  // white square), so the pictures of a combined picture can sit side by side or overlap neatly.
+  async function trimWhite(img) {
+    const im = await loadImageEl(img.data);
+    const c = document.createElement('canvas');
+    c.width = img.w;
+    c.height = img.h;
+    const ctx = c.getContext('2d');
+    ctx.drawImage(im, 0, 0, img.w, img.h);
+    const px = ctx.getImageData(0, 0, img.w, img.h).data;
+    let x0 = img.w, y0 = img.h, x1 = -1, y1 = -1;
+    for (let y = 0; y < img.h; y += 2) {
+      for (let x = 0; x < img.w; x += 2) {
+        const i = (y * img.w + x) * 4;
+        if (px[i] < 238 || px[i + 1] < 238 || px[i + 2] < 238) {
+          if (x < x0) x0 = x;
+          if (x > x1) x1 = x;
+          if (y < y0) y0 = y;
+          if (y > y1) y1 = y;
+        }
+      }
+    }
+    if (x1 < 0) return img;
+    const pad = Math.round(Math.max(img.w, img.h) * 0.02);
+    x0 = Math.max(0, x0 - pad); y0 = Math.max(0, y0 - pad);
+    x1 = Math.min(img.w - 1, x1 + pad); y1 = Math.min(img.h - 1, y1 + pad);
+    const w = x1 - x0 + 1;
+    const h = y1 - y0 + 1;
+    if (w > img.w * 0.95 && h > img.h * 0.95) return img;
+    const out = document.createElement('canvas');
+    out.width = w;
+    out.height = h;
+    out.getContext('2d').drawImage(c, x0, y0, w, h, 0, 0, w, h);
+    return { data: out.toDataURL('image/jpeg', 0.9), w, h };
+  }
+
   // Product pictures: direct when the site allows it, otherwise through the helper.
   async function fetchImage(url) {
     let res;
@@ -2833,6 +3142,40 @@
     const iw = img.w * r;
     const ih = img.h * r;
     return { x: align === 'left' ? x : x + (w - iw) / 2, y: y + (h - ih) / 2, w: iw, h: ih };
+  }
+
+  // An item's picture in the box: one picture, or a combined one made of the main product and its
+  // accessories, each a separate picture so it stays editable in Canva. A tall main product (a door)
+  // gets its accessories beside it; a square or wide one (a tile) gets them in its lower right corner.
+  // Returns the main picture's box.
+  function addPictures(s, S, pics, x, y, w, h) {
+    const [main, ...rest] = pics;
+    if (!main) return null;
+    if (!rest.length) {
+      const r = fitBox(main, x, y, w, h);
+      s.addImage({ data: main.data, ...r });
+      return r;
+    }
+    if (main.w / main.h < 0.8) {
+      const gap = Math.min(w, h) * 0.05;
+      const r = fitBox(main, x, y, Math.min(w * 0.6, h * main.w / main.h), h);
+      s.addImage({ data: main.data, ...r });
+      const ax = r.x + r.w + gap;
+      const ah = h / rest.length;
+      rest.forEach((im, i) => s.addImage({ data: im.data, ...fitBox(im, ax, y + i * ah, x + w - ax, ah) }));
+      return r;
+    }
+    const r = fitBox(main, x, y, w, h);
+    s.addImage({ data: main.data, ...r });
+    const a = Math.min(r.w, r.h) * (rest.length > 1 ? 0.4 : 0.48);
+    const pad = a * 0.06;
+    rest.slice(0, 2).forEach((im, i) => {
+      const bx = r.x + r.w - a * (i + 1) - pad * i;
+      const by = r.y + r.h - a;
+      s.addShape(S.rect, { x: bx, y: by, w: a, h: a, fill: { color: 'FFFFFF' }, line: { color: 'D9D9D9', width: 0.75 } });
+      s.addImage({ data: im.data, ...fitBox(im, bx + pad, by + pad, a - pad * 2, a - pad * 2) });
+    });
+    return r;
   }
 
   // Runs joined into separate lines (PptxGenJS breaks a line after a run with breakLine).
@@ -2974,7 +3317,7 @@
       if (rect) addPointers(s, S, page, anchors, rect, opts);
     } else if (single) {
       const it = items[0];
-      if (it.img) s.addImage({ data: it.img.data, ...fitBox(it.img, lx, top, lw, bottom - top) });
+      addPictures(s, S, it.pics, lx, top, lw, bottom - top);
       addDetail(s, S, it, x0, top, w, bottom, f, { smallImage: false, usageRow: true, number: singleNo });
     } else {
       addList(s, S, page, 0.5, top, SW - 1, bottom, f, 2);
@@ -3026,7 +3369,20 @@
     const v = it.view;
     const rows = [];
     const add = (k, val, required = true) => rows.push({ k, val, required });
-    if (it.members) {
+    if (it.members && it.style === 'combo') {
+      // The main product's details, then one row per accessory ("ยาแนวที่ใช้ | ยาแนว... · รหัส ...").
+      const [main, ...acc] = it.members;
+      const mv = main.view;
+      if (f.sku && mv.sku) add('รหัสสินค้า', mv.sku);
+      if (f.brand && mv.brand) add('ยี่ห้อ', mv.brand);
+      if (f.price && mv.final != null) add('ราคา', priceText(mv));
+      if (f.qty && qtyText(main.qty)) add('จำนวน', qtyText(main.qty, main.qtyUnit || mv.unit).replace(/^จำนวน /, ''));
+      for (const d of ATTR_FIELDS) {
+        const val = f[d.key] ? attrOf(mv, d.attr) : '';
+        if (val) add(d.label, val);
+      }
+      for (const m of acc) add(m.role || 'อุปกรณ์ประกอบ', [m.label, variantDetail(m, f)].filter(Boolean).join(' · '));
+    } else if (it.members) {
       if (f.brand && v.brand) add('ยี่ห้อ', v.brand);
       for (const m of it.members) add(m.label, variantDetail(m, f) || '-');
     } else {
@@ -3068,10 +3424,12 @@
     const colorText = color ? (color.startsWith('สี') ? color : 'สี' + color) : '';
 
     let rows = detailRows(it, f, usageRow);
-    const colW = it.members ? [w * 0.58, w * 0.42] : [1.55, w - 1.55];
+    const colW = it.members && it.style !== 'combo' ? [w * 0.58, w * 0.42] : [1.55, w - 1.55];
+    // Table text runs a little wider than plain text, so leave some room to spare.
     const rowHeights = (size) => rows.map((r) => {
-      const lines = Math.max(wrapLines(r.k.length, colW[0] - 0.12, size), wrapLines(r.val.length, colW[1] - 0.12, size));
-      return Math.max(0.27, lines * size * 1.3 / 72 + 0.08);
+      const lines = Math.max(wrapLines(r.k.length * 1.15, colW[0] - 0.12, size), wrapLines(r.val.length * 1.15, colW[1] - 0.12, size));
+      // Thai lines are tall: a wrapped row needs more than the font size per line.
+      return Math.max(0.27, lines * size * (lines > 1 ? 1.55 : 1.3) / 72 + 0.1);
     });
     const sum = (a) => a.reduce((t, h) => t + h, 0);
 
@@ -3105,11 +3463,8 @@
       y += 0.85;
     }
     if (smallImage) {
-      if (it.img) {
-        const r = fitBox(it.img, x + (w - 2.4) / 2, y, 2.4, imgH);
-        s.addImage({ data: it.img.data, ...r });
-        anchor = { x: r.x, y: r.y + r.h / 2 };
-      }
+      const r = addPictures(s, S, it.pics, x + (w - 2.4) / 2, y, 2.4, imgH);
+      if (r) anchor = { x: r.x, y: r.y + r.h / 2 };
       y += imgH + 0.1;
     }
     if (colorText) {
@@ -3138,15 +3493,35 @@
       if (parts.length) lines.push(parts);
     };
     if (f.name) line({ text: v.name, kind: 'name' });
+    const combo = it.members && it.style === 'combo';
+    // A combo set reads like its main product, followed by its accessories.
+    const mv = combo ? it.members[0].view : v;
     line({
       text: [
-        f.sku && v.sku ? 'รหัสสินค้า ' + v.sku : '',
-        f.brand && v.brand ? v.brand : '',
+        f.sku && mv.sku ? 'รหัสสินค้า ' + mv.sku : '',
+        f.brand && mv.brand ? mv.brand : '',
         f.source && v.source !== 'custom' && sourceLabel(v) ? 'จาก ' + sourceLabel(v) : '',
       ].filter(Boolean).join(' · '),
       kind: 'meta',
     });
-    if (it.members) {
+    if (combo) {
+      const [main, ...acc] = it.members;
+      const q = f.qty ? qtyText(main.qty, main.qtyUnit || mv.unit) : '';
+      const price = f.price && mv.final != null ? 'ราคา ' + priceText(mv) : '';
+      line(
+        price ? { text: price, kind: 'price' } : null,
+        q ? { text: (price ? ' · ' : '') + q, kind: 'qty' } : null,
+      );
+      for (const m of acc) {
+        line({ text: (m.role ? m.role + ' : ' : '') + m.label, kind: 'variant' });
+        const q2 = f.qty ? qtyText(m.qty, m.qtyUnit || m.view.unit) : '';
+        line(
+          f.sku && m.view.sku ? { text: 'รหัสสินค้า ' + m.view.sku, kind: 'meta' } : null,
+          f.price && m.view.final != null ? { text: (f.sku && m.view.sku ? ' · ' : '') + priceText(m.view), kind: 'price' } : null,
+          q2 ? { text: ((f.sku && m.view.sku) || (f.price && m.view.final != null) ? ' · ' : '') + q2, kind: 'qty' } : null,
+        );
+      }
+    } else if (it.members) {
       // A set: every product on its own line, full name, with its own code, price and quantity.
       for (const m of it.members) {
         const q = f.qty ? qtyText(m.qty, m.qtyUnit || m.view.unit) : '';
@@ -3230,7 +3605,7 @@
       numberBadge(s, S, (page.start || 0) + i + 1, cx, ry + 0.04, bs, COL.navy);
       anchors.push({ x: cx, y: ry + 0.04 + bs / 2 });
       const ix = cx + bs + 0.1;
-      if (it.img) s.addImage({ data: it.img.data, ...fitBox(it.img, ix, ry, isz, isz) });
+      addPictures(s, S, it.pics, ix, ry, isz, isz);
       const tx = ix + isz + 0.15;
       const tw = colW - (tx - cx);
       const th = Math.max(isz, rowH - 0.1);
@@ -3359,15 +3734,25 @@
       const PptxGenJS = await loadPptx();
       const keys = [...new Set(used.flatMap((p) => p.keys))];
       showDeckNote('info', `กำลังเตรียมรูปสินค้า ${keys.length} รายการ…`);
-      const failed = [];
-      const imgs = await Promise.all(keys.map(async (key) => {
+      // Each item's pictures: one, or for a combined picture every product's own (main product first).
+      const one = (it) => (it.image && it.image.kind === 'data' ? { img: it.image.img } : chosenImage(it) ? { url: chosenImage(it), view: it.view } : null);
+      const sourcesByKey = new Map(keys.map((key) => {
         const it = pool.get(key);
-        if (it.image && it.image.kind === 'data') return it.image.img;
-        const url = chosenImage(it);
-        if (!url) return null;
-        try { return await fetchImage(url); } catch (_) { failed.push(it.view); return null; }
+        return [key, (usesCombo(it) ? it.members.map((m) => one(pool.get(m.key))) : [one(it)]).filter(Boolean)];
       }));
-      const imgByKey = new Map(keys.map((key, i) => [key, imgs[i]]));
+      const urls = [...new Set([...sourcesByKey.values()].flat().filter((s) => s.url).map((s) => s.url))];
+      const failed = [];
+      const fetched = new Map(await Promise.all(urls.map(async (url) => {
+        try { return [url, await fetchImage(url)]; } catch (_) {
+          const src = [...sourcesByKey.values()].flat().find((s) => s.url === url);
+          failed.push(src.view);
+          return [url, null];
+        }
+      })));
+      const picsByKey = new Map(await Promise.all([...sourcesByKey].map(async ([key, list]) => {
+        const pics = list.map((s) => s.img || fetched.get(s.url)).filter(Boolean);
+        return [key, pics.length > 1 ? await Promise.all(pics.map((p) => trimWhite(p).catch(() => p))) : pics];
+      })));
       const f = deckForm.elements;
       const opts = {
         fields: readFields(),
@@ -3380,15 +3765,18 @@
         ...p,
         items: p.keys.map((key) => {
           const it = pool.get(key);
+          const pics = picsByKey.get(key);
           return {
             view: it.view,
             usage: it.usage,
             qty: it.qty || '',
             qtyUnit: it.qtyUnit || '',
-            img: imgByKey.get(key),
+            img: pics[0] || null,
+            pics,
             mark: p.marks[key] || null,
+            style: isSet(it) ? setStyle(it) : null,
             members: isSet(it)
-              ? it.members.map((m) => ({ label: m.label, view: pool.get(m.key).view, qty: m.qty || '', qtyUnit: m.qtyUnit || '' }))
+              ? it.members.map((m) => ({ label: m.label, role: m.role || '', view: pool.get(m.key).view, qty: m.qty || '', qtyUnit: m.qtyUnit || '' }))
               : null,
           };
         }),
@@ -3858,9 +4246,9 @@
     if (t.dataset.act === 'usage') it.usage = t.value;
     else if (t.dataset.act === 'qty') it.qty = t.value;
     else if (t.dataset.act === 'qty-unit') it.qtyUnit = t.value;
-    else if (t.dataset.act === 'mqty' || t.dataset.act === 'mqty-unit') {
+    else if (t.dataset.act === 'mqty' || t.dataset.act === 'mqty-unit' || t.dataset.act === 'mrole') {
       const m = it.members[Number(t.closest('[data-mi]').dataset.mi)];
-      m[t.dataset.act === 'mqty' ? 'qty' : 'qtyUnit'] = t.value;
+      m[{ mqty: 'qty', 'mqty-unit': 'qtyUnit', mrole: 'role' }[t.dataset.act]] = t.value;
     }
   });
 
@@ -3919,7 +4307,8 @@
       return;
     }
     if (act === 'add-item') {
-      if (t.value) moveKey(t.value, page.id);
+      if (t.value.startsWith('dup:')) { duplicateItem(t.value.slice(4), page.id); renderPages(); }
+      else if (t.value) moveKey(t.value, page.id);
       return;
     }
     if (t.name && (t.name.startsWith('f_') || t.name === 'pointer' || t.name === 'pointerColor')) {
@@ -3970,8 +4359,18 @@
         selection = { pageId: null, keys: new Set() };
         break;
       case 'trim':
-        openTrimDialog(el.dataset.floor);
+        openTrim(key);
         return;
+      case 'add-trim-here':
+        openTrim('', page.id);
+        return;
+      case 'dup': {
+        const copy = duplicateItem(key);
+        renderPages();
+        const input = copy && pagesEl.querySelector(`.pi[data-key="${CSS.escape(copy)}"] .pi-usage`);
+        if (input) { input.focus(); input.scrollIntoView({ block: 'center', behavior: 'smooth' }); }
+        return;
+      }
       case 'ungroup':
         ungroup(key);
         break;
@@ -4096,6 +4495,20 @@
       const key = add.dataset.add;
       if (pool.has(key)) removeFromDeck(key);
       else addViews([viewsByKey.get(key)]);
+      return;
+    }
+    const dup = e.target.closest('[data-dup]');
+    if (dup) {
+      const source = pool.has(dup.dataset.dup) ? dup.dataset.dup : [...pool.keys()].find((k) => k.startsWith(dup.dataset.dup + '#'));
+      if (source) { duplicateItem(source); renderPages(); }
+      return;
+    }
+    const trimFor = e.target.closest('[data-trim-for]');
+    if (trimFor) {
+      const key = trimFor.dataset.trimFor;
+      if (!pool.has(key)) addViews([viewsByKey.get(key)]);
+      deckSection.hidden = false;
+      openTrim(pool.get(key).inSet || key);
       return;
     }
     const thumbBtn = e.target.closest('.thumb');
