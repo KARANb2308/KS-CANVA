@@ -441,6 +441,14 @@
   .proj-menu .danger { color: var(--bad); }
   .proj-status { margin: 8px 0 0; font-size: .8rem; color: var(--muted); }
   .proj-status[data-state="error"] { color: var(--bad); font-weight: 600; }
+  .store-alert {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px;
+    margin: 10px 0 0; padding: 10px 14px; border-radius: 10px; font-size: .875rem;
+  }
+  .store-alert p { margin: 0; flex: 1 1 320px; }
+  .store-alert[data-kind="bad"] { background: var(--bad-soft); color: var(--bad); }
+  .store-alert[data-kind="info"] { background: var(--info-soft); color: var(--info); }
+  .store-alert[data-kind="ok"] { background: var(--ok-soft); color: var(--ok); }
   .proj-dialog { width: min(560px, calc(100% - 24px)); }
   .deck-of { margin: 0 0 2px; font-size: .85rem; color: var(--muted); }
   .deck-of strong { color: var(--accent); }
@@ -643,7 +651,8 @@
             <div class="proj-menu">
               <button type="button" data-proj="duplicate">ทำสำเนาโปรเจกต์นี้</button>
               <button type="button" data-proj="export">ส่งออกไฟล์ (สำรอง / ส่งต่อ)</button>
-              <label>นำเข้าไฟล์โปรเจกต์…<input class="visually-hidden" type="file" accept=".json,application/json" id="proj-import"></label>
+              <button type="button" data-proj="backup">สำรองทุกโปรเจกต์ (ไฟล์เดียว)</button>
+              <label>นำเข้าไฟล์โปรเจกต์ / ไฟล์สำรอง…<input class="visually-hidden" type="file" accept=".json,application/json" id="proj-import"></label>
               <a href="/trash" target="_blank" rel="noopener" id="proj-trash" hidden>โปรเจกต์ที่ลบ (กู้คืน) ↗</a>
               <button type="button" data-proj="delete" class="danger">ลบโปรเจกต์นี้</button>
             </div>
@@ -651,6 +660,7 @@
         </div>
       </div>
       <p class="proj-status" id="proj-status" role="status" aria-live="polite"></p>
+      <div class="store-alert" id="store-alert" role="alert" hidden></div>
     </section>
 
     <dialog class="editor proj-dialog" id="proj-dialog" aria-labelledby="proj-dialog-title">
@@ -1004,6 +1014,7 @@
   const SAME_ORIGIN_PROXY = /^https?:$/.test(location.protocol) ? location.origin + '/proxy?url=' : '';
   let proxyBase = '';
   let proxyKind = 'none';
+  let onlineStore = ''; // the online system says whether its project storage is set up: 'kv' or 'none'
 
   async function initProxy() {
     let custom = '';
@@ -1017,6 +1028,7 @@
         if (res.ok && (await res.text()).trim() === 'ok') {
           proxyBase = SAME_ORIGIN_PROXY;
           proxyKind = res.headers.get('X-KS-Host') === 'cloud' ? 'cloud' : 'local';
+          onlineStore = res.headers.get('X-KS-Store') || '';
         }
       } catch (_) { /* plain static hosting: no helper */ }
     }
@@ -4138,22 +4150,133 @@
     await createProject(rec);
   }
 
-  async function exportProject() {
-    await flushSave();
-    const rec = snapshot();
-    const name = projectLabel(rec.meta).replace(/[\\/:*?"<>|\r\n]+/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 80);
+  function downloadJSON(name, value) {
     const a = document.createElement('a');
-    a.href = URL.createObjectURL(new Blob([JSON.stringify(rec)], { type: 'application/json' }));
-    a.download = `${name}.ksproject.json`;
+    a.href = URL.createObjectURL(new Blob([JSON.stringify(value)], { type: 'application/json' }));
+    a.download = name;
     document.body.appendChild(a);
     a.click();
     a.remove();
     setTimeout(() => URL.revokeObjectURL(a.href), 1000);
   }
 
+  async function exportProject() {
+    await flushSave();
+    const rec = snapshot();
+    const name = projectLabel(rec.meta).replace(/[\\/:*?"<>|\r\n]+/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 80);
+    downloadJSON(`${name}.ksproject.json`, rec);
+  }
+
+  // ---------- Keeping projects safe ----------
+  const storeAlert = $('#store-alert');
+  let strandedProjects = []; // projects found only in this browser, offered for moving up
+  function showStoreAlert(kind, html) {
+    storeAlert.dataset.kind = kind;
+    storeAlert.innerHTML = html;
+    storeAlert.hidden = !html;
+  }
+
+  // Every project in one file, to keep somewhere safe (e.g. before a big change).
+  async function backupAll() {
+    await flushSave();
+    showStoreAlert('info', `<p>กำลังรวม ${projectList.length} โปรเจกต์เป็นไฟล์สำรอง…</p>`);
+    const projects = [];
+    const missed = [];
+    for (const m of projectList) {
+      try {
+        const rec = await store.load(m.id);
+        if (rec && rec.meta) projects.push(rec); else missed.push(m);
+      } catch (_) { missed.push(m); }
+    }
+    const d = new Date();
+    downloadJSON(`KS HOME สำรองโปรเจกต์ ${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}.ksbackup.json`,
+      { app: APP_ID, kind: 'backup', version: 1, createdAt: d.toISOString(), projects });
+    showStoreAlert(missed.length ? 'bad' : 'ok', `<p>ดาวน์โหลดไฟล์สำรอง ${projects.length} โปรเจกต์แล้ว${missed.length ? ` · อ่านไม่ได้ ${missed.length} โปรเจกต์: ${missed.map((m) => esc(projectLabel(m))).join(', ')}` : ''}
+      · เก็บไฟล์ไว้ในเครื่องหรือไดรฟ์ของบริษัท (ห้ามอัปโหลดขึ้น GitHub) · กู้คืนได้ที่ “จัดการ → นำเข้าไฟล์โปรเจกต์ / ไฟล์สำรอง”</p>
+      <button class="btn-sm btn-sm--plain" type="button" data-store="dismiss">ปิด</button>`);
+  }
+
+  // Projects from a backup file come back under their own ids; ones already here are left alone.
+  async function restoreBackup(list) {
+    await flushSave();
+    const have = new Set(projectList.map((m) => m.id));
+    let restored = 0;
+    let skipped = 0;
+    for (const rec of list) {
+      if (!rec || rec.app !== APP_ID || !rec.meta || !rec.data || !/^[a-z0-9-]{3,64}$/.test(String(rec.meta.id))) continue;
+      if (have.has(rec.meta.id)) { skipped++; continue; }
+      await store.save(rec);
+      projectList.push(rec.meta);
+      have.add(rec.meta.id);
+      restored++;
+    }
+    renderProjectList();
+    showStoreAlert('ok', `<p>กู้คืนจากไฟล์สำรองแล้ว ${restored} โปรเจกต์${skipped ? ` (ข้าม ${skipped} โปรเจกต์ที่มีอยู่แล้ว)` : ''} · เลือกได้จากรายการ “โปรเจกต์ลูกค้า”</p>
+      <button class="btn-sm btn-sm--plain" type="button" data-store="dismiss">ปิด</button>`);
+  }
+
+  // Projects kept in this browser while the shared storage wasn't working (e.g. before the
+  // online system was connected to its storage) can be moved up, so nothing is left behind.
+  async function offerBrowserProjects() {
+    let local = [];
+    try { local = (await browserStore.list()) || []; } catch (_) { return; }
+    const here = new Set([...projectList.map((m) => m.id), ...movedIds()]);
+    // Untouched blank projects aren't worth moving.
+    strandedProjects = local.filter((m) => m && m.id && !here.has(m.id) && (m.owner || m.project || m.items));
+    if (!strandedProjects.length) return;
+    const where = proxyKind === 'cloud' ? 'ระบบออนไลน์' : 'โฟลเดอร์ projects';
+    const names = strandedProjects.slice(0, 3).map((m) => esc(projectLabel(m))).join(', ') + (strandedProjects.length > 3 ? ' …' : '');
+    showStoreAlert('info', `<p>พบโปรเจกต์ ${strandedProjects.length} รายการที่เก็บไว้ในเบราว์เซอร์นี้ แต่ยังไม่อยู่ใน${where}: ${names}</p>
+      <button class="btn-sm is-on" type="button" data-store="move">ย้ายขึ้น${where}</button>
+      <button class="btn-sm btn-sm--plain" type="button" data-store="dismiss">ไว้ทีหลัง</button>`);
+  }
+
+  // Ids already moved up, so a project deleted online later isn't offered again.
+  const MOVED_KEY = 'ks-moved-projects';
+  function movedIds() {
+    try { return JSON.parse(localStorage.getItem(MOVED_KEY) || '[]'); } catch (_) { return []; }
+  }
+  function rememberMoved(id) {
+    try { localStorage.setItem(MOVED_KEY, JSON.stringify([...new Set([...movedIds(), id])])); } catch (_) { /* storage unavailable */ }
+  }
+
+  async function moveBrowserProjects() {
+    const list = strandedProjects;
+    showStoreAlert('info', `<p>กำลังย้าย ${list.length} โปรเจกต์…</p>`);
+    let moved = 0;
+    const failed = [];
+    for (const m of list) {
+      try {
+        const rec = await browserStore.load(m.id);
+        if (!rec || !rec.meta) continue;
+        await folderStore.save(rec);
+        rememberMoved(rec.meta.id);
+        if (!projectList.some((x) => x.id === rec.meta.id)) projectList.push(rec.meta);
+        moved++;
+      } catch (err) {
+        failed.push(`${projectLabel(m)} (${err.message})`);
+      }
+    }
+    strandedProjects = [];
+    renderProjectList();
+    showStoreAlert(failed.length ? 'bad' : 'ok', `<p>ย้ายแล้ว ${moved} โปรเจกต์ (สำเนาในเบราว์เซอร์นี้ยังเก็บไว้)${failed.length ? ` · ย้ายไม่สำเร็จ: ${failed.map(esc).join(', ')}` : ''}</p>
+      <button class="btn-sm btn-sm--plain" type="button" data-store="dismiss">ปิด</button>`);
+  }
+
+  storeAlert.addEventListener('click', (e) => {
+    const b = e.target.closest('[data-store]');
+    if (!b) return;
+    if (b.dataset.store === 'move') moveBrowserProjects();
+    else showStoreAlert('', '');
+  });
+
   async function importProject(file) {
     try {
       const rec = JSON.parse(await file.text());
+      if (rec && rec.app === APP_ID && rec.kind === 'backup' && Array.isArray(rec.projects)) {
+        await restoreBackup(rec.projects);
+        return;
+      }
       if (!rec || rec.app !== APP_ID || !rec.data || !rec.meta) throw new Error('ไฟล์นี้ไม่ใช่ไฟล์โปรเจกต์ของเว็บนี้');
       const now = new Date().toISOString();
       // Always a new copy, so importing never overwrites a project already here.
@@ -4168,6 +4291,7 @@
     await proxyReady;
     store = proxyKind === 'local' || proxyKind === 'cloud' ? folderStore : browserStore;
     try {
+      if (proxyKind === 'cloud' && onlineStore === 'none') throw new Error('ยังไม่ได้เชื่อมที่เก็บโปรเจกต์ (KV namespace ชื่อ PROJECTS) ใน Cloudflare');
       projectList = (await store.list()) || [];
     } catch (err) {
       // Online, say so plainly: the team would otherwise think this browser's projects are shared.
@@ -4175,7 +4299,14 @@
         : proxyKind === 'cloud' ? { ...browserStore, where: `เบราว์เซอร์นี้เท่านั้น เพราะที่เก็บออนไลน์ใช้ไม่ได้ (${err.message})` }
         : browserStore;
       try { projectList = (await store.list()) || []; } catch (__) { store = memoryStore; projectList = []; }
+      if (proxyKind === 'cloud') {
+        showStoreAlert('bad', `<p><strong>โปรเจกต์ยังไม่ได้เก็บออนไลน์</strong> — ${esc(err.message)}<br>
+          ตอนนี้งานเก็บไว้ในเบราว์เซอร์นี้เท่านั้น ทีมจะไม่เห็น และเปิดจากเครื่องหรือลิงก์อื่นจะไม่เจอ
+          · ผู้ดูแล: ทำ “ขั้นที่ 3: เชื่อม Worker กับที่เก็บโปรเจกต์” ในคู่มือติดตั้ง แล้วรีเฟรชหน้านี้ ระบบจะช่วยย้ายงานขึ้นออนไลน์ให้</p>`);
+      }
     }
+    // Shared storage works: anything stranded in this browser can be moved up.
+    if (store === folderStore) offerBrowserProjects();
     // Reopen the project last opened in this browser, else the most recently edited one.
     let lastId = '';
     try { lastId = localStorage.getItem(LAST_KEY) || ''; } catch (_) { lastId = ''; }
@@ -4210,7 +4341,7 @@
     const b = e.target.closest('[data-proj]');
     if (!b) return;
     b.closest('details').open = false;
-    ({ duplicate: duplicateProject, export: exportProject, delete: deleteProject })[b.dataset.proj]();
+    ({ duplicate: duplicateProject, export: exportProject, backup: backupAll, delete: deleteProject })[b.dataset.proj]();
   });
   $('#proj-import').addEventListener('change', (e) => {
     const file = e.target.files && e.target.files[0];
