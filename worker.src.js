@@ -75,7 +75,8 @@ async function route(request, env) {
     return redirect('/login');
   }
 
-  if (path === '/proxy-status') return plain(200, 'ok', { 'X-KS-Host': 'cloud' });
+  // The page checks this first: it's the online system, and whether project storage is connected.
+  if (path === '/proxy-status') return plain(200, 'ok', { 'X-KS-Host': 'cloud', 'X-KS-Store': env.PROJECTS ? 'kv' : 'none' });
   if (path === '/proxy') return request.method === 'GET' || request.method === 'HEAD' ? proxy(url) : plain(405, 'Method not allowed');
   if (path === '/api/projects' || path.startsWith('/api/projects/')) return projects(request, env, path);
   if (path === '/trash') return request.method === 'POST' ? restoreFromTrash(request, env, url) : trashPage(env, url);
