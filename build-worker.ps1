@@ -27,7 +27,7 @@ function ConvertTo-JsArray([string]$text) {
     $i = $i + $n
     $chunk = $chunk.Replace('\', '\\').Replace('"', '\"')
     $chunk = $chunk.Replace("`r", '\r').Replace("`n", '\n')
-    $chunk = $chunk.Replace([string][char]0x2028, '\u2028').Replace([string][char]0x2029, '\u2029')
+    $chunk = $chunk.Replace([string][char]0x2028, ' ').Replace([string][char]0x2029, ' ')
     $null = $sb.Append('  "')
     $null = $sb.Append($chunk)
     $null = $sb.AppendLine('",')
