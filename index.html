@@ -870,6 +870,8 @@
             <label class="field"><span>จุดใช้งาน</span><input name="ed_usage" placeholder="เช่น ห้องนอน 1, 2"></label>
             <label class="field ed-product-only"><span>จำนวน (หน่วยตาม “หน่วยนับ”)</span><input name="ed_qty" inputmode="decimal" placeholder="เช่น 25"></label>
             <label class="field field--wide ed-product-only"><span>ข้อมูลเพิ่มเติม (บรรทัดละ 1 ข้อ เช่น “รับประกัน: 2 ปี”)</span><textarea name="ed_extra" rows="3"></textarea></label>
+            <label class="field field--wide ed-product-only"><span>แหล่งที่มา / ร้านค้า (ไม่บังคับ)</span><input name="ed_source" list="source-list" placeholder="เช่น ไทวัสดุ, Global House, ร้านในพื้นที่"></label>
+            <datalist id="source-list"></datalist>
             <label class="field field--wide ed-product-only"><span>ลิงก์สินค้า (ไม่บังคับ)</span><input name="ed_url" type="url" placeholder="https://"></label>
             <label class="field field--wide ed-product-only" id="ed-page-field"><span>ใส่ในหน้า</span><select name="ed_page"></select></label>
           </div>
@@ -1923,6 +1925,11 @@
   const newPage = (title, withImage = true, continueNo = false) =>
     ({ id: nextPageId++, title, note: '', withImage, continueNo, image: null, keys: [], marks: {} });
 
+  // Where a product comes from: what the user typed (e.g. a shop for a product added by hand),
+  // else the website it was found on. '' for a hand-added product with nothing typed.
+  const siteLabel = (v) => (v.source !== 'custom' && SOURCES[v.source] ? SOURCES[v.source].label : '');
+  const sourceLabel = (v) => v.sourceLabel || siteLabel(v);
+
   function attrOf(v, code) {
     const a = v.specs.find((s) => s.code === code);
     return a ? plainText(a.value) : '';
@@ -2168,9 +2175,11 @@
     const units = [...new Set(views.map((v) => v.unit).filter(Boolean))];
     const prices = views.map((v) => v.final).filter((x) => x != null);
     const min = prices.length ? Math.min(...prices) : null;
+    const labels = [...new Set(views.map(sourceLabel).filter(Boolean))];
     set.view = {
       key: setKey,
       source: sources.length === 1 ? sources[0] : 'mixed',
+      sourceLabel: labels.join(', '), // e.g. "บุญถาวร, ไทวัสดุ"
       sku: '',
       name: set.name,
       brand: brands.length === 1 ? brands[0] : '',
@@ -2595,7 +2604,7 @@
   function itemMeta(it) {
     const v = it.view;
     if (isSet(it)) return esc(`ชุด ${it.members.length} รายการ: ${it.members.map((m) => m.label).join(', ')}`);
-    return [SOURCES[v.source].label, v.sku ? 'รหัส ' + v.sku : '', v.brand, v.final != null ? (v.priceFrom ? 'เริ่มต้น ' : '') + money(v.final) + ' บาท' : '']
+    return [sourceLabel(v) || SOURCES.custom.label, v.sku ? 'รหัส ' + v.sku : '', v.brand, v.final != null ? (v.priceFrom ? 'เริ่มต้น ' : '') + money(v.final) + ' บาท' : '']
       .filter(Boolean).map(esc).join(' · ');
   }
 
@@ -2776,7 +2785,9 @@
     edForm.dataset.mode = 'product';
     $('#editor-title').textContent = key ? 'แก้ไขสินค้า / เลือกรูป' : 'เพิ่มสินค้าเอง';
     $('#ed-name-label').textContent = 'ชื่อสินค้า *';
-    $('#editor-source').textContent = v ? `ข้อมูลจาก ${SOURCES[v.source].label}${v.source !== 'custom' ? ' · แก้ไขแล้วจะไม่ถูกเขียนทับเมื่อค้นหาซ้ำ' : ''}` : 'สำหรับสินค้าที่ไม่มีในเว็บไซต์ ใส่ข้อมูลและรูปเองได้ทั้งหมด';
+    $('#editor-source').textContent = !v ? 'สำหรับสินค้าที่ไม่มีในเว็บไซต์ ใส่ข้อมูล รูป และแหล่งที่มาเองได้ทั้งหมด'
+      : v.source === 'custom' ? 'สินค้าที่เพิ่มเอง'
+      : `ข้อมูลจาก ${SOURCES[v.source].label} · แก้ไขแล้วจะไม่ถูกเขียนทับเมื่อค้นหาซ้ำ`;
     f.ed_name.value = v ? v.name : '';
     f.ed_sku.value = v ? v.sku : '';
     f.ed_brand.value = v ? v.brand : '';
@@ -2788,6 +2799,11 @@
     f.ed_qty.value = it ? it.qty || '' : '';
     f.ed_extra.value = v ? v.specs.filter((s) => s.code.startsWith('custom_')).map((s) => `${s.label}: ${plainText(s.value)}`).join('\n') : '';
     f.ed_url.value = v ? v.url : '';
+    f.ed_source.value = v ? sourceLabel(v) : '';
+    // Suggestions: the websites, and every source already typed in this project.
+    const known = new Set([...Object.values(SOURCES).map((s) => s.label).filter((l) => !['ใส่เอง', 'หลายแหล่ง'].includes(l)),
+      ...[...pool.values()].map((x) => x.view && x.view.sourceLabel).filter(Boolean)]);
+    $('#source-list').innerHTML = [...known].map((l) => `<option value="${esc(l)}"></option>`).join('');
     $('#ed-page-field').hidden = !!key;
     if (!key) {
       const open = pages.filter((p) => p.keys.length < maxFor(p));
@@ -2916,6 +2932,10 @@
       specs: [...edited, ...rest, ...extra],
       url: f.ed_url.value.trim(),
     };
+    // Only kept when it says something other than the website the product came from.
+    const typedSource = f.ed_source.value.trim();
+    if (typedSource && typedSource !== siteLabel(view)) view.sourceLabel = typedSource;
+    else delete view.sourceLabel;
     const image = imageFromChoice(view.images[0]);
     const extras = { usage: f.ed_usage.value.trim(), qty: f.ed_qty.value.trim(), image, edited: true };
     if (old) {
@@ -3135,7 +3155,6 @@
     'รายการวัสดุในเอกสารฉบับนี้จัดทำขึ้นเพื่อสรุปและยืนยันรายการวัสดุเบื้องต้นตามที่ได้เลือกไว้เท่านั้น ยังไม่ถือเป็นการสั่งซื้อหรือการจองสินค้า',
     'การสั่งซื้อจะดำเนินการตามขั้นตอนของบริษัทเมื่อถึงกำหนดสั่งซื้อจริง ทั้งนี้ รุ่น สี ขนาด ราคา และความพร้อมของสินค้าอาจมีการเปลี่ยนแปลง ณ วันที่สั่งซื้อจริง',
   ];
-  const sourceLabel = (v) => (SOURCES[v.source] ? SOURCES[v.source].label : '');
 
   function fitBox(img, x, y, w, h, align = 'center') {
     const r = Math.min(w / img.w, h / img.h);
@@ -3404,7 +3423,7 @@
       }
     }
     if (usageRow && f.usage && it.usage) add('จุดใช้งาน', it.usage);
-    if (f.source && v.source !== 'custom' && sourceLabel(v)) add('แหล่งที่มา', sourceLabel(v));
+    if (f.source && sourceLabel(v)) add('แหล่งที่มา', sourceLabel(v));
     return rows;
   }
 
@@ -3500,7 +3519,7 @@
       text: [
         f.sku && mv.sku ? 'รหัสสินค้า ' + mv.sku : '',
         f.brand && mv.brand ? mv.brand : '',
-        f.source && v.source !== 'custom' && sourceLabel(v) ? 'จาก ' + sourceLabel(v) : '',
+        f.source && sourceLabel(v) ? 'จาก ' + sourceLabel(v) : '',
       ].filter(Boolean).join(' · '),
       kind: 'meta',
     });
