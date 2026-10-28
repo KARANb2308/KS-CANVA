@@ -441,6 +441,20 @@
   .proj-menu .danger { color: var(--bad); }
   .proj-status { margin: 8px 0 0; font-size: .8rem; color: var(--muted); }
   .proj-status[data-state="error"] { color: var(--bad); font-weight: 600; }
+  .btn-del { color: var(--bad); }
+  .btn-del:hover { border-color: var(--bad); }
+  .toast {
+    position: fixed; left: 50%; bottom: 20px; z-index: 50; transform: translateX(-50%);
+    display: flex; align-items: center; gap: 14px; width: max-content; max-width: calc(100% - 32px);
+    padding: 10px 12px 10px 16px; border-radius: 12px; font-size: .9rem;
+    color: var(--bg); background: var(--text); box-shadow: 0 10px 30px rgba(0, 0, 0, .25);
+  }
+  .toast span { overflow-wrap: anywhere; }
+  .toast button {
+    flex: none; padding: 6px 12px; font: inherit; font-weight: 700; color: inherit;
+    background: transparent; border: 1.5px solid currentColor; border-radius: 8px; cursor: pointer;
+  }
+  .toast button:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
   .store-alert {
     display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px;
     margin: 10px 0 0; padding: 10px 14px; border-radius: 10px; font-size: .875rem;
@@ -895,6 +909,8 @@
       </form>
     </dialog>
   </main>
+
+  <div class="toast" id="undo-toast" role="status" aria-live="polite" hidden><span></span><button type="button">เลิกทำ</button></div>
 
   <footer class="site">
     ข้อมูลดึงสดจาก boonthavorn.com ทุกครั้งที่ค้นหา ราคาและจำนวนสินค้าอาจเปลี่ยนแปลงได้ โปรดตรวจสอบกับหน้าเว็บไซต์ก่อนสั่งซื้อ
@@ -2108,6 +2124,39 @@
     renderPages();
   }
 
+  // Deleting from the deck happens at once, with a few seconds to take it back.
+  const undoToast = $('#undo-toast');
+  let undoState = null;
+  let undoTimer = null;
+  function deleteItems(keys) {
+    keys = keys.filter((k) => pool.has(k));
+    if (!keys.length) return;
+    const names = keys.map((k) => pool.get(k).view.name);
+    undoState = JSON.stringify({ pool: [...pool.entries()], pages, nextPageId });
+    for (const k of keys) removeFromDeck(k);
+    selection = { pageId: null, keys: new Set() };
+    renderPages();
+    undoToast.querySelector('span').textContent = keys.length === 1 ? `ลบ “${clip(names[0], 50)}” แล้ว` : `ลบ ${keys.length} รายการแล้ว`;
+    undoToast.hidden = false;
+    clearTimeout(undoTimer);
+    undoTimer = setTimeout(() => { undoToast.hidden = true; undoState = null; }, 10000);
+  }
+  function undoDelete() {
+    if (!undoState) return;
+    const s = JSON.parse(undoState);
+    pool.clear();
+    for (const [k, it] of s.pool) pool.set(k, it);
+    pages = s.pages;
+    nextPageId = s.nextPageId;
+    placing = null;
+    selection = { pageId: null, keys: new Set() };
+    undoState = null;
+    clearTimeout(undoTimer);
+    undoToast.hidden = true;
+    renderPages();
+  }
+  undoToast.querySelector('button').addEventListener('click', undoDelete);
+
   // Merge pages that share a heading, then split again at N items per page.
   function autoLayout() {
     const per = autoPer();
@@ -2670,6 +2719,7 @@
               <option value="tray">นำออกจากหน้านี้</option>
               ${setOptions(key)}
             </select>
+            <button class="btn-sm btn-sm--plain btn-del" type="button" data-act="delete-item" aria-label="ลบ ${esc(v.name)}">ลบ</button>
           </div>
         </div>
       </div>`;
@@ -2679,6 +2729,7 @@
       ? `<div class="merge-bar">
           <span>เลือก ${selected.size} รายการ</span>
           <button class="btn-sm is-on" type="button" data-act="merge"${selected.size < 2 ? ' disabled' : ''}>รวมเป็นชุดเดียว</button>
+          <button class="btn-sm btn-sm--plain btn-del" type="button" data-act="delete-selected">ลบที่เลือก</button>
           <button class="btn-sm btn-sm--plain" type="button" data-act="clear-select">ยกเลิก</button>
         </div>`
       : p.keys.length >= 2 ? '<p class="merge-hint">ติ๊กเลือกตั้งแต่ 2 รายการ แล้วกด “รวมเป็นชุดเดียว” เช่น ประตู + มือจับ, กระเบื้อง + ยาแนว (รวมรูปให้) หรือกระเบื้องรุ่นเดียวหลายขนาด · รายการแรกที่ติ๊กเป็นสินค้าหลัก</p>' : '';
@@ -2841,6 +2892,7 @@
       // `img` is each product's own picture choice, used in the combined picture.
       members: set.members.map((m) => ({ ...m, img: initialChoice(pool.get(m.key)) })),
       removed: [],
+      deleted: [],
     };
     edForm.dataset.mode = 'set';
     $('#editor-title').textContent = 'แก้ไขชุดสินค้า / เลือกรูป';
@@ -2898,7 +2950,8 @@
         </div>
         <span class="ed-mtools">
           ${i > 0 ? `<button class="btn-sm" type="button" data-member-up="${i}" title="เลื่อนขึ้น${combo && i === 1 ? ' (เป็นสินค้าหลัก)' : ''}">↑ เลื่อนขึ้น</button>` : ''}
-          <button class="btn-sm btn-sm--plain" type="button" data-member-out="${i}">แยกออก</button>
+          <button class="btn-sm btn-sm--plain" type="button" data-member-out="${i}" title="ออกจากชุด กลับเป็นรายการเดี่ยว">แยกออก</button>
+          <button class="btn-sm btn-sm--plain btn-del" type="button" data-member-del="${i}" title="ลบสินค้านี้ออกจากโปรเจกต์">ลบ</button>
         </span>
       </div>`;
     }).join('') + (editing.members.length < 2
@@ -2984,7 +3037,11 @@
     }
     const clean = ({ img, ...m }) => ({ ...m, label: String(m.label || '').trim() || pool.get(m.key).view.name, qty: String(m.qty || '').trim(), role: String(m.role || '').trim() });
     set.members = editing.members.map(clean).concat(editing.removed.map(clean));
+    // Products deleted here leave the project; a set left with one product becomes that product again.
+    for (const m of editing.deleted) pool.delete(m.key);
     if (editing.removed.length) ungroup(editing.key, editing.removed.map((m) => m.key));
+    else if (set.members.length < 2) ungroup(editing.key);
+    if (!pool.has(editing.key)) { editor.close(); renderPages(); return; }
     refreshSet(editing.key);
     editor.close();
     renderPages();
@@ -3016,6 +3073,13 @@
     const out = e.target.closest('[data-member-out]');
     if (out) {
       editing.removed.push(...editing.members.splice(Number(out.dataset.memberOut), 1));
+      renderEditorMembers();
+      renderEditorImages();
+      return;
+    }
+    const del = e.target.closest('[data-member-del]');
+    if (del) {
+      editing.deleted.push(...editing.members.splice(Number(del.dataset.memberDel), 1));
       renderEditorMembers();
       renderEditorImages();
       return;
@@ -4006,6 +4070,8 @@
       nextPageId = d.nextPageId || pages.reduce((m, p) => Math.max(m, p.id), 0) + 1;
       placing = null;
       selection = { pageId: null, keys: new Set() };
+      undoState = null; // an undo belongs to the project it was made in
+      undoToast.hidden = true;
       deckStatus.innerHTML = '';
       renderCover();
       renderPages();
@@ -4571,7 +4637,11 @@
         deckStatus.innerHTML = '';
         break;
       case 'tray-remove':
-        removeFromDeck(key);
+      case 'delete-item':
+        deleteItems([key]);
+        return;
+      case 'delete-selected':
+        deleteItems(page.keys.filter((k) => selection.keys.has(k)));
         return;
       case 'logo-default':
       case 'logo-none':
