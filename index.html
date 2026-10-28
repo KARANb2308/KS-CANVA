@@ -409,7 +409,7 @@
   .source-note { margin: 10px 0 0; padding: 10px 14px; border-radius: 10px; font-size: .875rem; background: var(--bad-soft); color: var(--bad); }
   .conn { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; margin-top: 14px; font-size: .8rem; color: var(--muted); }
   .conn-dot { width: 8px; height: 8px; border-radius: 50%; background: #c9a227; flex: none; }
-  .conn[data-kind="local"] .conn-dot, .conn[data-kind="custom"] .conn-dot { background: var(--ok); }
+  .conn[data-kind="local"] .conn-dot, .conn[data-kind="cloud"] .conn-dot, .conn[data-kind="custom"] .conn-dot { background: var(--ok); }
   /* Customer projects */
   .projects {
     margin: 20px 0 4px; padding: 14px 16px;
@@ -433,11 +433,11 @@
     display: flex; flex-direction: column; padding: 6px;
     background: var(--surface); border: 1px solid var(--border); border-radius: 12px; box-shadow: 0 10px 30px rgba(0, 0, 0, .15);
   }
-  .proj-menu button, .proj-menu label {
+  .proj-menu button, .proj-menu label, .proj-menu a {
     padding: 9px 12px; font: inherit; font-size: .9rem; text-align: left; color: var(--text);
-    background: none; border: 0; border-radius: 8px; cursor: pointer;
+    background: none; border: 0; border-radius: 8px; cursor: pointer; text-decoration: none;
   }
-  .proj-menu button:hover, .proj-menu label:hover, .proj-menu label:focus-within { background: var(--surface-2); }
+  .proj-menu button:hover, .proj-menu label:hover, .proj-menu label:focus-within, .proj-menu a:hover { background: var(--surface-2); }
   .proj-menu .danger { color: var(--bad); }
   .proj-status { margin: 8px 0 0; font-size: .8rem; color: var(--muted); }
   .proj-status[data-state="error"] { color: var(--bad); font-weight: 600; }
@@ -531,6 +531,30 @@
   .sm-name { display: block; font-weight: 500; overflow-wrap: anywhere; }
   .set-members .pi-meta { display: block; margin: 1px 0 4px; }
   .ed-member .qty-row { margin-top: 6px; }
+  /* Skirting (บัว) picker */
+  .trim-card { margin-top: 18px; }
+  .trim-card h3 { margin: 0 0 8px; font-size: .95rem; }
+  .trim-card h3 span { font-weight: 400; font-size: .8rem; color: var(--muted); }
+  .trim-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .trim-chip { display: inline-flex; align-items: center; gap: 8px; padding: 4px 10px 4px 4px; border: 1px solid var(--border); border-radius: 10px; font-size: .8rem; background: var(--surface); }
+  .trim-chip img { width: 34px; height: 26px; object-fit: cover; border-radius: 6px; background: #fff; }
+  .trim-chip.is-match { border-color: var(--ok); background: var(--ok-soft); }
+  .trim-dialog { width: min(820px, calc(100% - 24px)); }
+  .field-note { font-weight: 400; font-size: .8rem; color: var(--muted); }
+  .trim-colors { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; margin-bottom: 18px; }
+  .trim-color {
+    display: flex; flex-direction: column; gap: 4px; padding: 8px; text-align: left; cursor: pointer;
+    font: inherit; font-size: .8rem; color: var(--muted);
+    background: var(--surface); border: 2px solid var(--border); border-radius: 12px;
+  }
+  .trim-color img, .trim-noimg { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; border-radius: 8px; background: #fff; }
+  .trim-color strong { font-size: .9rem; color: var(--text); }
+  .trim-color.is-on { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+  .trim-color em { align-self: flex-start; padding: 1px 8px; border-radius: 999px; font-style: normal; font-size: .72rem; font-weight: 600; }
+  .badge-ok { color: var(--ok); background: var(--ok-soft); }
+  .badge-info { color: var(--info); background: var(--info-soft); }
+  .trim-fields { margin: 16px 0 12px; max-width: 260px; }
+
   .page-opts { display: flex; flex-wrap: wrap; gap: 4px 24px; }
   .page-opts .check--sm { margin-top: 12px; }
   .check input:disabled + span { opacity: .5; }
@@ -586,6 +610,7 @@
               <button type="button" data-proj="duplicate">ทำสำเนาโปรเจกต์นี้</button>
               <button type="button" data-proj="export">ส่งออกไฟล์ (สำรอง / ส่งต่อ)</button>
               <label>นำเข้าไฟล์โปรเจกต์…<input class="visually-hidden" type="file" accept=".json,application/json" id="proj-import"></label>
+              <a href="/trash" target="_blank" rel="noopener" id="proj-trash" hidden>โปรเจกต์ที่ลบ (กู้คืน) ↗</a>
               <button type="button" data-proj="delete" class="danger">ลบโปรเจกต์นี้</button>
             </div>
           </details>
@@ -618,6 +643,7 @@
         <label class="toggle"><input type="radio" name="source" value="homepro"><span>HomePro</span></label>
         <label class="toggle"><input type="radio" name="source" value="traphet"><span>ตราเพชร</span></label>
         <label class="toggle"><input type="radio" name="source" value="ecodoor"><span>Eco door</span></label>
+        <label class="toggle"><input type="radio" name="source" value="dbp"><span>ตราเพชร SPC (dbp.co.th)</span></label>
       </div>
       <label for="codes" id="codes-label">รหัสสินค้า</label>
       <div class="search-row">
@@ -744,6 +770,33 @@
       </form>
     </section>
 
+    <dialog class="editor trim-dialog" id="trim-dialog" aria-labelledby="trim-title">
+      <form id="trim-form" autocomplete="off" novalidate>
+        <header class="editor-head">
+          <div>
+            <h3 id="trim-title">เลือกบัว</h3>
+            <p class="sub" id="trim-for"></p>
+          </div>
+          <button class="icon-btn" type="button" data-tr="close" aria-label="ปิด">✕</button>
+        </header>
+        <div class="editor-body">
+          <p class="field-label">สีบัว PVC <span class="field-note">ตามคำแนะนำของ dbp.co.th</span></p>
+          <div class="trim-colors" id="trim-colors"></div>
+          <p class="field-label trim-size-label">ขนาดบัว (ก × ย × น ซม.)</p>
+          <div class="toggles" id="trim-sizes"></div>
+          <div class="fields trim-fields">
+            <label class="field"><span>จำนวน (เส้น)</span><input name="tr_qty" inputmode="decimal" placeholder="เช่น 20"></label>
+          </div>
+          <label class="check" id="trim-merge-row"><input type="checkbox" name="tr_merge" checked><span>รวมเป็นชุดเดียวกับพื้น (ใช้เลขรายการเดียวกัน)<small>ไม่เลือก = เพิ่มเป็นอีกรายการต่อจากพื้น</small></span></label>
+          <p class="ed-error" id="trim-error" role="alert"></p>
+        </div>
+        <footer class="editor-foot">
+          <button class="btn-ghost" type="button" data-tr="close">ยกเลิก</button>
+          <button class="btn" type="submit">เพิ่มบัว</button>
+        </footer>
+      </form>
+    </dialog>
+
     <dialog class="editor" id="item-editor" aria-labelledby="editor-title">
       <form id="item-form" autocomplete="off" novalidate>
         <header class="editor-head">
@@ -809,6 +862,7 @@
     homepro: { label: 'HomePro', by: 'code' },
     traphet: { label: 'ตราเพชร', by: 'name' },
     ecodoor: { label: 'Eco door', by: 'name' },
+    dbp: { label: 'ตราเพชร SPC (dbp.co.th)', by: 'link' },
     custom: { label: 'ใส่เอง', by: 'none' },
     mixed: { label: 'หลายแหล่ง', by: 'none' },
   };
@@ -832,6 +886,14 @@
       label: 'ชื่อสินค้า Eco door', placeholder: 'เช่น ประตูไฟเบอร์กลาส',
       hint: 'เว็บนี้ไม่มีรหัสสินค้า ค้นหาด้วยชื่อแทน · ค้นหาหลายชื่อได้โดยขึ้นบรรทัดใหม่ (Shift+Enter) แล้วกด “เพิ่มลงงานนำเสนอ” ที่สินค้าที่ต้องการ',
       examples: [['ประตูห้องน้ำ', 'ประตูห้องน้ำ'], ['วงกบ', 'วงกบ']],
+    },
+    dbp: {
+      label: 'ลิงก์หน้าสินค้า dbp.co.th', placeholder: 'วางลิงก์ เช่น https://www.dbp.co.th/th/product/spc-spc-flooring-plus-caramel',
+      hint: 'เปิดหน้าสินค้าบน dbp.co.th แล้วคัดลอกลิงก์มาวาง ใส่หลายลิงก์ได้โดยเว้นวรรคหรือขึ้นบรรทัดใหม่ · พื้น SPC มีปุ่ม “เลือกบัว” ในส่วนงานนำเสนอ',
+      examples: [
+        ['พื้น SPC คาราเมล', 'https://www.dbp.co.th/th/product/spc-spc-flooring-plus-caramel'],
+        ['พื้น SPC ซันไลท์เมเปิล', 'https://www.dbp.co.th/th/product/spc-spc-flooring-plus-sunlight-maple'],
+      ],
     },
   };
   const BTV_CHUNK = 20;
@@ -934,6 +996,7 @@
     connEl.querySelector('.conn-help').hidden = proxyKind !== 'none';
     connEl.querySelector('.conn-logout').hidden = proxyKind !== 'cloud';
     connEl.querySelector('.conn-more').hidden = proxyKind === 'cloud' || proxyKind === 'local';
+    $('#proj-trash').hidden = proxyKind !== 'cloud';
   }
 
   function renderSourceNote() {
@@ -942,6 +1005,7 @@
       if (currentSource === 'homepro') note = 'HomePro ไม่อนุญาตให้เว็บอื่นดึงข้อมูลโดยตรง ต้องเปิดหน้านี้ผ่านไฟล์ start.bat (ดับเบิลคลิก) ก่อนจึงจะค้นหาได้';
       if (currentSource === 'traphet') note = 'ยังไม่ได้เปิดผ่าน start.bat: จะได้ชื่อ รูป และรายละเอียด แต่ไม่มีราคา และรูปจะใส่ในไฟล์ .pptx ไม่ได้ (อัปโหลดรูปเองได้)';
       if (currentSource === 'ecodoor') note = 'ยังไม่ได้เปิดผ่าน start.bat: รูปสินค้าจะใส่ในไฟล์ .pptx ไม่ได้ (อัปโหลดรูปเองได้)';
+      if (currentSource === 'dbp') note = 'dbp.co.th ไม่อนุญาตให้เว็บอื่นดึงข้อมูลโดยตรง ต้องเปิดหน้านี้ผ่านไฟล์ start.bat (ดับเบิลคลิก) ก่อนจึงจะค้นหาได้';
     }
     sourceNoteEl.innerHTML = note
       ? `${esc(note)} · <a href="คู่มือการใช้งาน.html#open" target="_blank" rel="noopener">ดูวิธีเปิดทีละขั้นตอน ↗</a>`
@@ -949,8 +1013,10 @@
     sourceNoteEl.hidden = !note;
   }
 
+  // Online, after the 14-day sign-in runs out. Signing in again in another tab keeps this tab's unsaved work.
+  const SIGNED_OUT = 'หมดเวลาเข้าสู่ระบบ: เปิดเว็บนี้ในแท็บใหม่แล้วใส่รหัสผ่าน จากนั้นกลับมาที่แท็บนี้ งานจะบันทึกต่อให้เอง';
   function httpError(status) {
-    const err = new Error(`เซิร์ฟเวอร์ตอบกลับ HTTP ${status}`);
+    const err = new Error(status === 401 && proxyKind === 'cloud' ? SIGNED_OUT : `เซิร์ฟเวอร์ตอบกลับ HTTP ${status}`);
     err.status = status;
     return err;
   }
@@ -965,7 +1031,7 @@
     return res.text();
   }
   // Sites known to refuse cross-site reads: go straight through the helper when there is one.
-  const BLOCKED_HOSTS = new Set(['www.homepro.co.th', 'traphet.com', 'www.traphet.com', 'www.eco-door.net', 'eco-door.net']);
+  const BLOCKED_HOSTS = new Set(['www.homepro.co.th', 'traphet.com', 'www.traphet.com', 'www.eco-door.net', 'eco-door.net', 'www.dbp.co.th', 'cdn.dbp.co.th']);
   const isBlocked = (url) => { try { return BLOCKED_HOSTS.has(new URL(url).hostname); } catch (_) { return false; } };
 
   // Direct first; through the helper when the site blocks cross-site reads.
@@ -993,6 +1059,9 @@
           if (source === 'homepro') {
             const m = /\/p\/(\d+)/.exec(u.pathname);
             if (m) entry = { input: t, kind: 'sku', value: m[1] };
+          } else if (source === 'dbp') {
+            const m = /\/product\/([a-z0-9-]+)/i.exec(u.pathname);
+            if (m) entry = { input: t, kind: 'key', value: m[1].toLowerCase() };
           } else {
             const seg = u.pathname.split('/').filter(Boolean).pop() || '';
             const key = decodeURIComponent(seg).replace(/\.html?$/i, '');
@@ -1223,6 +1292,139 @@
     };
   }
 
+  // ---------- ตราเพชร SPC (dbp.co.th product pages, read through the helper) ----------
+  const DBP_SITE = 'https://www.dbp.co.th/th/product/';
+  const textOf = (el) => (el && el.textContent ? el.textContent : '').replace(/\s+/g, ' ').trim();
+
+  async function lookupDbp(entries) {
+    if (!proxyBase) throw needHelper(SOURCES.dbp.label);
+    return Promise.all(entries.map(async (e) => {
+      const slug = String(e.value).toLowerCase();
+      if (!/^[a-z0-9-]{3,}$/.test(slug)) return { query: e.input, views: [] };
+      try {
+        const html = await getText(viaProxy(DBP_SITE + slug));
+        const view = fromDbp(html, slug);
+        return { query: e.input, views: view ? [view] : [] };
+      } catch (err) {
+        if (err.status === 404) return { query: e.input, views: [] };
+        throw err;
+      }
+    }));
+  }
+
+  // Image links may come wrapped by the site's image optimizer (/_next/image?url=...).
+  function dbpImageUrl(src) {
+    if (!src) return '';
+    const m = /[?&]url=([^&]+)/.exec(src);
+    const url = m ? decodeURIComponent(m[1]) : src;
+    return /^https:\/\/cdn\.dbp\.co\.th\//.test(url) ? url : '';
+  }
+
+  function fromDbp(html, slug) {
+    const doc = new DOMParser().parseFromString(html, 'text/html');
+    const model = textOf(doc.querySelector('h1'));
+    if (!model) return null; // unknown links still return a page, just without a product title
+    const colorHeading = textOf(doc.querySelector('h2'));
+    const color = colorHeading && !/เลือก|ข้อมูล|ผลิตภัณฑ์|เอกสาร/.test(colorHeading) ? colorHeading : '';
+    const name = color ? `${model} ${color}` : model;
+
+    const tables = [...doc.querySelectorAll('table')];
+    const rowsOf = (t) => [...t.rows].map((r) => [...r.cells]);
+    const trimTable = tables.find((t) => /สีบัว/.test(textOf(t.rows[0])));
+    const accTable = tables.find((t) => t !== trimTable && /บัว/.test(textOf(t)) && /ขนาด/.test(textOf(t.rows[0])));
+    const specTable = tables.find((t) => t !== trimTable && t !== accTable);
+
+    // Spec table: when it has a column per model (SPC Flooring / SPC Flooring Plus), use this model's column.
+    const specs = [];
+    if (specTable) {
+      const rows = rowsOf(specTable);
+      const norm = (s) => s.toUpperCase().replace(/[^A-Z0-9ก-๙]/g, '');
+      const modelKey = norm(model);
+      let col = 1;
+      let best = 0;
+      rows[0].map(textOf).forEach((h, i) => {
+        const k = norm(h);
+        if (i && k && modelKey.includes(k) && k.length > best) { col = i; best = k.length; }
+      });
+      rows.slice(1).forEach((cells, i) => {
+        const label = textOf(cells[0]);
+        if (!label || cells.length < 2) return;
+        const value = textOf(cells.length > col ? cells[col] : cells[cells.length - 1]);
+        if (value && value !== '-') specs.push({ label, value, code: specCode(label, 'dbp_' + i) });
+      });
+    }
+
+    // Skirting colours and which floor colours each one suits.
+    const colors = trimTable ? rowsOf(trimTable).slice(1).filter((cells) => cells.length >= 2).map((cells) => {
+      const raw = textOf(cells[0]);
+      const suits = textOf(cells[1]);
+      const img = cells[0].querySelector('img');
+      return {
+        label: raw.replace(/มีเฉพาะบัว/, '').trim(),
+        note: /มีเฉพาะบัว/.test(raw) ? 'มีเฉพาะบัว' : '',
+        image: img ? dbpImageUrl(img.getAttribute('src')) : '',
+        suits,
+        forAll: /ทุกสี/.test(suits),
+        match: !!color && suits.replace(/\s/g, '').includes(color.replace(/\s/g, '')),
+      };
+    }) : [];
+
+    // Skirting sizes: the "บัว PVC" rows of the accessories table (the name cell spans several rows).
+    const sizes = [];
+    if (accTable) {
+      let current = '';
+      rowsOf(accTable).slice(1).forEach((cells) => {
+        let size = '';
+        let weight = '';
+        if (cells.length >= 3) { current = textOf(cells[0]); size = textOf(cells[1]); weight = textOf(cells[2]); }
+        else if (cells.length === 2) { size = textOf(cells[0]); weight = textOf(cells[1]); }
+        if (/^บัว/.test(current) && size) sizes.push({ size, weight, kind: current });
+      });
+    }
+
+    // Product pictures: images whose file name carries this product's colour (from the link).
+    const trimImages = new Set(colors.map((c) => c.image));
+    const candidates = [...new Set(html.match(/https:\/\/cdn\.dbp\.co\.th\/[A-Za-z0-9_%.-]+\.(?:png|jpe?g|webp)/gi) || [])]
+      .filter((u) => !trimImages.has(u) && !/logo|icon|banner|accessor|download|facebook|line_|_og_/i.test(u));
+    const file = (u) => u.split('/').pop().toLowerCase();
+    const parts = slug.split('-');
+    let images = [];
+    let token = '';
+    for (let n = 1; n <= Math.min(3, parts.length) && !images.length; n++) {
+      token = parts.slice(-n).join('_');
+      images = candidates.filter((u) => file(u).startsWith(token + '_') || file(u).includes('_' + token + '_'));
+    }
+    const base = parts.slice(0, -1).join('_');
+    const score = (u) => (file(u).startsWith(token + '_') ? 2 : 0) + (base && file(u).includes(base) ? 1 : 0);
+    images.sort((a, b) => score(b) - score(a));
+
+    const desc = [...doc.querySelectorAll('p, div, span')]
+      .find((el) => !el.children.length && textOf(el).startsWith(model) && textOf(el).length > model.length + 30);
+    const group = model.split(' รุ่น ')[0] || 'รายการวัสดุ';
+    return {
+      key: 'dbp:' + slug,
+      source: 'dbp',
+      sku: '',
+      name,
+      brand: 'ตราเพชร',
+      url: DBP_SITE + slug,
+      final: null,
+      regular: null,
+      pct: 0,
+      priceFrom: false,
+      unit: specs.some((s) => /กล่อง/.test(s.label)) ? 'กล่อง' : '',
+      inStock: null,
+      qty: null,
+      readyToShip: false,
+      images,
+      crumbs: [group],
+      specs,
+      description: desc ? esc(textOf(desc)) : '',
+      defaultGroup: group,
+      trims: colors.length ? { colors, sizes, floorColor: color } : null,
+    };
+  }
+
   // ---------- ตราเพชร / Eco door (WooCommerce, searched by name) ----------
   async function lookupWoo(source, entries) {
     const base = WOO_BASE[source];
@@ -1432,8 +1634,21 @@
           <section><h3>ข้อมูลจำเพาะ</h3>${specs}</section>
           <section><h3>รายละเอียดสินค้า</h3>${desc ? `<div class="desc">${desc}</div>` : '<p class="empty-note">ไม่มีรายละเอียด</p>'}</section>
         </div>
+        ${v.trims ? trimsCard(v.trims) : ''}
       </details>
     </article>`;
+  }
+
+  // The site's skirting-colour recommendations, shown on the search result.
+  function trimsCard(t) {
+    return `<section class="trim-card">
+      <h3>บัว PVC ที่ใช้คู่กัน <span>เลือกได้ด้วยปุ่ม “เลือกบัว” ในส่วนงานนำเสนอ</span></h3>
+      <div class="trim-chips">${t.colors.map((c) => `<span class="trim-chip${c.match ? ' is-match' : ''}">
+        ${c.image ? `<img src="${esc(c.image)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : ''}
+        <span><strong>${esc(c.label)}</strong>${c.match ? ' · แนะนำสำหรับสีนี้' : c.forAll ? ' · เข้ากับพื้นทุกสี' : ''}</span>
+      </span>`).join('')}</div>
+      ${t.sizes.length ? `<p class="sub">ขนาดบัว (ก × ย × น ซม.): ${t.sizes.map((s) => esc(s.size)).join(' · ')}</p>` : ''}
+    </section>`;
   }
 
   function renderResults(groups, byName) {
@@ -1507,8 +1722,8 @@
       showError(`ค้นหาได้ครั้งละไม่เกิน ${max} ${byName ? 'ชื่อ' : 'รหัส'} (ใส่มา ${entries.length})`);
       return;
     }
-    if (src === 'homepro' && !proxyBase) {
-      showError(needHelper('HomePro').message);
+    if ((src === 'homepro' || src === 'dbp') && !proxyBase) {
+      showError(needHelper(SOURCES[src].label).message);
       return;
     }
 
@@ -1522,6 +1737,7 @@
     try {
       const groups = src === 'btv' ? await lookupBtv(entries)
         : src === 'homepro' ? await lookupHomepro(entries)
+        : src === 'dbp' ? await lookupDbp(entries)
         : await lookupWoo(src, entries);
       if (id !== requestId) return;
       lastGroups = groups;
@@ -2011,6 +2227,131 @@
     if (placing && placing.key === setKey) placing = null;
   }
 
+  // ---------- Skirting (บัว) for floors from dbp.co.th ----------
+  const trimDialog = $('#trim-dialog');
+  const trimForm = $('#trim-form');
+  let trimState = null; // { floorKey, color, size } while the picker is open
+
+  // The floor a row's "เลือกบัว" button belongs to: the product itself, or a floor inside a set.
+  function trimFloorOf(it, key) {
+    if (!isSet(it)) return it.view.trims ? key : '';
+    const m = it.members.find((x) => pool.get(x.key).view.trims);
+    return m ? m.key : '';
+  }
+
+  function openTrimDialog(floorKey) {
+    const floor = pool.get(floorKey);
+    if (!floor || !floor.view.trims) return;
+    const t = floor.view.trims;
+    // Start on the colour the site recommends for this floor, else the one that suits every floor.
+    let color = t.colors.findIndex((c) => c.match);
+    if (color < 0) color = t.colors.findIndex((c) => c.forAll);
+    trimState = { floorKey, color: Math.max(0, color), size: 0 };
+    $('#trim-for').textContent = 'สำหรับ ' + floor.view.name;
+    trimForm.elements.tr_qty.value = '';
+    $('#trim-merge-row').hidden = !!floor.inSet; // already in a set: the skirting joins that set
+    $('#trim-error').textContent = '';
+    renderTrimDialog();
+    trimDialog.showModal();
+  }
+
+  function renderTrimDialog() {
+    const t = pool.get(trimState.floorKey).view.trims;
+    $('#trim-colors').innerHTML = t.colors.map((c, i) => `<button type="button" class="trim-color${i === trimState.color ? ' is-on' : ''}" data-color="${i}" aria-pressed="${i === trimState.color}">
+        ${c.image ? `<img src="${esc(c.image)}" alt="" referrerpolicy="no-referrer">` : '<span class="trim-noimg"></span>'}
+        <strong>${esc(c.label)}</strong>
+        <span>${esc(c.suits)}</span>
+        ${c.match ? '<em class="badge-ok">แนะนำสำหรับสีนี้</em>' : c.forAll ? '<em class="badge-info">เข้ากับพื้นทุกสี</em>' : ''}
+        ${c.note ? `<small>${esc(c.note)}</small>` : ''}
+      </button>`).join('');
+    $('#trim-sizes').innerHTML = t.sizes.map((s, i) => `<label class="toggle"><input type="radio" name="tr_size" value="${i}"${i === trimState.size ? ' checked' : ''}>
+      <span>${esc(s.size)}${s.weight ? ` · ${esc(s.weight)} กก./เส้น` : ''}</span></label>`).join('');
+    $('.trim-size-label').hidden = !t.sizes.length;
+  }
+
+  function addTrim() {
+    const floor = pool.get(trimState.floorKey);
+    const fv = floor.view;
+    const c = fv.trims.colors[trimState.color];
+    const sz = fv.trims.sizes[trimState.size] || null;
+    const qty = trimForm.elements.tr_qty.value.trim();
+    const key = 'dbptrim:' + fv.key.replace(/^dbp:/, '') + ':' + (c.label + '-' + (sz ? sz.size : '')).toLowerCase().replace(/[^a-z0-9]+/g, '-');
+    if (pool.has(key)) {
+      // Same colour and size again: just update the quantity.
+      const existing = pool.get(key);
+      const inSet = existing.inSet && pool.get(existing.inSet);
+      const member = inSet ? inSet.members.find((m) => m.key === key) : null;
+      if (qty) { if (member) member.qty = qty; else existing.qty = qty; }
+      trimDialog.close();
+      renderPages();
+      return;
+    }
+    const view = {
+      key,
+      source: 'dbp',
+      sku: '',
+      name: `บัว PVC สี ${c.label}${sz ? ' ขนาด ' + sz.size + ' ซม.' : ''}`,
+      brand: fv.brand,
+      url: fv.url,
+      final: null,
+      regular: null,
+      pct: 0,
+      priceFrom: false,
+      unit: 'เส้น',
+      inStock: null,
+      qty: null,
+      readyToShip: false,
+      images: c.image ? [c.image] : [],
+      crumbs: fv.crumbs,
+      specs: [
+        { code: 'color', label: 'สี', value: c.label },
+        ...(sz ? [
+          { code: 'dimension_unit', label: 'ขนาด (ก × ย × น)', value: sz.size + ' ซม.' },
+          ...(sz.weight ? [{ code: 'weight_unit', label: 'น้ำหนัก', value: sz.weight + ' กก./เส้น' }] : []),
+        ] : []),
+        { code: 'custom_pair', label: 'ใช้คู่กับ', value: fv.name },
+      ],
+      description: '',
+      defaultGroup: fv.defaultGroup,
+    };
+    pool.set(key, { kind: 'product', view, usage: floor.usage || '', image: null, edited: true, qty });
+    if (floor.inSet) {
+      addToSet(floor.inSet, key);
+      const m = pool.get(floor.inSet).members.find((x) => x.key === key);
+      if (m) m.qty = qty;
+    } else {
+      const page = pageOf(trimState.floorKey);
+      if (page) {
+        page.keys.splice(page.keys.indexOf(trimState.floorKey) + 1, 0, key);
+        if (trimForm.elements.tr_merge.checked) {
+          selection = { pageId: page.id, keys: new Set([trimState.floorKey, key]) };
+          mergeSelected(page);
+        }
+      } else {
+        placeKey(key, null);
+      }
+    }
+    trimDialog.close();
+    renderPages();
+  }
+
+  $('#trim-colors').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-color]');
+    if (!b) return;
+    trimState.color = Number(b.dataset.color);
+    renderTrimDialog();
+  });
+  trimForm.addEventListener('change', (e) => {
+    if (e.target.name === 'tr_size') trimState.size = Number(e.target.value);
+  });
+  trimForm.addEventListener('click', (e) => {
+    if (e.target.closest('[data-tr="close"]')) trimDialog.close();
+  });
+  trimForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    addTrim();
+  });
+
   // ---------- Pages UI ----------
   function thumb(it) {
     const src = chosenImage(it);
@@ -2092,6 +2433,7 @@
           <div class="pi-tools">
             <button class="btn-sm" type="button" data-act="edit">${set ? 'แก้ไขชุด / เลือกรูป' : 'แก้ไข / เลือกรูป'}</button>
             ${set ? '<button class="btn-sm btn-sm--plain" type="button" data-act="ungroup">แยกชุด</button>' : ''}
+            ${trimFloorOf(it, key) ? `<button class="btn-sm" type="button" data-act="trim" data-floor="${esc(trimFloorOf(it, key))}">เลือกบัว</button>` : ''}
             ${pointTools}
             <span class="updown">
               <button class="icon-btn" type="button" data-act="item-up" aria-label="เลื่อนขึ้น"${n === 0 ? ' disabled' : ''}>↑</button>
@@ -3092,13 +3434,20 @@
   let loadingProject = false;  // true while a project is being put on screen (no saving then)
   let saveTimer = null;
   let dirty = false;
+  let savedSig = '';           // the open project as last sent to the store, to skip saves that change nothing
+  let lastSavedAt = '';
   let saveChain = Promise.resolve();
   let projectsReady = Promise.resolve();
 
   async function apiFetch(path, opts = {}) {
     const res = await fetch(path, { ...opts, cache: 'no-store', headers: { ...API_HEADERS, ...(opts.headers || {}) } });
-    if (res.status === 401) throw new Error('หมดเวลาเข้าสู่ระบบ กรุณารีเฟรชหน้าแล้วใส่รหัสผ่านใหม่');
-    if (!res.ok) throw httpError(res.status);
+    if (res.status === 401) throw new Error(SIGNED_OUT);
+    if (!res.ok) {
+      const err = httpError(res.status);
+      // The online system explains some failures in words (e.g. the daily save quota).
+      if (res.headers.get('X-KS-Message')) err.message = (await res.text()).trim() || err.message;
+      throw err;
+    }
     return res;
   }
 
@@ -3201,6 +3550,7 @@
       data: { info, settings: readSettings(), cover: coverImage, pool: [...pool.entries()], pages, nextPageId },
     };
   }
+  const recordSig = (rec) => JSON.stringify([rec.meta.project, rec.meta.owner, rec.data]);
 
   function blankRecord(info = {}) {
     const now = new Date().toISOString();
@@ -3245,6 +3595,8 @@
       loadingProject = false;
     }
     dirty = false;
+    savedSig = recordSig(snapshot());
+    lastSavedAt = '';
   }
 
   function renderProjectList() {
@@ -3281,7 +3633,8 @@
     dirty = true;
     setSaveStatus('pending');
     clearTimeout(saveTimer);
-    saveTimer = setTimeout(flushSave, 2000); // a short pause, so rapid edits become one save
+    // A short pause, so rapid edits become one save (longer online, where saves count against a daily quota).
+    saveTimer = setTimeout(flushSave, proxyKind === 'cloud' ? 5000 : 2000);
   }
 
   // Save now if anything changed; saves run one after another.
@@ -3290,17 +3643,30 @@
     if (!dirty || !current || !store) return saveChain;
     dirty = false;
     const rec = snapshot();
+    const sig = recordSig(rec);
+    if (sig === savedSig) {
+      // e.g. a tick box ticked and unticked: nothing to send.
+      setSaveStatus(lastSavedAt ? 'saved' : 'opened', lastSavedAt);
+      return saveChain;
+    }
+    savedSig = sig;
     saveChain = saveChain
       .then(() => store.save(rec))
       .then(() => {
         const i = projectList.findIndex((m) => m.id === rec.meta.id);
         if (i >= 0) projectList[i] = rec.meta;
         else projectList.push(rec.meta);
-        if (current && current.id === rec.meta.id) renderProjectList();
-        setSaveStatus('saved', rec.meta.updatedAt);
+        if (current && current.id === rec.meta.id) {
+          lastSavedAt = rec.meta.updatedAt;
+          renderProjectList();
+          setSaveStatus('saved', rec.meta.updatedAt);
+        }
       })
       .catch((err) => {
-        dirty = true;
+        if (current && current.id === rec.meta.id) {
+          dirty = true;
+          savedSig = '';
+        }
         setSaveStatus('error', err);
       });
     return saveChain;
@@ -3330,12 +3696,16 @@
     projectList.push(rec.meta);
     renderProjectList();
     dirty = true;
+    savedSig = ''; // not in the store yet
     await flushSave();
   }
 
   async function deleteProject() {
     const m = projectList.find((x) => x.id === current.id) || projectInfo();
-    if (!window.confirm(`ลบโปรเจกต์ “${projectLabel(m)}” ?${store === folderStore ? '\n\n(ไฟล์จะถูกย้ายไปโฟลเดอร์ projects\\deleted กู้คืนได้ภายหลัง)' : '\n\nลบแล้วกู้คืนไม่ได้ ถ้ายังต้องการ กด “ส่งออกไฟล์” ก่อน'}`)) return;
+    const after = store !== folderStore ? 'ลบแล้วกู้คืนไม่ได้ ถ้ายังต้องการ กด “ส่งออกไฟล์” ก่อน'
+      : proxyKind === 'cloud' ? 'ทุกคนในทีมจะไม่เห็นโปรเจกต์นี้อีก (กู้คืนได้ภายใน 30 วัน ที่เมนู “จัดการ” → “โปรเจกต์ที่ลบ”)'
+      : '(ไฟล์จะถูกย้ายไปโฟลเดอร์ projects\\deleted กู้คืนได้ภายหลัง)';
+    if (!window.confirm(`ลบโปรเจกต์ “${projectLabel(m)}” ?\n\n${after}`)) return;
     clearTimeout(saveTimer);
     dirty = false;
     await saveChain;
@@ -3392,8 +3762,11 @@
     store = proxyKind === 'local' || proxyKind === 'cloud' ? folderStore : browserStore;
     try {
       projectList = (await store.list()) || [];
-    } catch (_) {
-      store = store === folderStore ? browserStore : memoryStore;
+    } catch (err) {
+      // Online, say so plainly: the team would otherwise think this browser's projects are shared.
+      store = store !== folderStore ? memoryStore
+        : proxyKind === 'cloud' ? { ...browserStore, where: `เบราว์เซอร์นี้เท่านั้น เพราะที่เก็บออนไลน์ใช้ไม่ได้ (${err.message})` }
+        : browserStore;
       try { projectList = (await store.list()) || []; } catch (__) { store = memoryStore; projectList = []; }
     }
     // Reopen the project last opened in this browser, else the most recently edited one.
@@ -3438,8 +3811,12 @@
     e.target.closest('details').open = false;
     if (file) importProject(file);
   });
-  // Don't lose the last second of typing.
-  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') flushSave(); });
+  // Don't lose the last second of typing; and coming back to the tab (e.g. after signing in
+  // again in another tab) retries a save that failed.
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') flushSave();
+    else if (dirty && projStatus.dataset.state === 'error') flushSave();
+  });
   window.addEventListener('beforeunload', (e) => {
     if (!dirty) return;
     flushSave();
@@ -3592,6 +3969,9 @@
       case 'clear-select':
         selection = { pageId: null, keys: new Set() };
         break;
+      case 'trim':
+        openTrimDialog(el.dataset.floor);
+        return;
       case 'ungroup':
         ungroup(key);
         break;
@@ -3732,7 +4112,7 @@
     let raw = '';
     try { raw = decodeURIComponent(location.hash.slice(1)); } catch (_) { raw = location.hash.slice(1); }
     if (!raw) return false;
-    const m = /^(homepro|traphet|ecodoor):([\s\S]*)$/.exec(raw);
+    const m = /^(homepro|traphet|ecodoor|dbp):([\s\S]*)$/.exec(raw);
     setSource(m ? m[1] : 'btv');
     const text = m ? m[2] : raw;
     // A link's codes are used once: clear them so a reload can't add them to another customer's project.
