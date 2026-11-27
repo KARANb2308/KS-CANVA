@@ -61,3 +61,22 @@ Claude เขียนบันทึกนี้หลังจบทุกง�
   - Cowork ไม่มี hook → ใน Cowork ใช้กฎใน CLAUDE.md อย่างเดียว
 - ตรวจด้วย: pipe-test ของ hook ทั้ง 3 กรณี (ก่อนบันทึก → block, stop_hook_active → ผ่าน, หลังบันทึกและ commit → ผ่าน) และ `jq -e` ตรวจ settings.json
 - commit: (ดู git log — commit เดียวกับไฟล์นี้)
+
+## 2026-11-27 — ปลั๊กอิน MAX v8.2 ที่มีระบบความจำงาน
+- คำขอ: "ทำ zip ใหม่ที่มีระบบจำด้วย"
+- สถานะ: เสร็จ (รอผู้ใช้อัปโหลด zip เอง)
+- ทำอะไร: `max-v8.2.zip` คือ MAX ที่อ่านและเขียน `docs/worklog.md` + `docs/playbook.md` ในทุกโปรเจกต์ สร้างไฟล์ให้เองตอนงานแรก และมี Stop hook ติดมากับปลั๊กอิน
+- ไฟล์:
+  - ปลั๊กอิน: `skills/max/SKILL.md` (หัวข้อ Project memory แทนบรรทัด LESSONS), `references/ml.md` (§5 close), `agents/max-advisor.md` (อ่าน playbook),
+    `references/worklog.template.md`, `references/playbook.template.md`, `hooks/hooks.json`, `hooks/require-worklog.mjs`, `README.md`, version 8.2.0
+  - repo: `.claude/hooks/require-worklog.mjs` (เพิ่ม opt-in + หลีกให้สำเนาของโปรเจกต์), `.claude/skills/max-deep/SKILL.md` (D9 สร้างไฟล์จาก template) — ทั้ง 2 ไฟล์เหมือนในปลั๊กอินทุกตัวอักษร
+- ขั้นตอนที่ได้ผล:
+  1. hook ตัวเดียวใช้ได้ทั้งในโปรเจกต์และในปลั๊กอิน: ไม่ทำงานถ้าโปรเจกต์ไม่มี `docs/worklog.md` (opt-in) และตัวในปลั๊กอินหลีกทางเมื่อโปรเจกต์มี `.claude/hooks/require-worklog.mjs` ของตัวเอง (เทียบ realpath) → ไม่บล็อกซ้ำ 2 ครั้ง
+  2. แก้ไฟล์ปลั๊กอินด้วย python ที่ `assert` ว่าข้อความเดิมเจอครั้งเดียว แก้เสร็จแล้ว `claude plugin validate <โฟลเดอร์>` → Validation passed
+  3. ทดสอบ hook 5 กรณี: repo สะอาด / แก้แต่ไม่บันทึก → บล็อก / ปลั๊กอินในโปรเจกต์ที่มีสำเนาเอง → หลีก / โปรเจกต์ไม่มี worklog → ผ่าน / มี worklog แต่ไม่บันทึก → บล็อก
+- ที่ไม่ได้ผล / ต้องระวัง:
+  - คำสั่ง `cp` ที่อยู่บรรทัดถัดจากสคริปต์ที่ล้มเหลวยังทำงานต่อ และคัดลอกไฟล์เก่าทับไฟล์ใหม่ใน repo → กู้คืนด้วย `git checkout --` แล้ว ต่อไปให้ต่อคำสั่งด้วย `&&` หรือ `set -e` และคัดลอกจาก repo ไปปลั๊กอินเท่านั้น
+  - `agents/max-advisor.md` ในปลั๊กอินเดิมอ้าง path แบบ Windows (`C:\Users\Acer\.claude\skills\max\references\ml.md`) ซึ่งบนเครื่อง cloud ไม่มี → ยังไม่ได้แก้ (เป็นของเดิม)
+  - `claude plugin validate` เตือนว่าไม่มี LICENSE/icon → เรื่องนี้มีผลเฉพาะตอนส่งเข้า directory สาธารณะ ปลั๊กอินส่วนตัวไม่ต้องมี
+- ตรวจด้วย: `claude plugin validate` → Validation passed; `cmp` ไฟล์ hook และ max-deep ระหว่าง repo กับปลั๊กอิน → เหมือนกัน; `node --check` hook ผ่าน
+- commit: (ดู git log — commit เดียวกับบันทึกนี้)

@@ -3,7 +3,13 @@
 // (commit message carries "Claude-Session") since docs/worklog.md was last committed.
 // The user's own commits (e.g. edits on github.com) never trigger it.
 // Never blocks twice in a row (stop_hook_active), and never blocks on its own errors.
+// Opt-in: does nothing in a project without docs/worklog.md (MAX creates it on the first job).
+// The same file ships in the MAX plugin and in a project's .claude/hooks/: when the project has
+// its own copy, the plugin's copy steps aside so the check runs once.
 import { execFileSync } from 'node:child_process';
+import { existsSync, realpathSync } from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const LOG = 'docs/worklog.md';
 const IGNORE = [/^docs\//, /^\.max\//];
@@ -28,6 +34,11 @@ try {
   const cwd = process.env.CLAUDE_PROJECT_DIR || input.cwd || process.cwd();
   git(['rev-parse', '--is-inside-work-tree'], cwd);
 
+  const projectCopy = path.join(cwd, '.claude', 'hooks', 'require-worklog.mjs');
+  const self = realpathSync(fileURLToPath(import.meta.url));
+  if (existsSync(projectCopy) && realpathSync(projectCopy) !== self) process.exit(0);
+  if (!existsSync(path.join(cwd, LOG))) process.exit(0);
+
   const changed = new Set();
   // not committed yet (staged, unstaged, new files)
   for (const f of lines(git(['diff', '--name-only', 'HEAD'], cwd))) changed.add(f);
@@ -50,7 +61,7 @@ try {
     decision: 'block',
     reason:
       `ยังไม่ได้บันทึกงานนี้ใน ${LOG} (ไฟล์ที่เปลี่ยน: ${list}). ` +
-      'ตามกฎ "ความจำงาน" ใน CLAUDE.md: เพิ่มบันทึกงานต่อท้าย docs/worklog.md ' +
+      'ตามระบบความจำงาน (CLAUDE.md / skill max): เพิ่มบันทึกงานต่อท้าย docs/worklog.md ' +
       '(คำขอ · ทำอะไร · ไฟล์ · ขั้นตอนที่ได้ผล · ที่ไม่ได้ผล/ระวัง · ตรวจด้วย · ค้าง) ' +
       'และอัปเดต docs/playbook.md ถ้าได้วิธีใหม่ที่ใช้ซ้ำได้ แล้ว commit ไปพร้อมงาน ' +
       'ถ้างานยังไม่เสร็จหรือผู้ใช้ยังไม่อนุมัติ ให้บันทึกสถานะเป็น "ค้าง" ได้',

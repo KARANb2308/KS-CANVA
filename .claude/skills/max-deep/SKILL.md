@@ -99,4 +99,5 @@ Run the `max` skill for the job, with these overrides:
 - `max_lite.py close <job>`; the MAX report adds one line:
   `เทียบกับแผน: ทำครบ C1–Cn | เปลี่ยนจากแผน: <what + why>`.
 - Project memory: append the job to `docs/worklog.md` (its template) and update `docs/playbook.md` with what worked
-  and the traps met — include the preflight's findings that proved true or false. No such files → one line in `LESSONS.md`.
+  and the traps met — include the preflight's findings that proved true or false. No such files → create them from
+  the `max` skill's `references/worklog.template.md` and `references/playbook.template.md`.
