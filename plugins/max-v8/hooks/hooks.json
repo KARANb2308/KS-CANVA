@@ -1,0 +1,16 @@
+{
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/require-worklog.mjs\"",
+            "timeout": 20,
+            "statusMessage": "MAX: ตรวจว่าบันทึกงานแล้ว"
+          }
+        ]
+      }
+    ]
+  }
+}
