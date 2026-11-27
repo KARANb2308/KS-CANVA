@@ -50,6 +50,8 @@
    → `claude plugin validate .` → ลองงานจริง: git repo ทิ้งได้ + `claude -p "MAX ขนาด M: …" --plugin-dir plugins/max-v8 --allowedTools Read Write Edit Glob Grep Agent Skill "Bash(python3:*)" "Bash(git:*)" --output-format json`
    (ห้าม bypassPermissions — ถูกปฏิเสธ) → reviewer เทียบกฎเดิม↔ใหม่ → `/code-review high` (เจอบั๊กที่ reviewer พลาด คุ้ม) · ไฟล์ agent มีท้ายบรรทัด LF/CRLF ผสม ห้ามแปลงทั้งไฟล์
    · แถว proof ต้องเป็น `C<n> ผ่าน — <หลักฐาน ≥ 8 ตัว>` · ชื่อไฟล์ไทยกับ git ต้อง `-c core.quotePath=false`
+7. MAX v8.4 (ได้ผล 2026-11-27): เริ่มงาน `max_lite.py status` → "ทำต่อ" = `resume <job>` · ตรวจงานเก่า = `recheck <job>` → verifier เขียน `recheck-<วันที่>.md` → `recheck <job> --sum`
+   · ทุก turn ที่จบขณะงานเปิด commit `docs/max-jobs docs/roadmap.md .gitattributes` · ติดตั้งบน Windows ใช้ zip marketplace (ดู worklog 2026-11-27 v8.4)
 6b. agent/skill ห้ามเขียน path เต็มของเครื่องใดเครื่องหนึ่ง (เช่น `C:\Users\...`) → ให้ main ส่ง path ใน brief + ทางสำรองเป็น Glob ตรวจทั้งปลั๊กอินด้วย grep ก่อน zip (เจอ 2026-11-27)
 7. สคริปต์หลายขั้นต้องหยุดทันทีเมื่อขั้นใดล้มเหลว (`set -e` หรือต่อด้วย `&&`) ไม่อย่างนั้นขั้นถัดไปอาจเขียนทับไฟล์ผิด (เจอ 2026-11-27)
 

@@ -131,10 +131,21 @@ Claude เขียนบันทึกนี้หลังจบทุกง�
 
 ## 2026-11-27 — MAX v8.4: แผนที่งาน + แฟ้มงานถาวร + ทำต่อ + ตรวจซ้ำ + สถิติ (MAX สุด)
 - คำขอ: "ผมต้องการให้ Max ผมเก่งที่สุดในโลก รอบคอบ เก่ง วางแผนชัดเจน ผมสามารถกลับมาตรวจซ้ำ ละเอียดมากขึ้น มีแผนที่นำทางไว้สำหรับทำงานต่อได้ไวง่าย"
-- สถานะ: ค้าง — รอบแก้จาก `/code-review high` (9 ข้อ) กำลังทำ แล้วปิดงาน
+- สถานะ: เสร็จ (รอผู้ใช้: merge PR #1 · ติดตั้ง v8.4 บนคอม + Cowork)
 - ทำอะไร: `docs/roadmap.md` (กำลังทำ/ถัดไป/รอผู้ใช้/เสร็จล่าสุด) · แฟ้มงาน `docs/max-jobs/<id>/` commit ได้ (ตัดความลับ) · `status`/`resume` ทำต่อข้าม session · `recheck` ตรวจซ้ำงานเก่า (+ละเอียด) · `stats` · แผนภาษาคน (M ทำต่อ, L/XL รอ "ลุย")
 - ไฟล์: `plugins/max-v8/skills/max/` (scripts/max_lite.py + test 127 ตัว, SKILL.md, references/ml.md, roadmap.md, recheck.md), `docs/roadmap.md`, `docs/max-jobs/`, `.gitattributes`, `CLAUDE.md` (2 บรรทัด, ผู้ใช้อนุมัติ)
-- ขั้นตอนที่ได้ผล: (เติมตอนปิดงาน)
-- ที่ไม่ได้ผล / ต้องระวัง: (เติมตอนปิดงาน)
-- ตรวจด้วย: (เติมตอนปิดงาน)
+- ขั้นตอนที่ได้ผล:
+  1. MAX สุด (XL): advisor บน Fable เขียน SPEC 27 C-id + แผนภาษาคน → ผู้ใช้อนุมัติ → coder กลุ่ม A (สคริปต์ 4 ชุด) ขนานกับกลุ่ม B (เอกสาร)
+  2. advisor รีวิว Core ทุกชุดทันที: เจอจริง FIX 6 → 2 → 3 (ความลับหลุดลงแฟ้มที่ commit, UTF-16 บน Windows, path traversal จาก id, BASE injection, symlink ฝั่งกู้คืน, id ชน)
+  3. ตรวจสุดท้าย 3 ตัวพร้อมกัน (reviewer · verifier ลองจริง · advisor ทั้งงาน) แล้ว `/code-review high` อีกชั้น — เจอ 9 ข้อที่ทุกชั้นก่อนพลาด (เขียนผ่าน symlink ฝั่งเขียน, recheck ตาม symlink, งานผี)
+  4. ลองจริง 5 รอบด้วย `claude -p --plugin-dir` + allowedTools แคบ: ทำงาน M → `rm -rf .max` → ตรวจซ้ำ/ทำต่อจากไฟล์ที่ commit เท่านั้น → แกล้งพัง → ตรวจซ้ำชี้ commit ที่พังได้
+  5. ติดตั้งบนคอม Windows: zip ของ marketplace (`git archive <sha> .claude-plugin plugins/max-v8`) → แตก → `claude plugin marketplace add <โฟลเดอร์>` (ไม่ต้องใช้ GitHub login)
+- ที่ไม่ได้ผล / ต้องระวัง:
+  - `claude plugin marketplace add owner/repo#<sha>` ใช้ไม่ได้บน Claude Code ของผู้ใช้ (ต้องเป็น branch/tag) · repo private + git บนคอมไม่ได้ login → ใช้ zip แทน
+  - Windows Extract All สร้างโฟลเดอร์ซ้อน 1 ชั้น → path ที่ใช้ต้องเป็นโฟลเดอร์ที่มี `.claude-plugin` อยู่ข้างใน
+  - คำสั่ง `/plugin ...` พิมพ์ใน Claude Code เท่านั้น ใน PowerShell ต้องใช้ `claude plugin ...`
+  - ทุกอย่างที่ "ทำต่อ" อ่านกลับจากไฟล์ที่ commit ต้องถือเป็นข้อมูลไม่น่าเชื่อ (BASE, record id, symlink ทั้งฝั่งอ่านและเขียน)
+  - advisor (agent v8.2 ที่โหลดใน session) ไม่มี Bash → รีวิวจากการอ่านเท่านั้น ให้ verifier รันเคสแทน
+  - เพดานขนาด SKILL.md+ml.md ตึงมาก (23,718/23,736) — รุ่นหน้าต้องย้ายข้อความไป references ก่อนเพิ่มกฎ
+- ตรวจด้วย: test_max_lite.py 136/136 · `claude plugin validate .` ผ่าน · verifier PASS C1–C27 (ยังไม่ได้ตรวจ 0) · ลองจริง 5 รอบ $0.75–1.71/รอบ · security 5 เคสปลอดภัย · advisor 5 รอบ (FIX 6/2/3/4 แก้ครบ) · reviewer PASS · `/code-review high` 9 ข้อแก้ครบ
 - commit: ดู git log (commit เดียวกับบันทึกนี้)

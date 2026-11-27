@@ -11,3 +11,8 @@ G3 เสร็จ FIX2 + T4 เทส 94/94 review: ./.max/max-roadmap/review.d
 G4 เสร็จ FIX3 + T5 T6 เทส 121/121 review: ./.max/max-roadmap/review.diff
 ตัดสิน: ทำเอง — T9 (4 คำสั่ง + แก้ข้อความ ≤ 10 บรรทัด: recheck.md ข้อจำกัด, playbook §0, CLAUDE.md 2 บรรทัดตามที่ผู้ใช้อนุมัติ)
 ด่าน: รีวิว+ตรวจ — 2026-11-27 06:32
+ตัดสิน: ยอมรับ T9 secret grep = 3 — ทั้ง 3 อยู่ในแฟ้มของงานนี้เอง และเป็นข้อความทดสอบใน SPEC (ค่าปลอม hunter2secret, ตัวคำสั่ง grep, APP_PASSWORD= [ตัดออก] ไม่ใช่ความลับ · แฟ้ม max-upgrade (backfill) = 0
+ตรวจแล้ว: C16 C18 C19 C20 C21 C22 C23 C24 C25 C26 C27 | ไม่ผ่าน: -
+F1 เสร็จ T1-5 เทส 127/127 review: .max/max-roadmap/review.diff
+F2 เสร็จ 8 ข้อ เทส 136/136 review: .max/max-roadmap/review.diff
+ด่าน: รอปิด — 2026-11-27 07:11
