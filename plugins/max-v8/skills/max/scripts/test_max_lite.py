@@ -12,6 +12,8 @@ ENV = dict({k: v for k, v in os.environ.items() if k not in ("GIT_DIR", "GIT_WOR
            PYTHONIOENCODING="utf-8", GIT_AUTHOR_NAME="t", GIT_AUTHOR_EMAIL="t@t",
            GIT_COMMITTER_NAME="t", GIT_COMMITTER_EMAIL="t@t")
 
+HZ = "/" + "home" + "/zed"
+
 
 def rd(p):
     with open(p, encoding="utf-8") as f:
@@ -639,9 +641,9 @@ class TestRecord(Repo):
 
     def test_clean_home_unit(self):
         old = {k: os.environ.get(k) for k in ("HOME", "USERPROFILE")}
-        os.environ["HOME"] = os.environ["USERPROFILE"] = "/home/zed"
+        os.environ["HOME"] = os.environ["USERPROFILE"] = HZ
         try:
-            got = max_lite.clean("see /home/zed/x and /home/zed.", "/srv/proj")[0]
+            got = max_lite.clean("see " + HZ + "/x and " + HZ + ".", "/srv/proj")[0]
         finally:
             for k, v in old.items():
                 os.environ.pop(k, None) if v is None else os.environ.__setitem__(k, v)
@@ -694,10 +696,10 @@ class TestRecord(Repo):
 
     def test_clean_lookbehind_and_authorization(self):
         old = {k: os.environ.get(k) for k in ("HOME", "USERPROFILE")}
-        os.environ["HOME"] = os.environ["USERPROFILE"] = "/home/zed"
+        os.environ["HOME"] = os.environ["USERPROFILE"] = HZ
         try:
-            got = max_lite.clean("a/home/zed/x /home/zed/y", "/srv/proj")[0]
-            self.assertEqual(got, "a/home/zed/x ~/y")
+            got = max_lite.clean("a" + HZ + "/x " + HZ + "/y", "/srv/proj")[0]
+            self.assertEqual(got, "a" + HZ + "/x ~/y")
         finally:
             for k, v in old.items():
                 os.environ.pop(k, None) if v is None else os.environ.__setitem__(k, v)
@@ -1330,6 +1332,83 @@ class TestRecheck(Repo):
         rc, o, _ = lite(self.d, "recheck", "j1")
         self.assertEqual(rc, 0)
         self.assertNotIn("--output", o)
+
+
+class TestFinalFixes(Repo):
+    def commit(self, msg):
+        sh(["git", "add", "-A", "docs"], self.d)
+        sh(["git", "commit", "-qm", msg], self.d)
+        return sh(["git", "rev-parse", "--short", "HEAD"], self.d, text=True).stdout.strip()
+
+    def closed_job(self):
+        lite(self.d, "dir", "j1", "--size", "M")
+        self.w(".max/j1/SPEC.md", "# SPEC\n- C1 ทำก\n")
+        self.w(".max/j1/proof.md", "C1 ผ่าน — เทสครบถ้วน one\n")
+        self.w("a.txt", "two\n")
+        self.assertEqual(lite(self.d, "close", "j1")[0], 0)
+        self.rec = os.path.join(self.d, "docs", "max-jobs", f"{TODAY()}-j1")
+
+    def test_recheck_range_uses_close_commit(self):
+        self.closed_job()
+        close_sha = self.commit("close")
+        self.w(f"docs/max-jobs/{TODAY()}-j1/recheck-{TODAY()}.md", "C1 ยังผ่าน — เทสครบถ้วน ok\n")
+        self.assertEqual(lite(self.d, "recheck", "j1", "--sum")[0], 0)
+        self.commit("sum")
+        o = lite(self.d, "recheck", "j1")[1]
+        self.assertIn(f"ช่วง: {self.base}..{close_sha}", o)
+
+    def test_sum_cleans_recheck_file(self):
+        self.closed_job()
+        rc = os.path.join(self.rec, f"recheck-{TODAY()}.md")
+        tok = "ghp_" + "a" * 36
+        self.w(f"docs/max-jobs/{TODAY()}-j1/recheck-{TODAY()}.md",
+               f"C1 ยังผ่าน — เทสครบถ้วน ใน {self.d}/a.txt {tok}\n")
+        rcode, o, _ = lite(self.d, "recheck", "j1", "--sum")
+        self.assertEqual(rcode, 0, o)
+        self.assertRegex(o, r"ตัดออก: [1-9]")
+        t = rd(rc)
+        self.assertNotIn(tok, t)
+        self.assertNotIn(self.d, t)
+
+    def test_dir_refuses_unresumed_open_record(self):
+        lite(self.d, "dir", "j1", "--size", "M")
+        self.w(".max/j1/SPEC.md", "# SPEC\n- C1 x\n")
+        lite(self.d, "gate", "j1", "build")
+        rp = os.path.join(self.d, "docs", "max-jobs", f"{TODAY()}-j1", "record.md")
+        before = rb(rp)
+        shutil.rmtree(os.path.join(self.d, ".max"))
+        rcode, o, _ = lite(self.d, "dir", "j1", "--size", "M")
+        self.assertEqual(rcode, 1)
+        self.assertIn("กู้ได้ [j1]", o)
+        self.assertIn("resume j1", o)
+        self.assertFalse(os.path.exists(os.path.join(self.d, ".max", "j1")))
+        self.assertEqual(rb(rp), before)
+
+    def test_status_recoverable_not_idle(self):
+        lite(self.d, "dir", "j1", "--size", "M")
+        self.w(".max/j1/SPEC.md", "# SPEC\n- C1 x\n")
+        lite(self.d, "gate", "j1", "build")
+        shutil.rmtree(os.path.join(self.d, ".max"))
+        o = lite(self.d, "status")[1]
+        self.assertIn("กู้ได้ [j1]", o)
+        self.assertNotIn("ไม่มีงาน MAX ค้าง", o)
+
+    def test_spec_less_abandon_keeps_new_active_line(self):
+        lite(self.d, "dir", "j1", "--size", "M")
+        lite(self.d, "abandon", "j1", "ไม่ทำแล้ว")
+        rm = os.path.join(self.d, "docs", "roadmap.md")
+        t = rd(rm).replace("## กำลังทำ\n", "## กำลังทำ\n- [j1] M · ด่าน: SPEC · ถัดไป: x · ติด: - · 2026-01-01 00:00\n", 1)
+        self.w("docs/roadmap.md", t)
+        lite(self.d, "todo", "next", "อะไรสักอย่าง")
+        self.assertIn("- [j1] M · ด่าน: SPEC", rd(rm))
+
+    def test_files_drop_pycache(self):
+        self.w("__pycache__/x.pyc", "z")
+        self.w("pkg/__pycache__/y.pyc", "z")
+        self.w("b.pyc", "z")
+        self.w("keep.py", "z")
+        got = max_lite.job_files(self.d, self.base)
+        self.assertEqual(got, ["keep.py"])
 
 
 class TestStats(Repo):
