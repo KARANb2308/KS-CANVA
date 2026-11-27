@@ -1,0 +1,16 @@
+{
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/require-worklog.mjs\"",
+            "timeout": 20,
+            "statusMessage": "ตรวจว่าบันทึกงานแล้ว"
+          }
+        ]
+      }
+    ]
+  }
+}

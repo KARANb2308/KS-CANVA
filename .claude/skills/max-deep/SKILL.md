@@ -21,6 +21,8 @@ applies; where this file is stricter, this file wins.
 
 ## D1 — Intake (one message, every independent call together)
 - `คำขอ:` the user's words verbatim, split into pieces `P1 … Pn` (each piece will map to C-ids later).
+- Project memory: `docs/playbook.md` (recipes that worked, traps) and `grep -n "<key words>" docs/worklog.md` for
+  similar past jobs, if the project has them — reuse what worked, and list known traps under `จุดที่ต้องระวัง`.
 - `git status --short` · `git log --oneline -15` · `python3 "<max skill folder>/scripts/max_lite.py" status`
   (an open job → read its ledger first, as `max` says) · `git log -S"<key word>" --oneline | head` for the area's history.
 - Up to 3 `max-scout` in the same message, one question each:
@@ -96,4 +98,5 @@ Run the `max` skill for the job, with these overrides:
 - Final diff: `max-reviewer` (MAX) **and** the `code-review` skill at `high`; touched Core → also `security-review`.
 - `max_lite.py close <job>`; the MAX report adds one line:
   `เทียบกับแผน: ทำครบ C1–Cn | เปลี่ยนจากแผน: <what + why>`.
-- Something learned that will repeat in this project → one line in `LESSONS.md`.
+- Project memory: append the job to `docs/worklog.md` (its template) and update `docs/playbook.md` with what worked
+  and the traps met — include the preflight's findings that proved true or false. No such files → one line in `LESSONS.md`.
