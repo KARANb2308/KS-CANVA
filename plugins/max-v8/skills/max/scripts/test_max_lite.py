@@ -1411,6 +1411,99 @@ class TestFinalFixes(Repo):
         self.assertEqual(got, ["keep.py"])
 
 
+class TestSafety2(Repo):
+    def mk(self):
+        lite(self.d, "dir", "j2", "--size", "M")
+        self.w(".max/j2/SPEC.md", "# SPEC\n- C1 x\n")
+        self.out = tempfile.mkdtemp(prefix="maxout-")
+        self.addCleanup(shutil.rmtree, self.out, True)
+        self.rid = f"{TODAY()}-j2"
+
+    def test_gate_refuses_symlinked_dest(self):
+        self.mk()
+        os.makedirs(os.path.join(self.d, "docs", "max-jobs"))
+        os.symlink(self.out, os.path.join(self.d, "docs", "max-jobs", self.rid))
+        rc, o, _ = lite(self.d, "gate", "j2", "build")
+        self.assertEqual(rc, 1)
+        self.assertEqual(os.listdir(self.out), [])
+
+    def test_gate_refuses_symlinked_docs(self):
+        self.mk()
+        shutil.rmtree(os.path.join(self.d, "docs"), ignore_errors=True)
+        os.symlink(self.out, os.path.join(self.d, "docs"))
+        rc, o, _ = lite(self.d, "gate", "j2", "build")
+        self.assertEqual(rc, 1)
+        self.assertEqual(os.listdir(self.out), [])
+
+    def test_recheck_refuses_symlinked_rcfile(self):
+        lite(self.d, "dir", "j1", "--size", "M")
+        self.w(".max/j1/SPEC.md", "# SPEC\n- C1 ทำก\n")
+        self.w(".max/j1/proof.md", "C1 ผ่าน — เทสครบถ้วน one\n")
+        self.assertEqual(lite(self.d, "close", "j1")[0], 0)
+        rec = os.path.join(self.d, "docs", "max-jobs", f"{TODAY()}-j1")
+        outside = os.path.join(tempfile.mkdtemp(prefix="maxout-"), "o.md")
+        self.addCleanup(shutil.rmtree, os.path.dirname(outside), True)
+        with open(outside, "w", encoding="utf-8") as f:
+            f.write("C1 ยังผ่าน — outside text ghp_" + "b" * 36 + "\n")
+        rc_f = os.path.join(rec, f"recheck-{TODAY()}.md")
+        os.symlink(outside, rc_f)
+        before = rb(outside)
+        for a in (["recheck", "j1", "--sum"], ["recheck", "j1"]):
+            rc, o, _ = lite(self.d, *a)
+            self.assertEqual(rc, 1, o)
+        self.assertTrue(os.path.islink(rc_f))
+        self.assertEqual(rb(outside), before)
+
+    def test_status_ignores_recheck_dirs(self):
+        self.w(".max/recheck-x/hunt-1.md", "x\n")
+        o = lite(self.d, "status")[1]
+        self.assertNotIn("recheck-x", o)
+        self.assertIn("ไม่มีงาน MAX ค้าง", o)
+
+    def test_gitattributes_recreated_on_save(self):
+        lite(self.d, "dir", "j1", "--size", "M")
+        self.w(".max/j1/SPEC.md", "# SPEC\n- C1 x\n")
+        lite(self.d, "gate", "j1", "build")
+        ga = os.path.join(self.d, ".gitattributes")
+        self.assertTrue(os.path.isfile(ga))
+        os.remove(ga)
+        lite(self.d, "gate", "j1", "review")
+        self.assertIn("merge=union", rd(ga))
+
+    def test_sum_respects_next_cap(self):
+        lite(self.d, "dir", "j1", "--size", "M")
+        self.w(".max/j1/SPEC.md", "# SPEC\n- C1 ก\n- C2 ข\n")
+        self.w(".max/j1/proof.md", "C1 ผ่าน — เทสครบถ้วน one\nC2 ผ่าน — เทสครบถ้วน two\n")
+        self.assertEqual(lite(self.d, "close", "j1")[0], 0)
+        for i in range(19):
+            lite(self.d, "todo", "next", f"งานอื่น {i}")
+        self.w(f"docs/max-jobs/{TODAY()}-j1/recheck-{TODAY()}.md",
+               "C1 พังแล้ว — พังจริงๆ เทส a\nC2 พังแล้ว — พังจริงๆ เทส b\n")
+        rc, o, _ = lite(self.d, "recheck", "j1", "--sum")
+        self.assertIn("ไม่พอที่: 1 ข้อ", o)
+        rm = rd(os.path.join(self.d, "docs", "roadmap.md"))
+        self.assertEqual(len([l for l in section(rm, "ถัดไป") if l.startswith("- ")]), 20)
+
+    def test_status_job_named_like_id(self):
+        lite(self.d, "dir", "2026-11-27-fix", "--size", "M")
+        self.w(".max/2026-11-27-fix/SPEC.md", "# SPEC\n- C1 x\n")
+        lite(self.d, "gate", "2026-11-27-fix", "build")
+        shutil.rmtree(os.path.join(self.d, ".max"))
+        o = lite(self.d, "status")[1]
+        self.assertIn("กู้ได้ [2026-11-27-fix]", o)
+
+    def test_clean_key_at_line_end(self):
+        got = max_lite.clean("password=\nhello world123\nรหัสผ่าน:\nabcdefghij", "/srv/proj")[0]
+        self.assertEqual(got, "password=\nhello world123\nรหัสผ่าน:\nabcdefghij")
+
+    def test_dir_size_validated(self):
+        for a in (["--size"], ["--size", "Q"], ["--size", "mm"]):
+            rc, o, e = lite(self.d, "dir", "j9", *a)
+            self.assertEqual(rc, 1, a)
+            self.assertFalse(os.path.exists(os.path.join(self.d, ".max", "j9")))
+        self.assertEqual(lite(self.d, "dir", "j9", "--size", "l")[0], 0)
+
+
 class TestStats(Repo):
     def rec(self, name, text, ledger=None):
         self.w(f"docs/max-jobs/{name}/record.md", text)

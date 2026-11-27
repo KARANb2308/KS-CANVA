@@ -205,11 +205,28 @@ def _active_id(r, job):
     return record_id(jd, job) if os.path.isfile(os.path.join(jd, "ledger.md")) else None
 
 
+def unsafe_docs(r, *more):
+    """first symlinked path among docs, docs/max-jobs, docs/roadmap.md and `more` (relative to r), else None."""
+    for rel in ("docs", os.path.join("docs", "max-jobs"), os.path.join("docs", "roadmap.md")) + more:
+        if os.path.islink(os.path.join(r, rel)):
+            return rel
+    return None
+
+
+def refuse_unsafe(r, *more):
+    bad = unsafe_docs(r, *more)
+    if bad:
+        out(f"ไม่เขียน: {bad} เป็น symlink")
+        sys.exit(1)
+
+
 def ensure_gitattr(r):
     p = os.path.join(r, ".gitattributes")
+    if os.path.islink(p):
+        return
     try:
         raw = open(p, "rb").read() if os.path.exists(p) else b""
-        if GATTR in raw.decode("utf-8", "replace").split():
+        if GATTR in [l.strip() for l in raw.decode("utf-8", "replace").splitlines()]:
             return
         eol = b"\r\n" if b"\r\n" in raw else b"\n"
         with open(p, "ab") as f:
@@ -219,16 +236,15 @@ def ensure_gitattr(r):
 
 
 def roadmap_save(r, data):
+    refuse_unsafe(r)
     head, sec, extra = _rm_norm(r, data)
     lines = list(head)
     for k in RM_SECS:
         lines += ["", "## " + k] + sec[k]
     for k, v in extra.items():
         lines += ["", "## " + k] + v
-    new = not os.path.exists(rm_path(r))
     atomic_write(rm_path(r), "\n".join(lines) + "\n")
-    if new:
-        ensure_gitattr(r)
+    ensure_gitattr(r)
 
 
 def ledger_head(jd):
@@ -353,9 +369,9 @@ def scan_proof(spec, proof):
 
 _SECRET_AUTH = re.compile(r"(?i)(?<![A-Za-z0-9])([A-Za-z0-9_-]*authorization[\"']?[ \t]*[=:][ \t]*[\"']?)([^\r\n]{6,})")
 _SECRET_KV = re.compile(r"(?i)(?<![A-Za-z0-9])([A-Za-z0-9_-]*(?:password|passwd|secret|token|api[_-]?key|"
-                        r"ks_session))([\"']?\s*[=:]\s*[\"']?)([^\s\"']{6,})")
+                        r"ks_session))([\"']?[ \t]*[=:][ \t]*[\"']?)([^\s\"']{6,})")
 _SECRET_URL = re.compile(r"(://[^/\s:@]+:)([^/\s@]{3,})(@)")
-_SECRET_TH = re.compile(r"(รหัสผ่าน\s*[=:]\s*)(\S{6,})")
+_SECRET_TH = re.compile(r"(รหัสผ่าน[ \t]*[=:][ \t]*)(\S{6,})")
 _SECRET_TOK = [re.compile(x) for x in (
     r"-----BEGIN [A-Z ]*PRIVATE KEY-----.*?(?:-----END [A-Z ]*PRIVATE KEY-----|\Z)",
     r"sk-[A-Za-z0-9_-]{20,}", r"gh[pousr]_[A-Za-z0-9]{20,}", r"github_pat_[A-Za-z0-9_]{20,}",
@@ -405,6 +421,7 @@ def ensure_record(r, jd, job):
 def sync_record(r, jd, job, status, extra=None, rid=None):
     extra = extra or {}
     rid = rid or ensure_record(r, jd, job)
+    refuse_unsafe(r, os.path.join("docs", "max-jobs", rid))
     dest = os.path.join(r, "docs", "max-jobs", rid)
     n_cut = 0
     for name in WHITELIST:
@@ -516,7 +533,11 @@ def cmd_dir(argv):
         sys.exit("usage: dir <job> --size S|M|L|XL")
     job, size = argv[0], "M"
     if "--size" in argv:
-        size = argv[argv.index("--size") + 1].upper()
+        i = argv.index("--size")
+        size = argv[i + 1].upper() if i + 1 < len(argv) else ""
+        if size not in ("S", "M", "L", "XL"):
+            out("usage: dir <job> --size S|M|L|XL")
+            sys.exit(1)
     check_job_name(job)
     r = root()
     jd = os.path.join(max_dir(r), job)
@@ -592,7 +613,8 @@ def cmd_diff(argv):
 
 def open_jobs(md):
     return sorted(d for d in os.listdir(md)
-                  if os.path.isdir(os.path.join(md, d)) and d != "closed")
+                  if os.path.isdir(os.path.join(md, d)) and d != "closed"
+                  and os.path.isfile(os.path.join(md, d, "ledger.md")))
 
 
 def _plain_dir(p):
@@ -640,7 +662,7 @@ def cmd_status(argv):
             if not m or m.group(1) in jobs:
                 continue
             job = m.group(1)
-            rec = find_record(r, job)
+            rec = find_record(r, job, by_id=False)
             st = rec_field(rec, "สถานะ") if rec else ""
             ts = (re.search(r"(\d{4}-\d\d-\d\d \d\d:\d\d)\s*$", l) or [None, ""])[1]
             closed_at = (re.search(r"\d{4}-\d\d-\d\d \d\d:\d\d", rec_field(rec, "ปิด")) or [""])[0] if rec else ""
@@ -790,6 +812,9 @@ def cmd_recheck(argv):
     cids = scan_proof(spec, proof)[0]
     today = datetime.date.today().isoformat()
     rcfile = os.path.join(folder, f"recheck-{today}.md")
+    if os.path.islink(rcfile) or os.path.islink(folder.rstrip("/\\")):
+        out(f"ไม่ใช้ {rcfile}: เป็น symlink")
+        sys.exit(1)
     if "--sum" in argv:
         return recheck_sum(r, job, folder, rcfile, cids, today)
     base = ledger_base(folder)
@@ -838,12 +863,18 @@ def recheck_sum(r, job, folder, rcfile, cids, today):
             atomic_write(rec, cur + ("" if cur.endswith("\n") else "\n") + line + "\n")
     data = roadmap_load(r)
     nxt = data["sec"]["ถัดไป"]
+    skipped = 0
     for c in cids:
         mark = f"แก้ {job} C{c} ที่พังแล้ว"
         nxt[:] = [l for l in nxt if mark not in l]
         if rows[c][0] == "พังแล้ว":
+            if len(nxt) >= RM_CAP["ถัดไป"]:
+                skipped += 1
+                continue
             nxt.append(f"- (P1) {mark} — {one_line(clean(rows[c][1], r)[0], 80)}")
     roadmap_save(r, data)
+    if skipped:
+        out(f"ไม่พอที่: {skipped} ข้อ")
 
 
 def cmd_repeat(argv):
