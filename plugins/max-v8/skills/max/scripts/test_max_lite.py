@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Tests for max_lite.py and hooks/require-worklog.mjs (stdlib only)."""
-import glob, json, os, shutil, subprocess, sys, tempfile, unittest
+import glob, json, os, re, shutil, subprocess, sys, tempfile, unittest
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 LITE = os.path.join(HERE, "max_lite.py")
@@ -655,7 +655,7 @@ class TestRecord(Repo):
         self.assertTrue(os.path.isfile(os.path.join(self.d, "docs", "max-jobs", "2026-11-27-j1", "record.md")))
 
     def test_record_id_validation_unit(self):
-        for bad in ("../../x", "a/b", "2026-11-27-a..b", "x"):
+        for bad in ("../../x", "a/b", "2026-11-27-a..b", "x", "2026-01-02-other", "2026-01-02-jj-x"):
             self.w(".max/jj/ledger.md", f"# h — start=2026-01-02 05:00 — record={bad}\n")
             self.assertEqual(max_lite.record_id(os.path.join(self.d, ".max", "jj"), "jj"), "2026-01-02-jj", bad)
 
@@ -716,8 +716,14 @@ class TestRecord(Repo):
         self.spec("C1 C2\n")
         self.assertEqual(lite(self.d, "gate", "j1", "build")[0], 0)
         self.assertEqual(rb(self.rp("record.md")), orig)
+        self.assertEqual(len([l for l in section(rd(os.path.join(self.d, "docs", "roadmap.md")), "เสร็จล่าสุด")
+                              if "[j1] ปิด" in l]), 1)
         self.assertTrue(os.path.isfile(os.path.join(self.d, "docs", "max-jobs", f"{TODAY()}-j1-2", "record.md")))
         self.assertIn(f"record={TODAY()}-j1-2", rd(os.path.join(self.d, ".max", "j1", "ledger.md")).splitlines()[0])
+
+    def test_authorization_does_not_cross_lines(self):
+        got = max_lite.clean("Authorization:\nkeepme12345 here", "/srv/proj")[0]
+        self.assertIn("keepme12345", got)
 
     def test_twice_equals_once(self):
         self.spec("C1 C2\nAPP_PASSWORD=hunter2secret\n")
@@ -1022,11 +1028,352 @@ class TestResume(Repo):
         self.assertEqual({n: rb(os.path.join(src, n)) for n in os.listdir(src)}, before)
         self.assertEqual(lite(self.d, "backfill", "nothere")[0], 1)
 
+    def _mkrec(self):
+        self.built()
+        return os.path.join(self.d, "docs", "max-jobs", self.rid())
+
+    def test_base_injection(self):
+        pwn = os.path.join(tempfile.gettempdir(), f"pwned-{os.getpid()}")
+        try:
+            rec = self._mkrec()
+            led = rd(os.path.join(rec, "ledger.md"))
+            led = re.sub(r"BASE=\S+", "BASE=--output=" + pwn, led, count=1)
+            with open(os.path.join(rec, "ledger.md"), "w", encoding="utf-8", newline="\n") as f:
+                f.write(led)
+            self.assertEqual(lite(self.d, "resume", "j1")[0], 0)
+            self.w(".max/j1/proof.md", "C1 ผ่าน — เทสครบถ้วน\n")
+            lite(self.d, "close", "j1")
+            self.assertFalse(os.path.exists(pwn))
+        finally:
+            if os.path.exists(pwn):
+                os.remove(pwn)
+
+    def test_resume_skips_symlink_source(self):
+        rec = self._mkrec()
+        out_ = tempfile.mkdtemp(prefix="maxout-")
+        try:
+            with open(os.path.join(out_, "s.txt"), "w") as f:
+                f.write("TOPSECRET\n")
+            os.remove(os.path.join(rec, "SPEC.md"))
+            try:
+                os.symlink(os.path.join(out_, "s.txt"), os.path.join(rec, "SPEC.md"))
+            except (OSError, NotImplementedError):
+                self.skipTest("no symlinks")
+            rc, o, _ = lite(self.d, "resume", "j1")
+            self.assertIn("ข้าม SPEC.md: symlink", o)
+            for dp, _, fs in os.walk(os.path.join(self.d, ".max")):
+                for f in fs:
+                    self.assertNotIn("TOPSECRET", rd(os.path.join(dp, f)))
+        finally:
+            shutil.rmtree(out_, ignore_errors=True)
+
+    def test_resume_refuses_symlink_folder(self):
+        rec = self._mkrec()
+        out_ = tempfile.mkdtemp(prefix="maxout-")
+        try:
+            moved = os.path.join(out_, "rec")
+            shutil.move(rec, moved)
+            try:
+                os.symlink(moved, rec)
+            except (OSError, NotImplementedError):
+                self.skipTest("no symlinks")
+            rc, o, _ = lite(self.d, "resume", "j1")
+            self.assertEqual(rc, 1)
+            self.assertFalse(os.path.exists(os.path.join(self.d, ".max", "j1")))
+        finally:
+            shutil.rmtree(out_, ignore_errors=True)
+
+    def test_resume_refuses_symlink_job_dir(self):
+        self._mkrec()
+        out_ = tempfile.mkdtemp(prefix="maxout-")
+        try:
+            os.makedirs(os.path.join(self.d, ".max"), exist_ok=True)
+            try:
+                os.symlink(out_, os.path.join(self.d, ".max", "j1"))
+            except (OSError, NotImplementedError):
+                self.skipTest("no symlinks")
+            rc, o, _ = lite(self.d, "resume", "j1")
+            self.assertEqual(rc, 1)
+            self.assertEqual(os.listdir(out_), [])
+        finally:
+            shutil.rmtree(out_, ignore_errors=True)
+
+    def test_resume_twice_only_appends_ledger_line(self):
+        self._mkrec()
+        self.w(".max/j1/SPEC.md", "ของฉัน\n")
+        self.w(".max/j1/ledger.md", "# ledger ของฉัน\nบรรทัดสอง\n")
+        lite(self.d, "resume", "j1")
+        lite(self.d, "resume", "j1")
+        self.assertEqual(rd(os.path.join(self.d, ".max", "j1", "SPEC.md")), "ของฉัน\n")
+        ls = rd(os.path.join(self.d, ".max", "j1", "ledger.md")).splitlines()
+        self.assertEqual(ls[:2], ["# ledger ของฉัน", "บรรทัดสอง"])
+        self.assertEqual(len(ls), 4)
+        self.assertTrue(all(l.startswith("กู้คืนจากแฟ้ม:") for l in ls[2:]))
+
+    def test_resume_bad_names(self):
+        for bad in ("../x", "a/b", ".x"):
+            self.assertEqual(lite(self.d, "resume", bad)[0], 1, bad)
+        self.assertFalse(os.path.exists(os.path.join(self.d, ".max", "x")))
+        self.assertFalse(os.path.exists(os.path.join(self.d, "x")))
+
+    def test_resume_by_job_name_only(self):
+        self._mkrec()
+        self.assertEqual(lite(self.d, "resume", self.rid())[0], 1)
+
+    def test_status_no_repair_leaves_roadmap_identical(self):
+        self.built()
+        before = rb(os.path.join(self.d, "docs", "roadmap.md"))
+        lite(self.d, "status")
+        self.assertEqual(rb(os.path.join(self.d, "docs", "roadmap.md")), before)
+
+    def test_status_hostile_job_lines(self):
+        lite(self.d, "todo", "next", "x")
+        p = os.path.join(self.d, "docs", "roadmap.md")
+        t = rd(p).replace("## กำลังทำ\n", "## กำลังทำ\n- [../../x] M · ด่าน: สร้าง · ถัดไป: - · ติด: - · 2026-01-01 10:00\n"
+                          "- [a/b] M · ด่าน: สร้าง · ถัดไป: - · ติด: - · 2026-01-01 10:00\n")
+        with open(p, "w", encoding="utf-8", newline="\n") as f:
+            f.write(t)
+        before = set(os.listdir(os.path.dirname(self.d)))
+        rc, o, _ = lite(self.d, "status")
+        self.assertEqual(rc, 0)
+        self.assertIn("หาย [../../x]", o)
+        self.assertIn("หาย [a/b]", o)
+        self.assertEqual(set(os.listdir(os.path.dirname(self.d))), before)
+
+    def test_status_newer_line_than_close_not_repaired(self):
+        lite(self.d, "dir", "j1", "--size", "M")
+        self.w(".max/j1/SPEC.md", "C1\n")
+        self.w(".max/j1/proof.md", "C1 ผ่าน — เทสครบถ้วน\n")
+        lite(self.d, "close", "j1")
+        p = os.path.join(self.d, "docs", "roadmap.md")
+        t = rd(p).replace("## กำลังทำ\n", "## กำลังทำ\n- [j1] M · ด่าน: SPEC · ถัดไป: - · ติด: - · 2099-01-01 00:00\n")
+        with open(p, "w", encoding="utf-8", newline="\n") as f:
+            f.write(t)
+        o = lite(self.d, "status")[1]
+        self.assertNotIn("ซ่อมแผนที่", o)
+        self.assertIn("หาย [j1]", o)
+        self.assertIn("- [j1] M · ด่าน: SPEC", rd(p))
+
+    def _old_closed_n(self, name, start):
+        self.w(f".max/closed/{name}/SPEC.md", "C1\n")
+        self.w(f".max/closed/{name}/proof.md", "C1 ผ่าน — เทสครบถ้วน\n")
+        self.w(f".max/closed/{name}/ledger.md", f"# MAX old — SPEC: x — BASE=abc — size=M — start={start}\n")
+
+    def test_backfill_same_name_day_different_start(self):
+        self._old_closed_n("old-202611270541", "2026-11-27 05:00")
+        self._old_closed_n("old-202611270642", "2026-11-27 06:00")
+        lite(self.d, "backfill", "old-202611270541")
+        first = rb(os.path.join(self.d, "docs", "max-jobs", "2026-11-27-old", "record.md"))
+        lite(self.d, "backfill", "old-202611270642")
+        self.assertEqual(rb(os.path.join(self.d, "docs", "max-jobs", "2026-11-27-old", "record.md")), first)
+        self.assertTrue(os.path.isfile(os.path.join(self.d, "docs", "max-jobs", "2026-11-27-old-2", "record.md")))
+        lite(self.d, "backfill", "old-202611270642")
+        self.assertFalse(os.path.exists(os.path.join(self.d, "docs", "max-jobs", "2026-11-27-old-3")))
+
+    def test_backfill_source_with_existing_record(self):
+        lite(self.d, "dir", "old", "--size", "M")
+        self.w(".max/old/SPEC.md", "C1\n")
+        self.w(".max/old/proof.md", "C1 ผ่าน — เทสครบถ้วน\n")
+        lite(self.d, "gate", "old", "build")
+        self.assertEqual(lite(self.d, "close", "old")[0], 0)
+        name = os.path.basename(glob.glob(os.path.join(self.d, ".max", "closed", "old-*"))[0])
+        snap = {p: rb(p) for p in glob.glob(os.path.join(self.d, "docs", "**", "*"), recursive=True) if os.path.isfile(p)}
+        rc, o, _ = lite(self.d, "backfill", name)
+        self.assertEqual(rc, 0)
+        self.assertIn(f"มีแฟ้มแล้ว: docs/max-jobs/{TODAY()}-old", o)
+        self.assertEqual({p: rb(p) for p in glob.glob(os.path.join(self.d, "docs", "**", "*"), recursive=True)
+                          if os.path.isfile(p)}, snap)
+
+    def test_backfill_does_not_take_open_job_id(self):
+        self._old_closed_n("old-202611270541", f"{TODAY()} 05:00")
+        lite(self.d, "dir", "old", "--size", "M")
+        p = os.path.join(self.d, ".max", "old", "ledger.md")
+        with open(p, "w", encoding="utf-8", newline="\n") as f:  # v8.3 style head, no record=
+            f.write(f"# MAX old — SPEC: x — BASE=abc — size=M — start={TODAY()} 07:00\n")
+        lite(self.d, "backfill", "old-202611270541")
+        self.assertTrue(os.path.isfile(os.path.join(self.d, "docs", "max-jobs", f"{TODAY()}-old-2", "record.md")))
+        self.assertEqual(len([l for l in section(self.rmt(), "กำลังทำ") if l.startswith("- [old] ")]), 1)
+
+    def test_backfill_open_gated_job_untouched(self):
+        lite(self.d, "dir", "old", "--size", "M")
+        self.w(".max/old/SPEC.md", "C1\n")
+        lite(self.d, "gate", "old", "build")
+        orec = os.path.join(self.d, "docs", "max-jobs", f"{TODAY()}-old", "record.md")
+        before = rb(orec)
+        self._old_closed_n("old-202611270541", f"{TODAY()} 03:00")
+        lite(self.d, "backfill", "old-202611270541")
+        self.assertEqual(rb(orec), before)
+        self.assertTrue(os.path.isfile(os.path.join(self.d, "docs", "max-jobs", f"{TODAY()}-old-2", "record.md")))
+
+    def test_backfill_twice_identical_and_source_untouched(self):
+        self._old_closed_n("old-202611270541", "2026-11-27 05:00")
+        src = os.path.join(self.d, ".max", "closed", "old-202611270541")
+        st = {n: os.stat(os.path.join(src, n)).st_mtime_ns for n in os.listdir(src)}
+        st["."] = os.stat(src).st_mtime_ns
+        lite(self.d, "backfill", "old-202611270541")
+        rec = os.path.join(self.d, "docs", "max-jobs", "2026-11-27-old")
+        snap = {n: rb(os.path.join(rec, n)) for n in os.listdir(rec)}
+        lite(self.d, "backfill", "old-202611270541")
+        self.assertEqual({n: rb(os.path.join(rec, n)) for n in os.listdir(rec)}, snap)
+        self.assertEqual(len([l for l in section(self.rmt(), "เสร็จล่าสุด") if "[old]" in l]), 1)
+        st2 = {n: os.stat(os.path.join(src, n)).st_mtime_ns for n in os.listdir(src)}
+        st2["."] = os.stat(src).st_mtime_ns
+        self.assertEqual(st2, st)
+
     def test_backfill_keeps_active_same_name(self):
         self._old_closed()
         lite(self.d, "dir", "old", "--size", "M")
         lite(self.d, "backfill", "old-202611270541")
         self.assertEqual(len([l for l in section(self.rmt(), "กำลังทำ") if l.startswith("- [old] ")]), 1)
+
+
+class TestRecheck(Repo):
+    SPEC = "# SPEC\n- C1 ทำก\n- C2 ทำข\n- C10 ทำค\n"
+    PROOF = ("C1 ผ่าน — เทสครบถ้วน one\nC2 ผ่าน — เทสครบถ้วน two\nC10 ผ่าน — เทสครบถ้วน three\n")
+
+    def setUp(self):
+        super().setUp()
+        lite(self.d, "dir", "j1", "--size", "M")
+        self.w(".max/j1/SPEC.md", self.SPEC)
+        self.w(".max/j1/proof.md", self.PROOF)
+        self.w("a.txt", "two\n")
+        self.assertEqual(lite(self.d, "close", "j1")[0], 0)
+        self.id = f"{TODAY()}-j1"
+        self.rec = os.path.join(self.d, "docs", "max-jobs", self.id)
+
+    def gs(self):
+        return sh(["git", "status", "--short"], self.d, text=True).stdout
+
+    def rc_file(self):
+        return os.path.join(self.rec, f"recheck-{TODAY()}.md")
+
+    def test_recheck_prints(self):
+        before = self.gs()
+        rc, o, _ = lite(self.d, "recheck", "j1")
+        self.assertEqual(rc, 0, o)
+        ls = o.splitlines()
+        self.assertIn(f"แฟ้ม: docs/max-jobs/{self.id}/ (ที่มา: แฟ้มถาวร)", ls)
+        self.assertTrue([l for l in ls if l.startswith(f"ช่วง: {self.base}..")], ls)
+        self.assertIn("ไฟล์: a.txt", ls)
+        for c, ev in (("C1", "one"), ("C2", "two"), ("C10", "three")):
+            row = [l for l in ls if l.startswith(c + " |")]
+            self.assertEqual(len(row), 1, c)
+            self.assertIn(ev, row[0])
+        self.assertIn(f"recheck=docs/max-jobs/{self.id}/recheck-{TODAY()}.md", ls)
+        self.assertEqual(lite(self.d, "recheck", self.id)[1].splitlines()[1:], ls[1:])
+        self.assertEqual(self.gs(), before)
+        self.assertFalse(os.path.exists(self.rc_file()))
+
+    def test_recheck_fallbacks(self):
+        shutil.rmtree(os.path.join(self.d, "docs", "max-jobs"))
+        rc, o, _ = lite(self.d, "recheck", "j1")
+        self.assertEqual(rc, 0)
+        self.assertIn("(ที่มา: .max/closed)", o)
+        shutil.rmtree(os.path.join(self.d, ".max", "closed"))
+        rc, o, _ = lite(self.d, "recheck", "j1")
+        self.assertEqual(rc, 1)
+        self.assertIn("ไม่มีแฟ้มงาน j1 — ดู docs/worklog.md", o)
+
+    def write_rc(self, text):
+        with open(self.rc_file(), "w", encoding="utf-8", newline="\n") as f:
+            f.write(text)
+
+    def test_sum(self):
+        self.write_rc("## x\nC1 ยังผ่าน — 3 passed test_a\nC2 พังแล้ว — ตั้งแต่ abc1234 test_b fail\n"
+                      "C10 ตรวจไม่ได้ — ต้องรันบน Windows\n")
+        rc, o, _ = lite(self.d, "recheck", "j1", "--sum")
+        self.assertEqual(rc, 0, o)
+        self.assertIn("ตรวจซ้ำ [j1]: ยังผ่าน 1 · พังแล้ว 1 (C2) · ตรวจไม่ได้ 1 (C10)", o)
+        rm = rd(os.path.join(self.d, "docs", "roadmap.md"))
+        self.assertEqual(len([l for l in section(rm, "ถัดไป") if "(P1) แก้ j1 C2 ที่พังแล้ว" in l]), 1)
+        self.assertEqual(rd(os.path.join(self.rec, "record.md")).splitlines()[-1],
+                         f"ตรวจซ้ำ: {TODAY()} ยังผ่าน 1 · พังแล้ว 1 · ตรวจไม่ได้ 1")
+        lite(self.d, "recheck", "j1", "--sum")
+        rm = rd(os.path.join(self.d, "docs", "roadmap.md"))
+        self.assertEqual(len([l for l in section(rm, "ถัดไป") if "แก้ j1 C2" in l]), 1)
+        self.assertEqual(len([l for l in rd(os.path.join(self.rec, "record.md")).splitlines()
+                              if l.startswith("ตรวจซ้ำ:")]), 1)
+
+    def test_sum_incomplete_writes_nothing(self):
+        for body in ("C1 ยังผ่าน — 3 passed test_a\nC10 ยังผ่าน — 3 passed test_c\n",
+                     "C1 ยังผ่าน — 3 passed test_a\nC2 พังแล้ว — สั้น\nC10 ยังผ่าน — 3 passed test_c\n"):
+            self.write_rc(body)
+            before = {p: rb(p) for p in (os.path.join(self.d, "docs", "roadmap.md"), os.path.join(self.rec, "record.md"))}
+            rc, o, _ = lite(self.d, "recheck", "j1", "--sum")
+            self.assertEqual(rc, 1)
+            self.assertIn("ตรวจซ้ำไม่ครบ: ขาด C2", o)
+            self.assertEqual({p: rb(p) for p in before}, before)
+
+    def test_last_line_wins(self):
+        self.write_rc("C1 ยังผ่าน — 3 passed test_a\nC2 พังแล้ว — ตั้งแต่ abc1234 fail\n"
+                      "C2 ยังผ่าน — แก้แล้ว 3 passed\nC10 ยังผ่าน — 3 passed test_c\n")
+        o = lite(self.d, "recheck", "j1", "--sum")[1]
+        self.assertIn("ยังผ่าน 3 · พังแล้ว 0 · ตรวจไม่ได้ 0", o)
+
+    def test_repeat(self):
+        lite(self.d, "dir", "j2", "--size", "M")
+        rc, o, _ = lite(self.d, "repeat", "j2", "ปุ่มยังไม่ขึ้น — ไม่ได้เปิดจอจริง")
+        self.assertEqual(rc, 0)
+        last = rd(os.path.join(self.d, ".max", "j2", "ledger.md")).splitlines()[-1]
+        self.assertTrue(last.startswith("แจ้งซ้ำ: ปุ่มยังไม่ขึ้น"), last)
+        rc, o, _ = lite(self.d, "repeat", "j1", "ซ้ำอีก APP_PASSWORD=hunter2secret")
+        self.assertEqual(rc, 0)
+        led = rd(os.path.join(self.rec, "ledger.md"))
+        self.assertTrue(led.splitlines()[-1].startswith("แจ้งซ้ำ: ซ้ำอีก"))
+        self.assertNotIn("hunter2secret", led)
+        self.assertEqual(lite(self.d, "repeat", "nojob", "x")[0], 1)
+
+    def test_recheck_bad_base_ignored(self):
+        led = rd(os.path.join(self.rec, "ledger.md"))
+        with open(os.path.join(self.rec, "ledger.md"), "w", encoding="utf-8", newline="\n") as f:
+            f.write(re.sub(r"BASE=\S+", "BASE=--output=/nonexistent/x", led, count=1))
+        rc, o, _ = lite(self.d, "recheck", "j1")
+        self.assertEqual(rc, 0)
+        self.assertNotIn("--output", o)
+
+
+class TestStats(Repo):
+    def rec(self, name, text, ledger=None):
+        self.w(f"docs/max-jobs/{name}/record.md", text)
+        if ledger is not None:
+            self.w(f"docs/max-jobs/{name}/ledger.md", ledger)
+
+    def test_stats_exact(self):
+        self.rec("2026-01-01-a", "# a\nขนาด: M\nสถานะ: ปิด\nC-id: 4\nยังไม่ได้ตรวจ: 0\nเกินเพดาน: 0\nturn: 20\n")
+        self.rec("2026-01-02-b", "# b\nขนาด: L\nสถานะ: ปิด\nC-id: 10\nยังไม่ได้ตรวจ: 2 (C1 C2)\nเกินเพดาน: 1\n"
+                 "ตรวจซ้ำ: 2026-02-01 ยังผ่าน 9 · พังแล้ว 1 · ตรวจไม่ได้ 0\n", "# h\nแจ้งซ้ำ: x (2026-01-03)\n")
+        self.rec("2026-01-03-c", "# c\nขนาด: M\nสถานะ: ทิ้ง: x\nC-id: 0\n")
+        self.rec("2026-01-04-d", "# d\nขนาด: XL\nสถานะ: กำลังทำ\nC-id: 50\n", "# h\nแจ้งซ้ำ: y\n")
+        rc, o, _ = lite(self.d, "stats")
+        self.assertEqual(rc, 0)
+        self.assertEqual(o.splitlines(), [
+            "งาน: 3 (ปิด 2 · ทิ้ง 1) · ขนาด: M 2 · L 1 · XL 0",
+            "แจ้งซ้ำ: 1 ครั้ง ใน 1 งาน",
+            "C-id: 14 · ยังไม่ได้ตรวจ 2 (14%)",
+            "เกินเพดาน: 1 งาน",
+            "turn เฉลี่ย: M 20 (จาก 1 งาน)",
+            "ตรวจซ้ำ: 1 ครั้ง · พังแล้ว 1"])
+
+    def test_stats_empty(self):
+        rc, o, _ = lite(self.d, "stats")
+        self.assertEqual((rc, o.strip()), (0, "ยังไม่มีแฟ้มงาน"))
+        self.rec("2026-01-01-a", "# a\nขนาด: M\nสถานะ: ปิด\nC-id: 4\n")
+        self.assertIn("turn เฉลี่ย: ไม่มีข้อมูล", lite(self.d, "stats")[1])
+
+    def test_stats_broken_records(self):
+        self.rec("2026-01-01-a", "")
+        self.rec("2026-01-02-b", "สถานะ: ปิด\nขนาด:\n")
+        self.rec("2026-01-03-c", "สถานะ: ปิด\nC-id: x\nขนาด: M\nturn: abc\n")
+        rc, o, _ = lite(self.d, "stats")
+        self.assertEqual(rc, 0, o)
+        self.assertIn("งาน: 3 (ปิด 2 · ทิ้ง 0)", o)
+        self.assertIn("C-id: 0 · ยังไม่ได้ตรวจ 0 (0%)", o)
+
+    def test_no_args_lists_commands(self):
+        rc, o, _ = lite(self.d)
+        self.assertEqual(rc, 2)
+        for c in ("gate", "todo", "resume", "backfill", "recheck", "repeat", "stats"):
+            self.assertIn(c, o)
 
 
 if __name__ == "__main__":
