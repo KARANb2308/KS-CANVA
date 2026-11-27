@@ -1,14 +1,15 @@
 ---
 name: max
-description: MAX v8 build workflow - sizes the task (S/M/L; XL only when the user types "MAX สุด"), SPEC with coverage ids, test-first Sonnet coders, spec-first review, a separate verifier, a proof gate before "done". Use for coding, builds, bug fixes, bug hunts and audits, or when the user says MAX / แม็กซ์ / "ทำแบบ MAX" / "MAX สุด". Not for questions or explanations - answer directly.
+description: MAX v8 build workflow - sizes the task (S/M/L; XL only when the user types "MAX สุด"), SPEC with coverage ids, test-first Sonnet coders, spec-first review, a separate verifier, a proof gate before "done". Use for coding, builds, bug fixes, bug hunts and audits, or when the user says MAX / แม็กซ์ / "ทำแบบ MAX" / "MAX สุด" / "ทำต่อ" / "ตรวจซ้ำ <งาน>" / "แผนที่งาน". Not for questions or explanations - answer directly.
 ---
 
 # MAX v8 (Cowork) — ถูกตั้งแต่ครั้งแรก ด้วย turn และ token น้อยที่สุด
 
 Cowork edition: no hooks, so the gates below are **yours to keep** (they were automatic on the PC). Tools run in
 Cowork's sandbox on the folder the user opened. Job state: `scripts/max_lite.py` beside this file (stdlib Python):
-run it as `python3 "<this skill's folder>/scripts/max_lite.py" …` from the project folder. Files go to
-`<project>/.max/<job>/` (kept between sessions, never committed).
+run it as `python3 "<this skill's folder>/scripts/max_lite.py" …` from the project folder. `<project>/.max/<job>/` =
+scratch (never committed); the script also writes `docs/roadmap.md` + `docs/max-jobs/<id>/` → commit them with the
+work; no secrets or customer data in proof lines.
 
 **A main turn costs much more than an agent turn.** Main thinks, writes the SPEC, briefs and rules; agents do every
 loop (test-fix, click-through, sweep).
@@ -90,8 +91,10 @@ end the turn, no call. At the cap: ledger `เกินเพดาน: <cause>`
 cap never skips a gate.**
 
 M/L/XL: Read `references/ml.md` once at the start (0b, SPEC + ledger, build, review + verify, close). Bug hunt / audit → `references/hunt.md`.
-"ทำต่อ" / a new session: `python3 …/max_lite.py status`, then read that job's `ledger.md` before anything; a
-`เริ่ม` line with no `เสร็จ` → read its report + `git status` first, never re-send a coder blindly.
+"ทำต่อ" / a new session: `python3 …/max_lite.py status`; `กู้ได้ [job]` → `resume <job>`; then read that job's
+`ledger.md` before anything; a `เริ่ม` line with no `เสร็จ` → read its report + `git status` first, never re-send a
+coder blindly. "ตรวจซ้ำ <งาน>" / "ตรวจซ้ำละเอียด" → read only `references/recheck.md`. Roadmap / next jobs / stats →
+`references/roadmap.md`.
 
 ## 3 — Bugs (every size, no guessing)
 1) **Reproduce at the user's entry point** (their button/route/file); can't reproduce = cause unknown, no fix yet

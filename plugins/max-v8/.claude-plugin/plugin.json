@@ -1,7 +1,7 @@
 {
   "name": "max-v8",
-  "version": "8.3.0",
-  "description": "MAX v8.3 for Cowork: S/M/L/XL sizing, SPEC with coverage ids, test-first Sonnet coders, reviewer + verifier, proof gate before done. Thai reports. v8.1: MAX ละเอียด (max-deep) deep pre-check with an approval stop. v8.3: XL MAX สุด, lighter load, task routes. v8.2: project memory — docs/worklog.md + docs/playbook.md read before and written after every job, with a Stop hook.",
+  "version": "8.4.0",
+  "description": "MAX v8.4 for Cowork: S/M/L/XL sizing, SPEC with coverage ids, test-first Sonnet coders, reviewer + verifier, proof gate before done. Thai reports. v8.4: roadmap docs/roadmap.md + durable job files docs/max-jobs, resume (ทำต่อ), recheck (ตรวจซ้ำ), stats, plain-Thai plan before work. v8.1: MAX ละเอียด (max-deep) deep pre-check with an approval stop. v8.3: XL MAX สุด, lighter load, task routes. v8.2: project memory — docs/worklog.md + docs/playbook.md read before and written after every job, with a Stop hook.",
   "author": {
     "name": "KS HOME"
   }
