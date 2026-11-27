@@ -6,7 +6,8 @@
 
 ## 0. ทุกงาน — เริ่มและจบ
 **ได้ผล (2026-11-27)**
-1. อ่าน `CLAUDE.md` → ไฟล์นี้ → `grep -n "<คำสำคัญของงาน>" docs/worklog.md` ดูงานที่คล้ายกัน
+1. `python3 plugins/max-v8/skills/max/scripts/max_lite.py status` (หรืออ่าน `docs/roadmap.md`) → รู้งานค้าง/รอผู้ใช้/ถัดไปใน 1 คำสั่ง
+   → อ่าน `CLAUDE.md` → ไฟล์นี้ → `grep -n "<คำสำคัญของงาน>" docs/worklog.md` ดูงานที่คล้ายกัน
 2. `git status --short` และ `git log --oneline -10` ดูว่ามีงานค้างไหม หรือผู้ใช้แก้อะไรบน GitHub มาก่อน
 3. ทำงาน (ผู้ใช้พูด "ตรวจละเอียด" → skill `max-deep`, พูด "MAX" → skill `max`)
 4. ตรวจด้วยหลักฐานจริง (ข้อ 5)
