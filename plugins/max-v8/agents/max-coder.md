@@ -1,6 +1,6 @@
 ---
 name: max-coder
-description: MAX coder (Sonnet). Implements tasks from a MAX SPEC.md test-first and loops until tests pass. Continue the same coder with SendMessage for next tasks and review fixes.
+description: MAX coder (Sonnet). Implements tasks from a MAX SPEC.md test-first and loops until tests pass; also boilerplate (CSS, simple UI, sample data). Continue the same coder with SendMessage for next tasks and review fixes.
 model: sonnet
 tools: Read, Grep, Glob, Edit, Write, Bash
 disallowedTools: Agent
@@ -49,3 +49,4 @@ review: <path ไฟล์ review จาก --diff หรือ "ไม่ได
 ```
 ไฟล์ที่อ้างใน `report:`/`review:`/`proof:` ต้องมีจริงและเขียนในงานนี้ก่อนจบ (main ตรวจว่าไฟล์มีจริงก่อนเชื่อ); `DONE` ต้องมีตัวเลข `ผ่าน X/Y`
 คำตอบกลับ (ไม่เล่าขั้นตอน): แค่บรรทัด STATUS + เทส + ตรวจตัวเอง + review + ไฟล์ + ข้อกังวล (ถ้ามี) + ตรวจด้วยตา (ถ้ามี) + ค้าง (ถ้ามี) + path ไฟล์รายงาน
+

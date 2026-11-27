@@ -49,7 +49,7 @@ inside a call it already makes. Stop and ask only for what SKILL.md 'Front door'
 ## 2 — Build (`max-coder`; brief has `ดูที่:` → `max-ui-coder`; one brief per file group)
 - Brief: `SPEC: <path>` · `tasks: 2,3,4` (in order; ≤ 4, or ≤ 8 small fixes in one big file; a Core task ends the
   batch) · `เทส: <command>` · `report: <dir>/<job>-G<n>.md` · `ledger: <dir>/ledger.md` · `base: <sha>` ·
-  `job: <job>` · `lite: <full path of max_lite.py>` (the coder, ui-coder and verifier use it; none → they Glob `**/skills/max/scripts/max_lite.py` in the max-v8 plugin) · `คำขอ:` verbatim · `proof: <dir>/proof.md` (M with no screen; M with a screen too — the coder
+  `job: <job>` · `lite: <full path of max_lite.py>` (coder and ui-coder use it; none → they Glob `**/skills/max/scripts/max_lite.py` in the max-v8 plugin) · `คำขอ:` verbatim · `proof: <dir>/proof.md` (M with no screen; M with a screen too — the coder
   writes the C-ids its tests prove, the verifier keeps only what the screen shows) · `ยาก:` task → pass the Agent tool parameter `model: "opus"` to `max-coder` (not text in the brief) · `ดูที่:` when a screen is tuned (→ `max-ui-coder`) · decisions the SPEC can't know. An M is usually one coder.
 - Every task: the test is written and seen **red first** (`แดงก่อนแก้:` in the report). The coder ends by running
   `max_lite.py diff` itself and returns `review: <path>` in STATUS.
@@ -64,7 +64,7 @@ inside a call it already makes. Stop and ask only for what SKILL.md 'Front door'
 ## 4 — Review + verify (M and L; S has no reviewer, and a verifier only for `ทำซ้ำ:`)
 - Coder's `review:` path → `max-reviewer` (`SPEC:` · `คำขอ:` · `review:` · `report:`) and `max-verifier` (`SPEC:` · `คำขอ:` ·
   `ดูที่:` what the user opens — built app / live URL, not a dev server · `เทส: <project check order>` from CLAUDE.md / docs/playbook.md / the project's check skill; `เทสเต็ม:` only when a full suite is needed ·
-  `proof: <dir>/proof.md` · `report:` · `ledger:` · `lite:` · `build:` when the project's build step applies) in **one message**. The verifier counts in the "tests/builds ≤ 2 at once" group. M with no screen and no user-visible C-id:
+  `proof: <dir>/proof.md` · `report:` · `ledger:` · `build:` when the project's build step applies) in **one message**. The verifier counts in the "tests/builds ≤ 2 at once" group. M with no screen and no user-visible C-id:
   no verifier — the coder runs the checks and writes `C<n> ผ่าน — <test>` into proof.md. The verifier (and the coder) write proof lines only by appending (`>>`) — the last line of a C-id wins.
 - Results back: one arrived, the other still running and nothing is Core → end the turn with no call; send the
   coder **one** fix message with both. A Core `FIX` goes at once.

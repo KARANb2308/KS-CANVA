@@ -1,6 +1,8 @@
 # MAX — Kedit project rules (read only when the project is Kedit and has the skill `kedit-verify`)
 Moved here from ml.md and `max-verifier` (v8.3). Same rules as before; other projects never load this file.
 
+Main: put `kedit: <absolute path of this file>` in every brief to coder, verifier, reviewer and hunter on a Kedit job.
+
 ## Where each line applies
 - SPEC coverage (ml.md §1, item 3): code used in several places (importers, desktop + `#/web`) → one C-id per place.
 - Verifier brief (ml.md §4): `เทส:` = the project check order (Kedit: `kedit-verify` — changed-file tests; the full

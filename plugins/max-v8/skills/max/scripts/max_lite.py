@@ -178,7 +178,7 @@ def cmd_close(argv):
     if spec and not cids:
         out("เตือน: SPEC ไม่มี C-id เลย")
     if missing or failed:
-        out(f"ปิดไม่ได้: ไม่มีหลักฐาน {' '.join(missing) or '-'} · ไม่ผ่าน {' '.join(failed) or '-'}")
+        out(f"ปิดไม่ได้: ไม่มีหลักฐาน {' '.join(missing) or 'ไม่มี'} · ไม่ผ่าน {' '.join(failed) or 'ไม่มี'}")
         sys.exit(1)
     out(f"ยังไม่ได้ตรวจจริง: {' '.join(unchecked) or 'ไม่มี'}")
     out(f"MAX: {job} · C-id {len(cids)} · ผ่าน {len(cids) - len(unchecked)}")
@@ -198,7 +198,12 @@ def print_draft(jd, job, spec, last):
     files = "(ไม่มี base)"
     if base and base != "no-git":
         names = git(["diff", "--name-only", base, "--", ".", ":(exclude).max"], root())
-        files = ", ".join(n for n in names.splitlines() if n) or "(ไม่มี base)"
+        new = git(["ls-files", "--others", "--exclude-standard", "--", ".", ":(exclude).max"], root())
+        seen = []
+        for n in names.splitlines() + new.splitlines():
+            if n and n not in seen:
+                seen.append(n)
+        files = ", ".join(seen) or "(ไม่มีไฟล์เปลี่ยน)"
     notes = [l.strip() for l in led if l.strip().startswith(("ตัดสิน:", "แจ้งซ้ำ:", "เกินเพดาน:"))]
     out("--- ร่างบันทึก docs/worklog.md (เติม ขั้นตอนที่ได้ผล) ---")
     out(f"## {datetime.datetime.now():%Y-%m-%d} — {job}")

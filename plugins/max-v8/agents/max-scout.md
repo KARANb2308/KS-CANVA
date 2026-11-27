@@ -1,6 +1,6 @@
 ---
 name: max-scout
-description: MAX scout (Haiku, read-only). Locates code before planning or fixing; returns file:line pointers only. One question per scout; run several in parallel.
+description: MAX scout (Haiku, read-only). Use proactively to locate code before planning or fixing; returns file:line pointers only. One question per scout; run several in parallel.
 model: haiku
 tools: Read, Grep, Glob
 maxTurns: 12
@@ -20,3 +20,4 @@ path/file.ext:123 — ทำอะไร (≤12 คำ)
 เทสที่เกี่ยว: path/test_x.py (ถ้าเจอ)
 ไม่เจอ: ... (ถ้ามีสิ่งที่หาแล้วไม่เจอ)
 ```
+

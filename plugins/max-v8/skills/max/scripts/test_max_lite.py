@@ -122,6 +122,27 @@ class TestClose(Repo):
         self.assertIn("- ไฟล์: (ไม่มี base)", o)
         self.assertIn("- ที่ไม่ได้ผล / ต้องระวัง: (เติม)", o)
 
+    def test_draft_includes_untracked_new_file(self):
+        self.job("C1\n", "C1 ผ่าน — เทสครบถ้วน\n")
+        self.w("new.txt", "x\n")
+        rc, o, _ = lite(self.d, "close", "j")
+        self.assertEqual(rc, 0, o)
+        self.assertIn("- ไฟล์: new.txt", o)
+        self.assertNotIn(".max/", o.split("- ไฟล์:")[1].split("\n")[0])
+
+    def test_draft_base_but_no_files(self):
+        self.job("C1\n", "C1 ผ่าน — เทสครบถ้วน\n")
+        rc, o, _ = lite(self.d, "close", "j")
+        self.assertEqual(rc, 0, o)
+        self.assertIn("- ไฟล์: (ไม่มีไฟล์เปลี่ยน)", o)
+
+    def test_refusal_prints_none_not_dash(self):
+        self.job("C1 C2\n", "C1 ผ่าน — เทสครบถ้วน\nC2 ไม่ผ่าน — ตรวจแล้วพัง\n")
+        rc, o, _ = lite(self.d, "close", "j")
+        self.assertEqual(rc, 1)
+        self.assertIn("ไม่มีหลักฐาน ไม่มี", o)
+        self.assertNotIn(" - ", o)
+
 
 class TestDiff(Repo):
     def test_format(self):

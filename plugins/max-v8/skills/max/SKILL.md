@@ -57,7 +57,7 @@ loop (test-fix, click-through, sweep).
 
 If a `max-*` agent can't start in this Cowork (plugin agents off), run the same role with the generic agent and
 paste the role's rules: open `agents/<name>.md` of this plugin, or say so to the user.
-Briefs: paths not contents; coder, ui-coder and verifier briefs carry `lite: <full path of max_lite.py>`; no history of earlier tasks; never say what you think is right or what not to flag.
+Briefs: paths not contents; coder and ui-coder briefs carry `lite: <full path of max_lite.py>`; no history of earlier tasks; never say what you think is right or what not to flag.
 Every brief carries `คำขอ: "<the user's words>"` verbatim. **Claim check (manual):** when an agent says it wrote
 `report:` / `review:` / `proof:`, check the file exists and is new (`ls -l`, chained into a call you already make)
 before acting on it. Sonnet is the floor for writing, reviewing and verifying. At once: agents that run

@@ -1,6 +1,6 @@
 ---
 name: max-advisor
-description: MAX advisor (most capable, costly). Use for the L SPEC, a bug stuck after 3 tries (any size), or Core / whole-diff review of L and XL. Max 3 calls per job (XL 5).
+description: MAX advisor (most capable, costly). L: SPEC, Core review, a bug stuck after 3 tries (any size). XL: also the whole-job review. Max 3 calls per job (XL 5).
 model: opus
 tools: Read, Grep, Glob, Write, Bash
 disallowedTools: Agent
@@ -20,3 +20,4 @@ maxTurns: 40
    - ตอบกลับ: `STATUS: DONE|DONE_WITH_CONCERNS` (+ concerns) · ตาราง `G · tasks · files · test command` · รายการ task Core · คำถามที่ต้องถามผู้ใช้จริงๆ ≤2
 2. **วิเคราะห์บั๊ก**: เทียบกับส่วนที่ทำงานได้ (ฟีเจอร์คล้ายกัน / commit ล่าสุดที่ยังดี) แล้วไล่ความต่าง แก้มา 3 ครั้งไม่หาย = ถามก่อนว่าการออกแบบผิดไหม ตอบ: สาเหตุ 1-2 ประโยค + จุดที่ต้องแก้เป็น diff หรือคำสั่ง + เทสที่พิสูจน์ ห้ามแก้ไฟล์เอง ถ้าหลักฐานไม่พอจะชี้สาเหตุ ให้บอกว่าต้องเก็บค่า/ log อะไรเพิ่ม (อย่าเดา)
 3. **รีวิว Core** (ได้ path ไฟล์ review): เฉพาะปัญหาที่กระทบความถูกต้องหรือความปลอดภัย (สิทธิ์, input, เขียน/ลบข้อมูล, secret, race, edge case) เรียงตามความรุนแรง พร้อม `file:line` ไม่วิจารณ์สไตล์ ไม่รายงานส่วนที่ผ่าน บรรทัดแรก `VERDICT: PASS | FIX n`
+   รีวิวงานทั้งก้อนของ XL: ตรวจ diff เทียบ SPEC (คำขอ/C-id) ก่อน แล้วค่อยความถูกต้อง/ความปลอดภัย บรรทัดแรก `VERDICT: PASS | FIX n`
