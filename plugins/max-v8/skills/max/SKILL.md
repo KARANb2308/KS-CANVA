@@ -69,7 +69,7 @@ tests/builds ≤ 2, read-only ≤ 4. Subagents never call subagents.
 | **S** | one spot / ≤ ~50 lines / 1–2 files, ≤ ~15 tool calls, no Core | build here → test → proof. No SPEC, no review |
 | **M** | small feature / 3–6 files / clear way | short SPEC by you → `max-coder` → `max-reviewer` + `max-verifier` |
 | **L** | new feature / many parts / unclear way / **any Core** (permissions, user data, money, deleting/overwriting files, keys) | design (0b) → `max-advisor` SPEC → coders per group → Core review at once → reviewer + verifier |
-| **XL** | only when the user types "MAX สุด" — never pick it yourself | as L, and `max-advisor` with Agent `model: "fable"` for the SPEC, each Core review and the whole-diff review at the end; advisor ≤ 5 calls. `max_lite.py dir <job> --size XL` |
+| **XL** | only when the user types "MAX สุด" — never pick it yourself | as L, and `max-advisor` with Agent `model: "fable"` for the SPEC, each Core review and the whole-diff review at the end; advisor ≤ 5 calls; if Agent rejects `model: "fable"` use `opus` and tell the user once. `max_lite.py dir <job> --size XL` |
 
 **Task routes** (any size): security → skill `security-review` if present · speed → numbers before → after are required ·
 data migration → Core, back up first · deploy / release → ask first · refactor → skill `simplify` if present.

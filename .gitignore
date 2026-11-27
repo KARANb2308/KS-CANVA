@@ -4,3 +4,6 @@ projects/
 
 # MAX job files (kept locally between sessions, never committed)
 .max/
+
+# Python cache
+__pycache__/

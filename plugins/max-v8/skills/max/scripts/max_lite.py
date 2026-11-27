@@ -24,7 +24,7 @@ def out(s):
 
 def git(args, cwd):
     try:
-        r = subprocess.run(["git"] + args, cwd=cwd, capture_output=True, text=True,
+        r = subprocess.run(["git", "-c", "core.quotePath=false"] + args, cwd=cwd, capture_output=True, text=True,
                            encoding="utf-8", errors="replace")
         return r.stdout.strip() if r.returncode == 0 else ""
     except OSError:
@@ -157,24 +157,24 @@ def cmd_close(argv):
     if not os.path.isdir(jd):
         sys.exit(f"no job folder {jd}")
     spec, proof = read(os.path.join(jd, "SPEC.md")), read(os.path.join(jd, "proof.md"))
-    cid_re = r"(?<![A-Za-z0-9_])C(\d+)(?![0-9])"
+    cid_re = r"(?<![A-Za-z0-9_#])C(\d+)(?![0-9A-Za-z_])"
+    row_re = re.compile(r"^\s*(?:-\s+)?C(\d+)\s*:?\s*(ไม่ผ่าน|ยังไม่ได้ตรวจ|ผ่าน)\s*(?:[—-]\s*(.*))?$")
+    prow = [m for m in (row_re.match(l) for l in proof.splitlines()) if m]
     cids = sorted(set(re.findall(cid_re, spec)), key=int)
     missing, failed, unchecked, last = [], [], [], {}
     for c in cids:
-        rows = [l for l in proof.splitlines() if c in re.findall(cid_re, l)]
+        rows = [m for m in prow if m.group(1) == c]
         if not rows:
             missing.append(f"C{c}")
             continue
-        l = rows[-1]  # last proof line decides
-        last[c] = l.strip()
-        if "ไม่ผ่าน" in l:
+        m = rows[-1]  # last proof row decides; only the verdict right after the leading C-id counts
+        last[c] = m.group(0).strip()
+        if m.group(2) == "ไม่ผ่าน":
             failed.append(f"C{c}")
-        elif "ยังไม่ได้ตรวจ" in l:
+        elif m.group(2) == "ยังไม่ได้ตรวจ":
             unchecked.append(f"C{c}")
-        else:
-            m = re.search(r"ผ่าน[^—\-]*[—\-]\s*(.*)$", l)
-            if not (m and len(m.group(1).strip()) >= 8):
-                missing.append(f"C{c}")
+        elif len((m.group(3) or "").strip()) < 8:
+            missing.append(f"C{c}")
     if spec and not cids:
         out("เตือน: SPEC ไม่มี C-id เลย")
     if missing or failed:
@@ -183,7 +183,10 @@ def cmd_close(argv):
     out(f"ยังไม่ได้ตรวจจริง: {' '.join(unchecked) or 'ไม่มี'}")
     out(f"MAX: {job} · C-id {len(cids)} · ผ่าน {len(cids) - len(unchecked)}")
     print_draft(jd, job, spec, last)
-    archive(md, job, f"ปิด · C {len(cids)} · ยังไม่ได้ตรวจ {len(unchecked)}")
+    over = [l.strip() for l in read(os.path.join(jd, "ledger.md")).splitlines()
+            if l.strip().startswith("เกินเพดาน:")]
+    archive(md, job, f"ปิด · C {len(cids)} · ยังไม่ได้ตรวจ {len(unchecked)}"
+            + "".join(" · " + o[:120] for o in over))
 
 
 def print_draft(jd, job, spec, last):

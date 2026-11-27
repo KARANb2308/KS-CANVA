@@ -89,6 +89,38 @@ class TestClose(Repo):
         self.assertEqual(rc, 0)
         self.assertIn("ยังไม่ได้ตรวจจริง: C1", o)
 
+    def test_hex_color_and_thai_suffix(self):
+        self.job("สี #C0392B ใช้\nC2ทำซ้ำ\n", "C2 ผ่าน — เทสครบถ้วนแล้ว\n")
+        self.assertEqual(lite(self.d, "close", "j")[0], 0)
+
+    def test_verdict_words_in_text(self):
+        self.job("C1\n", "C1 ยังไม่ได้ตรวจ — ยอมรับ: เทสไม่ผ่านบน Windows\n")
+        rc, o, _ = lite(self.d, "close", "j")
+        self.assertEqual(rc, 0)
+        self.assertIn("ยังไม่ได้ตรวจจริง: C1", o)
+
+    def test_no_verdict_token_not_pass(self):
+        self.job("C1\n", "C1 หน้า login ใส่รหัสผ่าน — รอผู้ใช้\n")
+        self.assertEqual(lite(self.d, "close", "j")[0], 1)
+
+    def test_cross_reference_ignored(self):
+        self.job("C1 C3\n", "C1 ไม่ผ่าน — x\n- C3 ผ่าน — shot3.png เหมือน C1\n")
+        rc, o, _ = lite(self.d, "close", "j")
+        self.assertEqual(rc, 1)
+        self.assertIn("ไม่ผ่าน C1", o)
+
+    def test_thai_filename_and_overcap_history(self):
+        self.job("คำขอ: x\nC1\n", "C1 ผ่าน — เทสครบถ้วน\n",
+                 "# MAX j — BASE=%s — size=M\nเกินเพดาน: ติดบั๊ก\n")
+        self.w("คู่มือ.html", "<p>x</p>\n")
+        rc, o, _ = lite(self.d, "diff", self.base, "--job", "j")
+        p = [l.split("=", 1)[1] for l in o.splitlines() if l.startswith("review=")][0]
+        self.assertIn("=== NEW FILE คู่มือ.html ===", rd(p))
+        rc, o, _ = lite(self.d, "close", "j")
+        self.assertEqual(rc, 0, o)
+        self.assertIn("คู่มือ.html", o)
+        self.assertIn("เกินเพดาน: ติดบั๊ก", rd(os.path.join(self.d, ".max", "history.md")))
+
     def test_draft_and_archive(self):
         self.job("คำขอ: ทำของให้ดี\nC1 C2\n",
                  "C1 ผ่าน — ข้อแรกเก่า\nC1 ผ่าน — ข้อแรกล่าสุด\nC2 ผ่าน — ข้อสองครบถ้วน\n",
@@ -222,6 +254,13 @@ class TestHook(Repo):
         self.w(".max/j/ledger.md", "# x\n")
         rc, o = self.run_hook()
         self.assertEqual((rc, o), (0, ""))
+
+    def test_stale_open_job_blocks(self):
+        self.w(".max/j/ledger.md", "# x\n")
+        old = __import__("time").time() - 13 * 3600
+        os.utime(os.path.join(self.d, ".max", "j", "ledger.md"), (old, old))
+        rc, o = self.run_hook()
+        self.assertIn('"block"', o)
 
     def test_closed_job_still_blocks(self):
         self.w(".max/closed/ledger.md", "# x\n")
