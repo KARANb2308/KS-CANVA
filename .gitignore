@@ -1,0 +1,6 @@
+# Customer data — never upload (names, addresses, customer work)
+projects/
+*.ksproject.json
+
+# MAX job files (kept locally between sessions, never committed)
+.max/
