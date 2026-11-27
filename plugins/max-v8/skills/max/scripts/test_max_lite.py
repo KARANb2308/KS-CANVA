@@ -278,5 +278,307 @@ class TestHook(Repo):
         self.assertEqual(self.run_hook(), (0, ""))
 
 
+import datetime as _dt, re as _re
+
+TODAY = lambda: _dt.date.today().isoformat()
+
+
+def section(text, name):
+    out_, on = [], False
+    for l in text.splitlines():
+        if l.startswith("## "):
+            on = l[3:].strip() == name
+            continue
+        if on and l.strip():
+            out_.append(l)
+    return out_
+
+
+def rb(p):
+    with open(p, "rb") as f:
+        return f.read()
+
+
+class TestRoadmap(Repo):
+    def rmp(self):
+        return os.path.join(self.d, "docs", "roadmap.md")
+
+    def rm(self):
+        return rd(self.rmp())
+
+    def test_dir_m_creates_map(self):
+        rc, o, _ = lite(self.d, "dir", "j1", "--size", "M")
+        self.assertEqual(rc, 0)
+        t = self.rm()
+        heads = [l for l in t.splitlines() if l.startswith("## ")]
+        self.assertEqual(heads, ["## กำลังทำ", "## ถัดไป", "## รอผู้ใช้", "## เสร็จล่าสุด"])
+        act = section(t, "กำลังทำ")
+        self.assertEqual(len(act), 1)
+        self.assertTrue(act[0].startswith("- [j1] M · ด่าน: SPEC"), act[0])
+        self.assertIn("budget=25", o)
+        self.assertIn(f"record=docs/max-jobs/{TODAY()}-j1", o)
+        self.assertIn(f"record={TODAY()}-j1", rd(os.path.join(self.d, ".max", "j1", "ledger.md")).splitlines()[0])
+
+    def test_dir_twice_and_s(self):
+        lite(self.d, "dir", "j1", "--size", "M")
+        lite(self.d, "dir", "j1", "--size", "M")
+        self.assertEqual(len(section(self.rm(), "กำลังทำ")), 1)
+        d2 = tempfile.mkdtemp(prefix="maxlite-")
+        try:
+            sh(["git", "init", "-q"], d2)
+            rc, o, _ = lite(d2, "dir", "s1", "--size", "S")
+            self.assertEqual(rc, 0)
+            self.assertNotIn("record=", o)
+            self.assertFalse(os.path.exists(os.path.join(d2, "docs")))
+        finally:
+            shutil.rmtree(d2, ignore_errors=True)
+
+    def test_bad_job_names(self):
+        for bad in ("../x", "a/b", ".x", "a\\b"):
+            rc, _, _ = lite(self.d, "dir", bad)
+            self.assertEqual(rc, 1, bad)
+        self.assertFalse(os.path.exists(os.path.join(self.d, "docs")))
+        self.assertFalse(os.path.exists(os.path.join(self.d, ".max")))
+        self.assertFalse(os.path.exists(os.path.join(self.d, "x")))
+
+    def test_todo_next_wait_done(self):
+        lite(self.d, "todo", "next", "แก้ dbp", "--p", "1")
+        # add the P2 first in file order by writing P2 before P1 would still sort
+        rc, o, _ = lite(self.d, "todo", "next", "อื่น")
+        self.assertEqual(rc, 0)
+        self.assertIn("เพิ่ม: - (P2) อื่น", o)
+        self.assertEqual(section(self.rm(), "ถัดไป"), ["- (P1) แก้ dbp", "- (P2) อื่น"])
+        lite(self.d, "todo", "wait", "merge PR")
+        self.assertEqual(section(self.rm(), "รอผู้ใช้"), [f"- merge PR ({TODAY()})"])
+        rc, o, _ = lite(self.d, "todo", "done", "dbp")
+        self.assertEqual(rc, 0)
+        self.assertIn("ลบ 1:", o)
+        self.assertEqual(section(self.rm(), "ถัดไป"), ["- (P2) อื่น"])
+
+    def test_p_sorts_even_if_added_later(self):
+        lite(self.d, "todo", "next", "ช้า", "--p", "3")
+        lite(self.d, "todo", "next", "ด่วน", "--p", "1")
+        self.assertEqual(section(self.rm(), "ถัดไป"), ["- (P1) ด่วน", "- (P3) ช้า"])
+
+    def test_done_not_found_and_ambiguous(self):
+        lite(self.d, "todo", "next", "งาน หนึ่ง")
+        lite(self.d, "todo", "next", "งาน สอง")
+        before = rb(self.rmp())
+        rc, o, _ = lite(self.d, "todo", "done", "ไม่มีแน่")
+        self.assertEqual(rc, 1)
+        self.assertIn("ไม่พบ", o)
+        rc, o, _ = lite(self.d, "todo", "done", "งาน")
+        self.assertEqual(rc, 1)
+        self.assertIn("ตรงหลายบรรทัด:", o)
+        self.assertEqual(rb(self.rmp()), before)
+
+    def test_todo_cap(self):
+        for i in range(20):
+            self.assertEqual(lite(self.d, "todo", "next", f"ข้อ {i}")[0], 0)
+        before = rb(self.rmp())
+        rc, o, _ = lite(self.d, "todo", "next", "ข้อ 21")
+        self.assertEqual(rc, 1)
+        self.assertIn("เต็ม 20", o)
+        self.assertEqual(rb(self.rmp()), before)
+
+    def test_todo_failures_do_not_create_file(self):
+        rc, o, _ = lite(self.d, "todo", "done", "x")
+        self.assertEqual(rc, 1)
+        self.assertFalse(os.path.exists(os.path.join(self.d, "docs")))
+
+    def test_hand_written_survives(self):
+        lite(self.d, "todo", "next", "a")
+        t = self.rm().replace("## ถัดไป\n", "## ถัดไป\nบรรทัดแปลก ไม่ใช่ bullet\n") + "\n## โน้ต\n- x\n"
+        with open(self.rmp(), "w", encoding="utf-8", newline="\n") as f:
+            f.write(t)
+        lite(self.d, "todo", "next", "b")
+        t = self.rm()
+        self.assertIn("บรรทัดแปลก ไม่ใช่ bullet", section(t, "ถัดไป"))
+        self.assertEqual(section(t, "โน้ต"), ["- x"])
+
+    def test_conflict_markers_and_dupes(self):
+        lite(self.d, "dir", "j1", "--size", "M")
+        t = ("# แผนที่งาน\n## กำลังทำ\n<<<<<<< HEAD\n"
+             "- [j1] M · ด่าน: สร้าง · ถัดไป: - · ติด: - · 2026-11-27 10:00\n=======\n"
+             "- [j1] M · ด่าน: รีวิว+ตรวจ · ถัดไป: - · ติด: - · 2026-11-27 11:30\n>>>>>>> other\n"
+             "## ถัดไป\n- (P2) ซ้ำ\n- (P2) ซ้ำ\n")
+        with open(self.rmp(), "w", encoding="utf-8", newline="\n") as f:
+            f.write(t)
+        lite(self.d, "todo", "wait", "z")
+        t = self.rm()
+        for m in ("<<<<<<<", "=======", ">>>>>>>"):
+            self.assertNotIn(m, t)
+        act = section(t, "กำลังทำ")
+        self.assertEqual(len(act), 1)
+        self.assertIn("2026-11-27 11:30", act[0])
+        self.assertEqual(section(t, "ถัดไป"), ["- (P2) ซ้ำ"])
+
+    def test_real_git_merge_union(self):
+        lite(self.d, "dir", "j1", "--size", "M")
+        sh(["git", "add", "-A"], self.d)
+        sh(["git", "commit", "-qm", "map"], self.d)
+        main = sh(["git", "rev-parse", "--abbrev-ref", "HEAD"], self.d, text=True).stdout.strip()
+        sh(["git", "checkout", "-qb", "b1"], self.d)
+        lite(self.d, "todo", "next", "จาก b1")
+        sh(["git", "commit", "-qam", "b1"], self.d)
+        sh(["git", "checkout", "-q", main], self.d)
+        sh(["git", "checkout", "-qb", "b2"], self.d)
+        lite(self.d, "todo", "next", "จาก b2")
+        sh(["git", "commit", "-qam", "b2"], self.d)
+        r = sh(["git", "merge", "-q", "--no-edit", "b1"], self.d)
+        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+        lite(self.d, "todo", "wait", "x")
+        t = self.rm()
+        nxt = section(t, "ถัดไป")
+        self.assertIn("- (P2) จาก b1", nxt)
+        self.assertIn("- (P2) จาก b2", nxt)
+        self.assertEqual(len([l for l in t.splitlines() if l == "## ถัดไป"]), 1)
+
+    def test_gitattributes_append_once(self):
+        self.w(".gitattributes", "*.png binary\n")
+        lite(self.d, "dir", "j1", "--size", "M")
+        lite(self.d, "dir", "j2", "--size", "M")
+        ga = rd(os.path.join(self.d, ".gitattributes")).splitlines()
+        self.assertIn("*.png binary", ga)
+        self.assertEqual(ga.count("docs/roadmap.md merge=union"), 1)
+
+    def test_long_text_one_line_no_cr(self):
+        lite(self.d, "todo", "next", "ก" * 100 + "\n" + "ข" * 150)
+        nxt = section(self.rm(), "ถัดไป")
+        self.assertEqual(len(nxt), 1)
+        self.assertEqual(nxt[0], "- (P2) " + "ก" * 100 + " " + "ข" * 99 + "…")
+        self.assertNotIn(b"\r", rb(self.rmp()))
+
+
+class TestRecord(Repo):
+    def setUp(self):
+        super().setUp()
+        lite(self.d, "dir", "j1", "--size", "M")
+        self.rec = os.path.join(self.d, "docs", "max-jobs", f"{TODAY()}-j1")
+
+    def rp(self, name):
+        return os.path.join(self.rec, name)
+
+    def spec(self, text):
+        self.w(".max/j1/SPEC.md", text)
+
+    def test_gate_build(self):
+        self.spec("# SPEC\nC1\n")
+        rc, o, _ = lite(self.d, "gate", "j1", "build", "--next", "รอ coder G1")
+        self.assertEqual(rc, 0)
+        self.assertEqual(o.splitlines()[0], "ด่าน: [j1] สร้าง → ถัดไป: รอ coder G1")
+        led = rd(os.path.join(self.d, ".max", "j1", "ledger.md")).splitlines()[-1]
+        self.assertTrue(led.startswith("ด่าน: สร้าง — "), led)
+        act = section(rd(os.path.join(self.d, "docs", "roadmap.md")), "กำลังทำ")
+        self.assertEqual(len(act), 1)
+        self.assertTrue(act[0].startswith("- [j1] M · ด่าน: สร้าง · ถัดไป: รอ coder G1 · ติด: - · "), act[0])
+        for n in ("SPEC.md", "ledger.md", "record.md"):
+            self.assertTrue(os.path.isfile(self.rp(n)), n)
+        self.assertFalse(os.path.exists(self.rp("proof.md")))
+        self.assertIn("สถานะ: กำลังทำ", rd(self.rp("record.md")).splitlines())
+
+    def test_gate_bad_args(self):
+        rc, o, _ = lite(self.d, "gate", "j1", "nope")
+        self.assertEqual(rc, 1)
+        for s in ("spec", "plan", "build", "review", "fix", "proof"):
+            self.assertIn(s, o)
+        self.assertEqual(lite(self.d, "gate", "nojob", "build")[0], 1)
+        self.assertFalse(os.path.exists(os.path.join(self.d, ".max", "nojob")))
+        rc, o, _ = lite(self.d, "gate", "j1", "build")
+        self.assertEqual(rc, 1)
+        self.assertIn("ยังไม่มี SPEC", o)
+        self.assertFalse(os.path.exists(self.rec) and os.path.exists(self.rp("record.md")))
+        self.assertEqual(lite(self.d, "gate", "j1", "spec")[0], 0)
+
+    def test_gate_plan(self):
+        self.spec("# SPEC\n\n## แผน (ภาษาคน)\n- p1\n- p2\n- p3\n\n## 1. เป้าหมาย\nXX\n")
+        rc, o, _ = lite(self.d, "gate", "j1", "plan")
+        self.assertEqual(rc, 0)
+        for x in ("- p1", "- p2", "- p3"):
+            self.assertIn(x, o)
+        self.assertNotIn("เป้าหมาย", o)
+        self.assertNotIn("XX", o)
+        act = section(rd(os.path.join(self.d, "docs", "roadmap.md")), "กำลังทำ")[0]
+        self.assertIn("ติด: ผู้ใช้ (อนุมัติแผน)", act)
+        self.assertIn("ถัดไป: รอผู้ใช้พิมพ์ ลุย", act)
+
+    def test_gate_plan_missing(self):
+        self.spec("# SPEC\n\n## แผนที่\n- x\n")
+        before = rb(os.path.join(self.d, "docs", "roadmap.md"))
+        rc, o, _ = lite(self.d, "gate", "j1", "plan")
+        self.assertEqual(rc, 1)
+        self.assertIn("ไม่มีหัวข้อ แผน ใน SPEC", o)
+        self.assertEqual(rb(os.path.join(self.d, "docs", "roadmap.md")), before)
+
+    def test_clean_secrets(self):
+        real = os.path.realpath(self.d)
+        txt = ("APP_PASSWORD=hunter2secret\nรหัสผ่าน: abc12345\n" + "ghp_" + "a" * 30 + "\n"
+               + "Bearer " + "x" * 26 + f"\npath {real}/.max/j1/SPEC.md\n")
+        self.spec(txt)
+        rc, o, _ = lite(self.d, "gate", "j1", "build")
+        self.assertEqual(rc, 0)
+        got = rd(self.rp("SPEC.md"))
+        for bad in ("hunter2secret", "abc12345", "a" * 30, "x" * 26, real):
+            self.assertNotIn(bad, got)
+        self.assertEqual(got.count("[ตัดออก]"), 4)
+        self.assertIn("APP_PASSWORD=", got)
+        self.assertIn("./.max/j1/SPEC.md", got)
+        self.assertIn("ตัดออก: 4", o)
+        self.assertIn("ตัดออก: 4", rd(self.rp("record.md")).splitlines())
+        self.assertEqual(rd(os.path.join(self.d, ".max", "j1", "SPEC.md")), txt)
+        self.assertNotIn(real, rd(self.rp("ledger.md")))
+
+    def test_private_key_block(self):
+        self.spec("-----BEGIN RSA PRIVATE KEY-----\nMIIabc\ndef\n-----END RSA PRIVATE KEY-----\nต่อ\n")
+        lite(self.d, "gate", "j1", "build")
+        got = rd(self.rp("SPEC.md"))
+        self.assertNotIn("MIIabc", got)
+        self.assertIn("[ตัดออก]", got)
+        self.assertIn("ต่อ", got)
+
+    def test_no_over_cut(self):
+        txt = "C1 ผ่าน — test_login::test_password_required 3 passed\nคำว่า รหัสผ่าน ในหน้า login\n"
+        self.spec(txt)
+        o = lite(self.d, "gate", "j1", "build")[1]
+        self.assertEqual(rd(self.rp("SPEC.md")), txt)
+        self.assertNotIn("ตัดออก:", o)
+
+    def test_whitelist(self):
+        self.spec("C1\n")
+        for n in ("review.diff", "shot.png", "x.ksproject.json", "j1-G1.md"):
+            self.w(f".max/j1/{n}", "data\n")
+        lite(self.d, "gate", "j1", "build")
+        self.assertEqual(sorted(os.listdir(self.rec)), ["SPEC.md", "ledger.md", "record.md"])
+
+    def test_big_file_truncated(self):
+        self.spec(("x" * 99 + "\n") * 4000)
+        lite(self.d, "gate", "j1", "build")
+        b = rb(self.rp("SPEC.md"))
+        self.assertLessEqual(len(b), 300100)
+        self.assertTrue(b.decode("utf-8").rstrip().endswith("[ตัดท้าย: ไฟล์ยาวเกิน]"))
+
+    def test_twice_equals_once(self):
+        self.spec("C1 C2\nAPP_PASSWORD=hunter2secret\n")
+        self.w(".max/j1/proof.md", "C1 ผ่าน — เทสครบถ้วน\n")
+        lite(self.d, "gate", "j1", "build")
+        first = {n: rb(self.rp(n)) for n in os.listdir(self.rec)}
+        lite(self.d, "gate", "j1", "build")
+        for n, b in first.items():
+            if n != "ledger.md":
+                self.assertEqual(rb(self.rp(n)), b, n)
+        self.assertEqual(sorted(os.listdir(self.rec)), sorted(first))
+        rec = rd(self.rp("record.md"))
+        self.assertIn("C-id: 2", rec)
+        self.assertFalse([n for n in os.listdir(self.rec) if n.endswith(".tmp")])
+
+    def test_v83_head_without_record(self):
+        shutil.rmtree(os.path.join(self.d, "docs"))
+        self.w(".max/j1/ledger.md", "# MAX j1 — SPEC: x — BASE=abc — size=M — start=2026-11-27 05:48\n")
+        self.spec("C1\n")
+        rc, _, _ = lite(self.d, "gate", "j1", "build")
+        self.assertEqual(rc, 0)
+        self.assertTrue(os.path.isfile(os.path.join(self.d, "docs", "max-jobs", "2026-11-27-j1", "record.md")))
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=1)
