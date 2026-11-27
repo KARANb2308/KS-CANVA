@@ -7,7 +7,7 @@
 // The same file ships in the MAX plugin and in a project's .claude/hooks/: when the project has
 // its own copy, the plugin's copy steps aside so the check runs once.
 import { execFileSync } from 'node:child_process';
-import { existsSync, realpathSync } from 'node:fs';
+import { existsSync, readdirSync, realpathSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -38,6 +38,14 @@ try {
   const self = realpathSync(fileURLToPath(import.meta.url));
   if (existsSync(projectCopy) && realpathSync(projectCopy) !== self) process.exit(0);
   if (!existsSync(path.join(cwd, LOG))) process.exit(0);
+
+  // an open MAX job (.max/<job>/ledger.md, not .max/closed) means MAX will draft the worklog at close
+  try {
+    const md = path.join(cwd, '.max');
+    for (const e of readdirSync(md, { withFileTypes: true })) {
+      if (e.isDirectory() && e.name !== 'closed' && existsSync(path.join(md, e.name, 'ledger.md'))) process.exit(0);
+    }
+  } catch {}
 
   const changed = new Set();
   // not committed yet (staged, unstaged, new files)
