@@ -442,8 +442,26 @@ class TestRoadmap(Repo):
         p = os.path.join(self.d, "z.txt")
         with self.assertRaises(Exception):
             max_lite.atomic_write(p, b"bytes not str")
-        self.assertEqual(os.listdir(self.d).count("z.txt.tmp"), 0)
+        self.assertEqual([f for f in os.listdir(self.d) if f.endswith(".tmp")], [])
         self.assertFalse(os.path.exists(p))
+        with open(p + ".tmp", "w") as f:  # another process's tmp must survive
+            f.write("other")
+        max_lite.atomic_write(p, "mine")
+        self.assertEqual(rd(p + ".tmp"), "other")
+        self.assertEqual(rd(p), "mine")
+
+    def test_only_roadmap_head_deduped(self):
+        lite(self.d, "todo", "next", "a")
+        t = self.rm().replace("# แผนที่งาน\n", "# แผนที่งาน\n# แผนที่งาน\nหัวผู้ใช้\nหัวผู้ใช้\n", 1)
+        with open(self.rmp(), "w", encoding="utf-8", newline="\n") as f:
+            f.write(t)
+        lite(self.d, "todo", "next", "b")
+        self.assertEqual(self.rm().count("# แผนที่งาน"), 1)
+        self.assertEqual(self.rm().count("หัวผู้ใช้"), 2)
+
+    def test_diff_rejects_bad_job(self):
+        self.assertEqual(lite(self.d, "diff", self.base, "--job", "a b")[0], 1)
+        self.assertFalse(os.path.exists(os.path.join(self.d, ".max", "a b")))
 
     def test_real_git_merge_union(self):
         lite(self.d, "dir", "j1", "--size", "M")
@@ -644,6 +662,8 @@ class TestRecord(Repo):
     def test_utf16_and_symlink_sources(self):
         self.w(".max/j1/SPEC.md", "C1 ภาษาไทย\n".encode("utf-16"), "wb")
         self.assertEqual(lite(self.d, "gate", "j1", "build")[0], 0)
+        self.assertIn("C1 ภาษาไทย", rd(self.rp("SPEC.md")))
+        self.assertIn("C-id: 1", rd(self.rp("record.md")).splitlines())
         os.remove(os.path.join(self.d, ".max", "j1", "SPEC.md"))
         self.w("secret-outside.txt", "TOPSECRET\n")
         try:
@@ -653,6 +673,51 @@ class TestRecord(Repo):
         shutil.rmtree(self.rec)
         lite(self.d, "gate", "j1", "spec")
         self.assertFalse(os.path.exists(self.rp("SPEC.md")))
+
+    def test_utf16_secrets_cleaned(self):
+        real = os.path.realpath(self.d)
+        self.w(".max/j1/SPEC.md", f"C1\nAPP_PASSWORD=hunter2secret\n{real}/x\n".encode("utf-16"), "wb")
+        rc, o, _ = lite(self.d, "gate", "j1", "build")
+        self.assertEqual(rc, 0)
+        b = rb(self.rp("SPEC.md"))
+        for bad in ("hunter2secret", real):
+            self.assertNotIn(bad.encode("utf-8"), b)
+            self.assertNotIn(bad.encode("utf-16-le"), b)
+        self.assertIn("C-id: 1", rd(self.rp("record.md")).splitlines())
+
+    def test_utf16_without_bom_skipped(self):
+        self.w(".max/j1/SPEC.md", "C1\nAPP_PASSWORD=hunter2secret\n".encode("utf-16-le"), "wb")
+        rc, o, _ = lite(self.d, "gate", "j1", "build")
+        self.assertEqual(rc, 0)
+        self.assertIn("ข้าม SPEC.md: ไม่ใช่ UTF-8", o)
+        self.assertFalse(os.path.exists(self.rp("SPEC.md")))
+
+    def test_clean_lookbehind_and_authorization(self):
+        old = {k: os.environ.get(k) for k in ("HOME", "USERPROFILE")}
+        os.environ["HOME"] = os.environ["USERPROFILE"] = "/home/zed"
+        try:
+            got = max_lite.clean("a/home/zed/x /home/zed/y", "/srv/proj")[0]
+            self.assertEqual(got, "a/home/zed/x ~/y")
+        finally:
+            for k, v in old.items():
+                os.environ.pop(k, None) if v is None else os.environ.__setitem__(k, v)
+        got = max_lite.clean("Authorization: Bearer abc\nAuthorization: Token abcdef ghi\nok", "/srv/proj")[0]
+        self.assertNotIn("abc", got)
+        self.assertNotIn("ghi", got)
+        self.assertTrue(got.endswith("ok"))
+
+    def test_v83_job_does_not_overwrite_closed_record(self):
+        lite(self.d, "dir", "j1", "--size", "M")
+        self.w(".max/j1/SPEC.md", "C1\n")
+        self.w(".max/j1/proof.md", "C1 ผ่าน — เทสครบถ้วน\n")
+        self.assertEqual(lite(self.d, "close", "j1")[0], 0)
+        orig = rb(self.rp("record.md"))
+        self.w(".max/j1/ledger.md", f"# MAX j1 — SPEC: x — BASE=abc — size=M — start={TODAY()} 05:48\n")
+        self.spec("C1 C2\n")
+        self.assertEqual(lite(self.d, "gate", "j1", "build")[0], 0)
+        self.assertEqual(rb(self.rp("record.md")), orig)
+        self.assertTrue(os.path.isfile(os.path.join(self.d, "docs", "max-jobs", f"{TODAY()}-j1-2", "record.md")))
+        self.assertIn(f"record={TODAY()}-j1-2", rd(os.path.join(self.d, ".max", "j1", "ledger.md")).splitlines()[0])
 
     def test_twice_equals_once(self):
         self.spec("C1 C2\nAPP_PASSWORD=hunter2secret\n")
@@ -810,6 +875,30 @@ class TestCloseRecord(Repo):
         self.assertNotIn("docs/roadmap.md", body)
         self.assertNotIn("docs/max-jobs", body)
 
+    def test_abandon_after_gate_without_spec(self):
+        lite(self.d, "dir", "j1", "--size", "M")
+        lite(self.d, "gate", "j1", "spec")
+        self.assertEqual(lite(self.d, "abandon", "j1", "x")[0], 0)
+        st = [l for l in rd(self.rec()).splitlines() if l.startswith("สถานะ:")]
+        self.assertEqual(st, ["สถานะ: ทิ้ง: x"])
+        self.assertTrue(section(self.rmt(), "เสร็จล่าสุด")[0].endswith(f"→ docs/max-jobs/{self.rid()}/"))
+
+    def test_abandon_twice_without_spec_keeps_both_lines(self):
+        for why in ("a", "b"):
+            lite(self.d, "dir", "j1", "--size", "M")
+            lite(self.d, "abandon", "j1", why)
+        self.assertEqual(len([l for l in section(self.rmt(), "เสร็จล่าสุด") if "[j1]" in l]), 2)
+
+    def test_gate_after_half_close_repairs_line(self):
+        self.start()
+        subprocess.run([sys.executable, LITE, "close", "j1"], cwd=self.d, capture_output=True, text=True,
+                       encoding="utf-8", env=dict(ENV, MAX_LITE_FAIL_AFTER="4"))
+        self.assertEqual(lite(self.d, "gate", "j1", "build")[0], 0)
+        t = self.rmt()
+        self.assertEqual(len([l for l in section(t, "กำลังทำ") if l.startswith("- [j1] ")]), 1)
+        self.assertEqual([l for l in section(t, "เสร็จล่าสุด") if "[j1]" in l], [])
+        self.assertIn("สถานะ: กำลังทำ", rd(self.rec()).splitlines())
+
     def test_same_name_job_after_close_stays_active(self):
         self.start()
         self.assertEqual(lite(self.d, "close", "j1")[0], 0)
@@ -819,6 +908,125 @@ class TestCloseRecord(Repo):
         self.assertEqual(len([l for l in act if l.startswith("- [j1] ")]), 1)
         self.assertIn(f"record={self.rid()}-2", rd(os.path.join(self.d, ".max", "j1", "ledger.md")).splitlines()[0])
         self.assertEqual(len([l for l in section(self.rmt(), "เสร็จล่าสุด") if "[j1]" in l]), 1)
+
+
+class TestResume(Repo):
+    def rid(self):
+        return f"{TODAY()}-j1"
+
+    def rmt(self):
+        return rd(os.path.join(self.d, "docs", "roadmap.md"))
+
+    def built(self):
+        lite(self.d, "dir", "j1", "--size", "M")
+        self.w(".max/j1/SPEC.md", "# SPEC\nC1\n")
+        lite(self.d, "gate", "j1", "build")
+        sh(["git", "add", "-A"], self.d)
+        sh(["git", "commit", "-qm", "wip"], self.d)
+        shutil.rmtree(os.path.join(self.d, ".max"))
+
+    def test_status_recoverable_then_resume(self):
+        self.built()
+        rc, o, _ = lite(self.d, "status")
+        self.assertEqual(rc, 0)
+        self.assertIn("กำลังทำ: - [j1] M · ด่าน: สร้าง", o)
+        self.assertIn(f"กู้ได้ [j1]: docs/max-jobs/{self.rid()}/ → resume j1", o)
+        rc, o, _ = lite(self.d, "resume", "j1")
+        self.assertEqual(rc, 0, o)
+        self.assertEqual(rb(os.path.join(self.d, ".max", "j1", "SPEC.md")),
+                         rb(os.path.join(self.d, "docs", "max-jobs", self.rid(), "SPEC.md")))
+        for s in ("dir=", "base=", "ด่าน: สร้าง"):
+            self.assertIn(s, o)
+        self.assertTrue(rd(os.path.join(self.d, ".max", "j1", "ledger.md")).splitlines()[-1].startswith("กู้คืนจากแฟ้ม:"))
+        o = lite(self.d, "status")[1]
+        self.assertNotIn("กู้ได้", o)
+        self.assertIn("ค้าง [j1]:", o)
+
+    def test_resume_never_overwrites(self):
+        self.built()
+        self.w(".max/j1/SPEC.md", "ของฉัน\n")
+        rc, o, _ = lite(self.d, "resume", "j1")
+        self.assertEqual(rd(os.path.join(self.d, ".max", "j1", "SPEC.md")), "ของฉัน\n")
+        self.assertIn("มีอยู่แล้ว: SPEC.md", o)
+        self.assertTrue(os.path.isfile(os.path.join(self.d, ".max", "j1", "ledger.md")))
+
+    def test_resume_errors(self):
+        rc, o, _ = lite(self.d, "resume", "nojob")
+        self.assertEqual(rc, 1)
+        self.assertIn("ไม่มีแฟ้มงาน nojob", o)
+        lite(self.d, "dir", "j1", "--size", "M")
+        self.w(".max/j1/SPEC.md", "C1\n")
+        self.w(".max/j1/proof.md", "C1 ผ่าน — เทสครบถ้วน\n")
+        lite(self.d, "close", "j1")
+        rc, o, _ = lite(self.d, "resume", "j1")
+        self.assertEqual(rc, 1)
+        self.assertIn("งานปิดแล้ว — ใช้ recheck", o)
+        self.assertEqual(lite(self.d, "resume", "../x")[0], 1)
+
+    def test_status_nothing(self):
+        rc, o, _ = lite(self.d, "status")
+        self.assertEqual(o.strip(), "ไม่มีงาน MAX ค้าง")
+        self.assertFalse(os.path.exists(os.path.join(self.d, "docs")))
+
+    def test_status_repairs_half_closed(self):
+        lite(self.d, "dir", "j1", "--size", "M")
+        self.w(".max/j1/SPEC.md", "C1\n")
+        self.w(".max/j1/proof.md", "C1 ผ่าน — เทสครบถ้วน\n")
+        r = subprocess.run([sys.executable, LITE, "close", "j1"], cwd=self.d, capture_output=True, text=True,
+                           encoding="utf-8", env=dict(ENV, MAX_LITE_FAIL_AFTER="3"))
+        self.assertEqual(r.returncode, 9)
+        shutil.rmtree(os.path.join(self.d, ".max", "j1"))
+        o = lite(self.d, "status")[1]
+        self.assertIn("ซ่อมแผนที่: [j1]", o)
+        t = self.rmt()
+        self.assertEqual(section(t, "กำลังทำ"), [])
+        self.assertEqual(len([l for l in section(t, "เสร็จล่าสุด") if "[j1]" in l]), 1)
+        self.assertNotIn("ซ่อมแผนที่", lite(self.d, "status")[1])
+
+    def test_status_lost_job(self):
+        lite(self.d, "dir", "jx", "--size", "M")
+        shutil.rmtree(os.path.join(self.d, ".max"))
+        shutil.rmtree(os.path.join(self.d, "docs", "max-jobs"), ignore_errors=True)
+        o = lite(self.d, "status")[1]
+        self.assertIn("หาย [jx]: ไม่มีทั้ง .max และแฟ้ม — ดู docs/worklog.md", o)
+        self.assertIn("[jx]", self.rmt())
+
+    def test_status_next_top3(self):
+        for i in range(5):
+            lite(self.d, "todo", "next", f"ข้อ {i}")
+        o = lite(self.d, "status")[1]
+        self.assertEqual(len([l for l in o.splitlines() if l.startswith("ถัดไป:")]), 3)
+        self.assertIn("(+2)", o)
+
+    def _old_closed(self):
+        self.w(".max/closed/old-202611270541/SPEC.md", "C1\nAPP_PASSWORD=hunter2secret\n")
+        self.w(".max/closed/old-202611270541/proof.md", "C1 ผ่าน — เทสครบถ้วน\n")
+        self.w(".max/closed/old-202611270541/ledger.md",
+               "# MAX old — SPEC: x — BASE=abc — size=M — start=2026-11-27 05:00\n")
+
+    def test_backfill(self):
+        self._old_closed()
+        src = os.path.join(self.d, ".max", "closed", "old-202611270541")
+        before = {n: rb(os.path.join(src, n)) for n in os.listdir(src)}
+        rc, o, _ = lite(self.d, "backfill", "old-202611270541")
+        self.assertEqual(rc, 0, o)
+        rec = os.path.join(self.d, "docs", "max-jobs", "2026-11-27-old")
+        self.assertIn("สถานะ: ปิด (ย้อนหลัง)", rd(os.path.join(rec, "record.md")).splitlines())
+        self.assertNotIn("hunter2secret", rd(os.path.join(rec, "SPEC.md")))
+        self.assertIn("record=docs/max-jobs/2026-11-27-old", o)
+        self.assertEqual(len([l for l in section(self.rmt(), "เสร็จล่าสุด") if "[old]" in l]), 1)
+        snap = {n: rb(os.path.join(rec, n)) for n in os.listdir(rec)}
+        lite(self.d, "backfill", "old-202611270541")
+        self.assertEqual({n: rb(os.path.join(rec, n)) for n in os.listdir(rec)}, snap)
+        self.assertEqual(len([l for l in section(self.rmt(), "เสร็จล่าสุด") if "[old]" in l]), 1)
+        self.assertEqual({n: rb(os.path.join(src, n)) for n in os.listdir(src)}, before)
+        self.assertEqual(lite(self.d, "backfill", "nothere")[0], 1)
+
+    def test_backfill_keeps_active_same_name(self):
+        self._old_closed()
+        lite(self.d, "dir", "old", "--size", "M")
+        lite(self.d, "backfill", "old-202611270541")
+        self.assertEqual(len([l for l in section(self.rmt(), "กำลังทำ") if l.startswith("- [old] ")]), 1)
 
 
 if __name__ == "__main__":

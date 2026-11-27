@@ -11,6 +11,8 @@ Job files live in <project>/.max/<job>/ so they survive a new Cowork session
   python3 max_lite.py abandon <job> "<why>"      -> archive an unfinished job with a reason
   python3 max_lite.py gate <job> <spec|plan|build|review|fix|proof> [--next "<t>"] [--wait "<t>"]
                                                  -> log the stage, update docs/roadmap.md + docs/max-jobs/<id>/
+  python3 max_lite.py resume <job>               -> rebuild .max/<job>/ from docs/max-jobs/<id>/ (never overwrites)
+  python3 max_lite.py backfill <folder in .max/closed>  -> make a record for an old closed job
   python3 max_lite.py todo next "<t>" [--p 1|2|3] | wait "<t>" | done "<part>"  -> edit the roadmap lists
 """
 import datetime, os, re, shutil, subprocess, sys
@@ -59,9 +61,12 @@ def max_dir(r):
 
 def read(p):
     try:
-        return open(p, encoding="utf-8", errors="replace").read()
+        raw = open(p, "rb").read()
     except OSError:
         return ""
+    if raw[:2] in (b"\xff\xfe", b"\xfe\xff"):
+        return raw.decode("utf-16", "replace").replace("\r\n", "\n")
+    return raw.decode("utf-8-sig", "replace").replace("\r\n", "\n")
 
 
 # ---------- roadmap (docs/roadmap.md) + job record (docs/max-jobs/<id>/) ----------
@@ -82,13 +87,14 @@ EXCL = [":(exclude).max", ":(exclude)docs/roadmap.md", ":(exclude)docs/max-jobs"
 def check_job_name(job):
     if (not job or "/" in job or "\\" in job or ".." in job or job.startswith(".")
             or re.search(r"[\s\[\]:*?\"<>|]", job)):
-        out(f"ชื่องานใช้ไม่ได้: {job!r} (ห้ามมี / \\ .. ช่องว่าง [ ] : * ? \" < > | หรือขึ้นต้นด้วย .)")
+        out(f"ชื่องานใช้ไม่ได้: {job!r} (ห้ามมี / \\ .. ช่องว่าง [ ] : * ? \" < > | หรือขึ้นต้นด้วย .)"
+            " ถ้าเป็นโฟลเดอร์งานเก่าใน .max/ ให้เปลี่ยนชื่อโฟลเดอร์ก่อน")
         sys.exit(1)
 
 
 def atomic_write(path, text):
     os.makedirs(os.path.dirname(path), exist_ok=True)
-    tmp = path + ".tmp"
+    tmp = f"{path}.{os.getpid()}.tmp"
     try:
         with open(tmp, "w", encoding="utf-8", newline="\n") as f:
             f.write(text)
@@ -140,7 +146,12 @@ def _uniq(lines):
 
 def _rm_norm(r, data):
     sec = {k: list(data["sec"].get(k, [])) for k in RM_SECS}
-    head = list(data["head"])
+    head, seen_h = [], set()
+    for l in data["head"]:  # only our own heading lines are de-duplicated (add/add merge)
+        if l in RM_HEAD and l in seen_h:
+            continue
+        seen_h.add(l)
+        head.append(l)
     if "# แผนที่งาน" not in head:
         head = RM_HEAD + [l for l in head if l not in RM_HEAD]
     done_re = re.compile(r"^- (\d{4}-\d\d-\d\d) \[([^\]]+)\] ")
@@ -324,9 +335,9 @@ def scan_proof(spec, proof):
     return cids, missing, failed, unchecked, last
 
 
+_SECRET_AUTH = re.compile(r"(?i)(?<![A-Za-z0-9])([A-Za-z0-9_-]*authorization[\"']?\s*[=:]\s*[\"']?)([^\r\n]{6,})")
 _SECRET_KV = re.compile(r"(?i)(?<![A-Za-z0-9])([A-Za-z0-9_-]*(?:password|passwd|secret|token|api[_-]?key|"
-                        r"authorization|ks_session))([\"']?\s*[=:]\s*[\"']?)([^\s\"']{6,})")
-_SECRET_BASIC = re.compile(r"(?i)(authorization[\"']?\s*[=:]\s*[\"']?Basic\s+)([A-Za-z0-9+/=]{6,})")
+                        r"ks_session))([\"']?\s*[=:]\s*[\"']?)([^\s\"']{6,})")
 _SECRET_URL = re.compile(r"(://[^/\s:@]+:)([^/\s@]{3,})(@)")
 _SECRET_TH = re.compile(r"(รหัสผ่าน\s*[=:]\s*)(\S{6,})")
 _SECRET_TOK = [re.compile(x) for x in (
@@ -347,7 +358,7 @@ def clean(text, r):
 
     for pat in _SECRET_TOK:
         text = pat.sub(lambda m: (n.__setitem__(0, n[0] + 1) or CUT), text)
-    text = _SECRET_BASIC.sub(lambda m: cut(m, 2), text)
+    text = _SECRET_AUTH.sub(lambda m: cut(m, 2), text)
     text = _SECRET_URL.sub(lambda m: cut(m, 2), text)
     text = _SECRET_KV.sub(lambda m: cut(m, 3), text)
     text = _SECRET_TH.sub(lambda m: cut(m, 2), text)
@@ -356,20 +367,39 @@ def clean(text, r):
         if len(fwd) > 1 and fwd != "~":
             for form in (fwd.replace("/", "\\\\"), fwd.replace("/", "\\"), fwd):
                 flags = re.I if re.match(r"^[A-Za-z]:", form) else 0
-                text = re.sub(re.escape(form) + r"(?![A-Za-z0-9_-]|\.[A-Za-z0-9])", repl, text, flags=flags)
+                text = re.sub(r"(?<![A-Za-z0-9_.~-])" + re.escape(form) + r"(?![A-Za-z0-9_-]|\.[A-Za-z0-9])",
+                              repl, text, flags=flags)
     return text, n[0]
 
 
-def sync_record(r, jd, job, status, extra=None):
-    extra = extra or {}
+def ensure_record(r, jd, job):
+    """Pin a valid record= in the ledger head; a head without one (v8.3) must not reuse a closed record's id."""
     rid = record_id(jd, job)
+    if re.search(r"record=" + re.escape(rid) + r"(\s|$)", ledger_head(jd)):
+        return rid
+    rid = unique_id(r, job, rid[:10])
+    led = os.path.join(jd, "ledger.md")
+    lines = read(led).split("\n")
+    h = lines[0] if lines else ""
+    lines[0] = re.sub(r"record=\S+", f"record={rid}", h) if "record=" in h else f"{h} — record={rid}"
+    atomic_write(led, "\n".join(lines))
+    return rid
+
+
+def sync_record(r, jd, job, status, extra=None, rid=None):
+    extra = extra or {}
+    rid = rid or ensure_record(r, jd, job)
     dest = os.path.join(r, "docs", "max-jobs", rid)
     n_cut = 0
     for name in WHITELIST:
         src = os.path.join(jd, name)
         if not os.path.isfile(src) or os.path.islink(src):
             continue
-        txt, n = clean(read(src), r)
+        txt = read(src)
+        if "\x00" in txt:
+            out(f"ข้าม {name}: ไม่ใช่ UTF-8")
+            continue
+        txt, n = clean(txt, r)
         n_cut += n
         raw = txt.encode("utf-8")
         if len(raw) > MAX_FILE:
@@ -454,6 +484,9 @@ def cmd_gate(argv):
     out(f"ด่าน: [{job}] {label} → ถัดไป: {one_line(nxt) or '-'}")
     if size != "S":
         data = roadmap_load(r)
+        tail = f" → docs/max-jobs/{record_id(jd, job)}/"  # job continues after a half-way close: undo its done line
+        data["sec"]["เสร็จล่าสุด"] = [l for l in data["sec"]["เสร็จล่าสุด"]
+                                   if not (f" [{job}] " in l and l.rstrip().endswith(tail))]
         set_active(data, job, active_line(job, size, label, nxt, wait, f"{now:%Y-%m-%d %H:%M}"))
         roadmap_save(r, data)
         _, n_cut = sync_record(r, jd, job, "กำลังทำ")
@@ -494,6 +527,7 @@ def cmd_diff(argv):
     base = argv[0]
     i = argv.index("--job")
     job = argv[i + 1]
+    check_job_name(job)
     files = [a for k, a in enumerate(argv[1:], 1) if k not in (i, i + 1)]
     r = root()
     jd = os.path.join(max_dir(r), job)
@@ -540,14 +574,144 @@ def open_jobs(md):
                   if os.path.isdir(os.path.join(md, d)) and d != "closed")
 
 
+def find_record(r, key):
+    """docs/max-jobs/<id> for an exact id, else the newest record of job `key` (None if there is none)."""
+    base = os.path.join(r, "docs", "max-jobs")
+    if not key or re.search(r"[/\\]|\.\.", key) or not os.path.isdir(base):
+        return None
+    if re.match(r"^\d{4}-\d\d-\d\d-", key) and os.path.isfile(os.path.join(base, key, "record.md")):
+        return os.path.join(base, key)
+    pat = re.compile(r"^(\d{4}-\d\d-\d\d)-" + re.escape(key) + r"(?:-(\d+))?$")
+    c = []
+    for d in os.listdir(base):
+        m = pat.match(d)
+        if m and os.path.isfile(os.path.join(base, d, "record.md")):
+            c.append((m.group(1), int(m.group(2) or 1), d))
+    return os.path.join(base, max(c)[2]) if c else None
+
+
+def rec_field(path, key):
+    m = re.search(r"^" + re.escape(key) + r": ?(.*)$", read(os.path.join(path, "record.md")), re.M)
+    return m.group(1).strip() if m else ""
+
+
+def done_line(rec, job, label, date):
+    cid = (re.search(r"\d+", rec_field(rec, "C-id")) or [""])[0] or "0"
+    unc = (re.search(r"\d+", rec_field(rec, "ยังไม่ได้ตรวจ")) or [""])[0] or "0"
+    return f"- {date} [{job}] {label} · C {cid} · ยังไม่ได้ตรวจ {unc} → docs/max-jobs/{os.path.basename(rec)}/"
+
+
 def cmd_status(argv):
-    md = max_dir(root())
+    r = root()
+    md = max_dir(r)
     jobs = open_jobs(md)
+    if os.path.exists(rm_path(r)):
+        data = roadmap_load(r)
+        fixed, notes = [], []
+        for l in list(data["sec"]["กำลังทำ"]):
+            m = re.match(r"^- \[([^\]]+)\]", l)
+            if not m or m.group(1) in jobs:
+                continue
+            job = m.group(1)
+            rec = find_record(r, job)
+            st = rec_field(rec, "สถานะ") if rec else ""
+            if rec and re.match(r"(ปิด|ทิ้ง)", st):
+                date = (re.search(r"\d{4}-\d\d-\d\d", rec_field(rec, "ปิด")) or [datetime.date.today().isoformat()])[0]
+                label = st if st.startswith("ทิ้ง") else "ปิด"
+                data["sec"]["กำลังทำ"].remove(l)
+                data["sec"]["เสร็จล่าสุด"].insert(0, done_line(rec, job, label, date))
+                fixed.append(job)
+            elif rec:
+                notes.append(f"กู้ได้ [{job}]: docs/max-jobs/{os.path.basename(rec)}/ → resume {job}")
+            else:
+                notes.append(f"หาย [{job}]: ไม่มีทั้ง .max และแฟ้ม — ดู docs/worklog.md")
+        if fixed:
+            roadmap_save(r, data)
+            data = roadmap_load(r)
+        for l in data["sec"]["กำลังทำ"]:
+            out(f"กำลังทำ: {l}")
+        for l in data["sec"]["รอผู้ใช้"]:
+            out(f"รอผู้ใช้: {l}")
+        nxt = data["sec"]["ถัดไป"]
+        for k, l in enumerate(nxt[:3]):
+            out(f"ถัดไป: {l}" + (f" (+{len(nxt) - 3})" if k == 2 and len(nxt) > 3 else ""))
+    else:
+        fixed, notes = [], []
     if not jobs:
         out("ไม่มีงาน MAX ค้าง")
     for j in jobs:
         lines = [l for l in read(os.path.join(md, j, "ledger.md")).splitlines() if l.strip()]
         out(f"ค้าง [{j}]: {lines[-1] if lines else '(ledger ว่าง)'}")
+    for n in notes:
+        out(n)
+    for j in fixed:
+        out(f"ซ่อมแผนที่: [{j}]")
+
+
+def cmd_resume(argv):
+    if not argv:
+        sys.exit("usage: resume <job>")
+    job = argv[0]
+    check_job_name(job)
+    r = root()
+    rec = find_record(r, job)
+    if not rec:
+        out(f"ไม่มีแฟ้มงาน {job}")
+        sys.exit(1)
+    if re.match(r"(ปิด|ทิ้ง)", rec_field(rec, "สถานะ")):
+        out("งานปิดแล้ว — ใช้ recheck")
+        sys.exit(1)
+    jd = os.path.join(max_dir(r), job)
+    os.makedirs(jd, exist_ok=True)
+    for name in WHITELIST:
+        src, dst = os.path.join(rec, name), os.path.join(jd, name)
+        if not os.path.isfile(src):
+            continue
+        if os.path.exists(dst):
+            out(f"มีอยู่แล้ว: {name}")
+        else:
+            atomic_write(dst, read(src))
+    led = os.path.join(jd, "ledger.md")
+    append_line(led, f"กู้คืนจากแฟ้ม: {datetime.datetime.now():%Y-%m-%d %H:%M}")
+    lines = [l for l in read(led).splitlines() if l.strip()]
+    base = (re.search(r"BASE=(\S+)", lines[0]) or [None, ""])[1]
+    stage = [l for l in lines if l.startswith("ด่าน:")]
+    out(f"dir={jd}\nbase={base}")
+    if stage:
+        out(stage[-1])
+    for l in lines[-5:]:
+        out(l)
+
+
+def cmd_backfill(argv):
+    if not argv:
+        sys.exit("usage: backfill <folder in .max/closed>")
+    name = argv[0]
+    check_job_name(name)
+    r = root()
+    src = os.path.join(r, ".max", "closed", name)
+    if not os.path.isdir(src):
+        out(f"ไม่มีโฟลเดอร์ .max/closed/{name}")
+        sys.exit(1)
+    job = re.sub(r"-\d{12}$", "", name)
+    head = ledger_head(src)
+    date = (re.search(r"start=(\d{4}-\d\d-\d\d)", head) or [None, datetime.date.today().isoformat()])[1]
+    stamp = re.search(r"-(\d{4})(\d\d)(\d\d)\d{4}$", name)
+    done = f"{stamp.group(1)}-{stamp.group(2)}-{stamp.group(3)}" if stamp else date
+    rid, n = f"{date}-{job}", 1
+    while True:
+        st = read(os.path.join(r, "docs", "max-jobs", rid, "record.md"))
+        busy = re.search(r"record=" + re.escape(rid) + r"(\s|$)", ledger_head(os.path.join(r, ".max", job)))
+        if "สถานะ: ปิด (ย้อนหลัง)" in st.splitlines() or (not st and not busy):
+            break
+        n += 1
+        rid = f"{date}-{job}-{n}"
+    _, n_cut = sync_record(r, src, job, "ปิด (ย้อนหลัง)", rid=rid)
+    rec = os.path.join(r, "docs", "max-jobs", rid)
+    finish_map(r, job, rid, done_line(rec, job, "ปิด (ย้อนหลัง)", done), drop_active=False)
+    out(f"record=docs/max-jobs/{rid}")
+    if n_cut:
+        out(f"ตัดออก: {n_cut}")
 
 
 def archive(md, job, line):
@@ -582,12 +746,13 @@ def job_files(r, base):
     return seen
 
 
-def finish_map(r, job, rid, line):
+def finish_map(r, job, rid, line, drop_active=True):
     """Step 4: drop the job from กำลังทำ, put its new line on top of เสร็จล่าสุด (replacing the same job+id)."""
     data = roadmap_load(r)
-    data["sec"]["กำลังทำ"] = [l for l in data["sec"]["กำลังทำ"] if not l.startswith(f"- [{job}] ")]
+    if drop_active:
+        data["sec"]["กำลังทำ"] = [l for l in data["sec"]["กำลังทำ"] if not l.startswith(f"- [{job}] ")]
     tail = f" → docs/max-jobs/{rid}/"
-    same = lambda l: f" [{job}] " in l and (l.rstrip().endswith(tail) if rid else "→" not in l)
+    same = lambda l: f" [{job}] " in l and (l.rstrip().endswith(tail) if rid else l == line)
     data["sec"]["เสร็จล่าสุด"] = [line] + [l for l in data["sec"]["เสร็จล่าสุด"] if not same(l)]
     roadmap_save(r, data)
 
@@ -677,7 +842,8 @@ def cmd_abandon(argv):
     size = (re.search(r"size=(\w+)", ledger_head(jd)) or [None, "M"])[1]
     if size != "S":
         now = datetime.datetime.now()
-        if os.path.isfile(os.path.join(jd, "SPEC.md")):
+        if (os.path.isfile(os.path.join(jd, "SPEC.md"))
+                or os.path.isfile(os.path.join(r, "docs", "max-jobs", record_id(jd, job), "record.md"))):
             rid, _ = sync_record(r, jd, job, f"ทิ้ง: {why}", {"ปิด": f"{now:%Y-%m-%d %H:%M}"})
             finish_map(r, job, rid, f"- {now:%Y-%m-%d} [{job}] ทิ้ง: {why} → docs/max-jobs/{rid}/")
             out(f"record=docs/max-jobs/{rid}")
@@ -688,7 +854,7 @@ def cmd_abandon(argv):
 
 if __name__ == "__main__":
     cmds = {"dir": cmd_dir, "diff": cmd_diff, "status": cmd_status, "close": cmd_close, "abandon": cmd_abandon,
-            "gate": cmd_gate, "todo": cmd_todo}
+            "gate": cmd_gate, "todo": cmd_todo, "resume": cmd_resume, "backfill": cmd_backfill}
     if len(sys.argv) < 2 or sys.argv[1] not in cmds:
         out(__doc__)
         sys.exit(2)
