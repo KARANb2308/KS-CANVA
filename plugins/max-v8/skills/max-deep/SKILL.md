@@ -92,7 +92,7 @@ Run the `max` skill for the job, with these overrides:
 - **Size never goes down from the preflight.** S only when the preflight shows ≤ 1 file, ≤ ~20 lines, no Core —
   and even then `max-reviewer` + `max-verifier` still run (no S shortcut, no review skip rule).
 - Core → `max-advisor` reviews the Core part (as MAX L).
-- Budget for main, pre-check included: M ≤ 35 turns, L ≤ 70. The cap never skips a gate.
+- Budget for main = the `max` skill budget (`max_lite.py`: M 25, L 50, XL 70) **+10 for the pre-check**: M ≤ 35 turns, L ≤ 60, XL ≤ 80. The cap never skips a gate.
 
 ## D9 — Close
 - Final diff: `max-reviewer` (MAX) **and** the `code-review` skill at `high`; touched Core → also `security-review`.

@@ -1,6 +1,6 @@
 ---
 name: max
-description: MAX v8 build workflow for Cowork - sizes the task (S/M/L), design-first for unclear work, SPEC with coverage ids, test-first Sonnet coders, spec-first review and a separate verifier, root-cause debugging, a proof gate before "done". Use for any coding, web/app build, bug fix, bug hunt or audit in a folder Cowork can open, or when the user says MAX / แม็กซ์ / "ทำแบบ MAX".
+description: MAX v8 build workflow - sizes the task (S/M/L; XL only when the user types "MAX สุด"), SPEC with coverage ids, test-first Sonnet coders, spec-first review, a separate verifier, a proof gate before "done". Use for coding, builds, bug fixes, bug hunts and audits, or when the user says MAX / แม็กซ์ / "ทำแบบ MAX" / "MAX สุด". Not for questions or explanations - answer directly.
 ---
 
 # MAX v8 (Cowork) — ถูกตั้งแต่ครั้งแรก ด้วย turn และ token น้อยที่สุด
@@ -16,6 +16,7 @@ loop (test-fix, click-through, sweep).
 ## Front door (intake → verify → report)
 - **The user says ตรวจละเอียด / ตรวจให้ละเอียดก่อน / MAX ละเอียด / MAX+ / max-deep → run the `max-deep` skill
   first** (deep pre-check, stop for approval, then this workflow with every gate on). Otherwise as below.
+- Project Kedit (has the skill kedit-verify) → read `references/project-kedit.md`.
 - **Reply in plain Thai**, short, no filler, the user's words not file names.
 - **Look first, then ask once** (AskUserQuestion, ≤ 4 questions, recommended option first "(แนะนำ)"): where the
   user will look (which app/URL/file) · what "ทั้งหมด" means · a reference for anything visual · after it's done
@@ -47,16 +48,16 @@ loop (test-fix, click-through, sweep).
 | Who | Model | When |
 |---|---|---|
 | `max-scout` | Haiku, read-only | ≥ 3 unknown places or a huge file: up to 3 in one message. Otherwise Grep yourself |
-| `max-coder` | Sonnet | Builds test-first, writes the review diff at the end; one brief per file group. A task marked `ยาก:` → a fresh `max-coder` told to work as the hard-task coder (or `max-advisor` if still stuck) |
+| `max-coder` | Sonnet | Builds test-first, writes the review diff at the end; one brief per file group. A task marked `ยาก:` → send it with the Agent parameter `model: "opus"` (or `max-advisor` if still stuck) |
 | `max-ui-coder` | Sonnet + browser | Same, for a brief with `ดูที่:` (tunes by watching) |
 | `max-reviewer` | Sonnet, read-only | Fresh eyes on the diff: SPEC first, then real bugs |
 | `max-verifier` | Sonnet, no code edits | Opens the real thing, walks C-ids, runs the project's checks, writes `proof.md`; also S repro (`ทำซ้ำ:`) |
-| `max-hunter` | Sonnet, read-only | Bug hunt / audit of existing code, one area group each (3b) |
-| `max-advisor` | Most capable model | Only: L SPEC, a stuck bug, Core pass on permissions / money / deletion |
+| `max-hunter` | Sonnet, read-only | Bug hunt / audit of existing code, one area group each (`references/hunt.md`) |
+| `max-advisor` | Opus (XL: `model: "fable"`) | L SPEC, a stuck bug (§3, any size), Core pass on permissions / money / deletion |
 
 If a `max-*` agent can't start in this Cowork (plugin agents off), run the same role with the generic agent and
 paste the role's rules: open `agents/<name>.md` of this plugin, or say so to the user.
-Briefs: paths not contents; no history of earlier tasks; never say what you think is right or what not to flag.
+Briefs: paths not contents; coder, ui-coder and verifier briefs carry `lite: <full path of max_lite.py>`; no history of earlier tasks; never say what you think is right or what not to flag.
 Every brief carries `คำขอ: "<the user's words>"` verbatim. **Claim check (manual):** when an agent says it wrote
 `report:` / `review:` / `proof:`, check the file exists and is new (`ls -l`, chained into a call you already make)
 before acting on it. Sonnet is the floor for writing, reviewing and verifying. At once: agents that run
@@ -68,6 +69,10 @@ tests/builds ≤ 2, read-only ≤ 4. Subagents never call subagents.
 | **S** | one spot / ≤ ~50 lines / 1–2 files, ≤ ~15 tool calls, no Core | build here → test → proof. No SPEC, no review |
 | **M** | small feature / 3–6 files / clear way | short SPEC by you → `max-coder` → `max-reviewer` + `max-verifier` |
 | **L** | new feature / many parts / unclear way / **any Core** (permissions, user data, money, deleting/overwriting files, keys) | design (0b) → `max-advisor` SPEC → coders per group → Core review at once → reviewer + verifier |
+| **XL** | only when the user types "MAX สุด" — never pick it yourself | as L, and `max-advisor` with Agent `model: "fable"` for the SPEC, each Core review and the whole-diff review at the end; advisor ≤ 5 calls. `max_lite.py dir <job> --size XL` |
+
+**Task routes** (any size): security → skill `security-review` if present · speed → numbers before → after are required ·
+data migration → Core, back up first · deploy / release → ask first · refactor → skill `simplify` if present.
 
 Unsure → the smaller size, but **touching Core is never S**, even 5 lines. S becomes M at once (5-line SPEC, the
 rest to `max-coder`) when it passes ~50 lines or 2 files, or its test or look fails twice.
@@ -79,12 +84,12 @@ An S bug also needs the test seen red (`แดงก่อนแก้:`) and, a
 
 **At M and L main writes no code, runs no test loops, clicks nothing** — except `ตัดสิน: ทำเอง — <why>` in the
 ledger for a fix ≤ ~10 lines or the final look (≤ 2 screenshots).
-**Main budget (count it yourself — no meter here): M ≤ 25 turns, L ≤ 50.** M plan: look + SPEC + coder ≤ 4 · each
+**Main budget (count it yourself — no meter here): S 10, M 25, L 50, XL 70 turns (same as `max_lite.py`).** M plan: look + SPEC + coder ≤ 4 · each
 coder return 1 · review + verify ≤ 6 · close ≤ 3. Main starts no run > 2 min. A return while another agent runs →
 end the turn, no call. At the cap: ledger `เกินเพดาน: <cause>`, everything left to agents in one message. **The
 cap never skips a gate.**
 
-M/L: Read `references/ml.md` once at the start (0b, SPEC + ledger, build, 3b, review + verify, close).
+M/L/XL: Read `references/ml.md` once at the start (0b, SPEC + ledger, build, review + verify, close). Bug hunt / audit → `references/hunt.md`.
 "ทำต่อ" / a new session: `python3 …/max_lite.py status`, then read that job's `ledger.md` before anything; a
 `เริ่ม` line with no `เสร็จ` → read its report + `git status` first, never re-send a coder blindly.
 
@@ -108,7 +113,7 @@ smallest way 4) fix the one spot at the cause, then grep the same pattern: `ท�
 
 ## Ceilings
 - Review fixes ≤ 2 rounds per task; still failing → Core: `max-advisor`; else "ค้าง" in the ledger + tell the user.
-- `max-advisor` ≤ 3 calls per job. No agent teams. No advisor on S/M unless the user asks.
+- `max-advisor` ≤ 3 calls per job (XL ≤ 5). No agent teams. No advisor on S/M unless the user asks — except §3 "Stuck" (any size).
 - Tests the coder ran on the final diff: reviewer never re-runs them.
 - Never rewrite a whole file to change one spot. Long test output → a log file; read the summary line.
 - Cowork sandbox: if a test needs Windows-only tools, a GPU or the user's installed app, it can't run here → the

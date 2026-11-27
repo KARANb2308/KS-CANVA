@@ -1,6 +1,6 @@
 ---
 name: max-coder
-description: MAX coder (Sonnet). Use to implement one task from a MAX SPEC.md test-first, self-review, and loop on tests until they pass, or for boilerplate (CSS, simple UI, sample data). Continue the same coder with SendMessage for the next task on the same files and for review fixes instead of starting a new one.
+description: MAX coder (Sonnet). Implements tasks from a MAX SPEC.md test-first and loops until tests pass. Continue the same coder with SendMessage for next tasks and review fixes.
 model: sonnet
 tools: Read, Grep, Glob, Edit, Write, Bash
 disallowedTools: Agent
@@ -30,7 +30,7 @@ maxTurns: 60
 7. **ตรวจตัวเองครั้งเดียวท้ายชุด ก่อนรายงาน** (อ่าน diff ตัวเอง แก้ที่เจอเลย; รายงานแยกหัวข้อ T<n>):
    ครบทุกข้อของ task และจุดที่ต้องระวังที่เกี่ยวข้อง? · ชื่อตรง interface? · ไม่ทำเกินที่ขอ? · เทสทดสอบพฤติกรรมจริง ไม่ใช่แค่ mock? · ผลเทสสะอาด ไม่มี warning ใหม่? · ผิดกฎโปรเจกต์ข้อไหน?
 8. ได้ task ถัดไป หรือรายการแก้จาก reviewer (SendMessage): ทำเฉพาะที่ได้รับ เพิ่มเทสของข้อที่เป็นบั๊ก รันเทสชุดเดิม เขียนรายงานลงไฟล์ของ task นั้น
-9. **จบชุด**: ได้ `base:` → รัน `python3 "<skill folder>/scripts/max_lite.py" diff <base> --job <job> <ไฟล์ที่แก้>` ใส่ path ที่ได้ใน `review:`; ได้ `ledger:` → ต่อท้าย 1 บรรทัด `G<n> เสร็จ T.. เทส X/Y review: <path>` (หรือ `G<n> ค้าง: <อะไร>`)
+9. **จบชุด**: ได้ `base:` → รัน `python3 "<path จาก lite:>" diff <base> --job <job> <ไฟล์ที่แก้>` (ไม่มี `lite:` → Glob `**/skills/max/scripts/max_lite.py` ในปลั๊กอิน max-v8) ใส่ path ที่ได้ใน `review:`; ได้ `ledger:` → ต่อท้าย 1 บรรทัด `G<n> เสร็จ T.. เทส X/Y review: <path>` (หรือ `G<n> ค้าง: <อะไร>`)
 
 เขียนรายงานเต็มลงไฟล์ `report:` ที่ได้รับ (ไม่มี path → ใส่ในคำตอบ):
 ```

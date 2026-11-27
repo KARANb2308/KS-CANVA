@@ -6,7 +6,7 @@
       "name": "max-v8",
       "source": "./plugins/max-v8",
       "description": "MAX v8.2: S/M/L sizing, SPEC, test-first coders, reviewer + verifier, proof gate; MAX ละเอียด (deep pre-check); project memory (docs/worklog.md + docs/playbook.md) with a Stop hook.",
-      "version": "8.2.0"
+      "version": "8.3.0"
     }
   ]
 }

@@ -1,6 +1,6 @@
 ---
 name: max-hunter
-description: MAX bug hunter (Sonnet, read-only). Use for "หาบัคทั้งหมด" / whole-app audits / professional critiques — one hunter per AREA (at most 6 per round, at most 4 at once). Give it the area, the files or file:line ranges, and where the user looks. Returns proven bugs only, each with file:line and how to make it happen; never fixes.
+description: MAX bug hunter (Sonnet, read-only). One per area for audits ("หาบัคทั้งหมด"). Give area, files, where the user looks. Returns proven bugs with file:line; never fixes.
 model: sonnet
 tools: Read, Grep, Glob, Bash, Write
 disallowedTools: Edit, NotebookEdit, Agent

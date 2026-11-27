@@ -1,6 +1,6 @@
 ---
 name: max-scout
-description: MAX scout (Haiku, cheap, read-only). Use proactively to locate code before planning or fixing — where a feature, function, route or setting lives — so the main session doesn't read whole files. Returns file:line pointers only. Ask one question per scout; run several in parallel.
+description: MAX scout (Haiku, read-only). Locates code before planning or fixing; returns file:line pointers only. One question per scout; run several in parallel.
 model: haiku
 tools: Read, Grep, Glob
 maxTurns: 12
