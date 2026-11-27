@@ -111,7 +111,7 @@ Claude เขียนบันทึกนี้หลังจบทุกง�
 
 ## 2026-11-27 — อัปเกรด MAX เป็น v8.3 (ทำแบบ MAX ละเอียด)
 - คำขอ: "อัพเกรดให้ Max ฉลาดที่สุด เก่งที่สุด รอบคอบ ละเอียดที่สุด ทำงานได้รอบด้านที่สุด แต่กิน Token เวลา น้อยที่สุด บอกผมก่อนว่ามีอะไรบ้าง" + "ลุย และลดความเสี่ยง ลดข้อเสียให้เหลือน้อยที่สุด"
-- สถานะ: ค้าง — รอบแก้ 2 (ผลจาก code-review high) กำลังทำ
+- สถานะ: เสร็จ (รอผู้ใช้ merge PR #1 แล้ว `/plugin marketplace update ks-home`; Cowork ต้องอัปโหลด zip ใหม่)
 - ทำอะไร: แก้ของพังใน MAX (คำสั่ง dir ผิด, close/diff ของ max_lite, กฎขัดกัน), ย้ายเนื้อหา Kedit และขั้นหาบั๊กไปไฟล์แยก, ย่อ description, ระดับ XL "MAX สุด" (advisor ใช้ Fable เฉพาะเมื่อผู้ใช้สั่ง), ตารางเส้นทางตามประเภทงาน, hook ไม่บล็อกระหว่างงาน MAX เปิด
 - ไฟล์: `plugins/max-v8/` (SKILL.md, references/{ml,hunt,project-kedit}.md, agents ×7, scripts/max_lite.py + test_max_lite.py ใหม่, hooks/), สำเนา `.claude/hooks/`, `.claude/skills/max-deep/`, `.claude-plugin/marketplace.json`
 - ขั้นตอนที่ได้ผล:
@@ -125,5 +125,6 @@ Claude เขียนบันทึกนี้หลังจบทุกง�
   - coder แปลง CRLF → LF ทั้งไฟล์ (diff บวมทุกบรรทัด) → ไฟล์ agent ต้นฉบับมีท้ายบรรทัดผสม ต้องคงไว้
   - "บรรทัดล่าสุดชนะ" + ค้นคำทั้งบรรทัด ทำให้คำว่า "รหัสผ่าน" นับเป็นผ่าน และบรรทัดของ C-id อื่นทับผลได้ → ต้องอ่านผลเฉพาะคำหลัง C-id ตัวแรกของบรรทัด
   - git ใส่เครื่องหมายคำพูดให้ชื่อไฟล์ภาษาไทย (core.quotePath) → ต้อง `-c core.quotePath=false`
-- ตรวจด้วย: test_max_lite.py 23/23 (ก่อนรอบแก้ 2) · `claude plugin validate .` ผ่าน · cmp สำเนาตรง · SKILL.md+ml.md 22,167 B (เดิม 22,260) · descriptions 2,470 B (เดิม 3,202) · reviewer PASS (รอบแก้ 1)
+- ตรวจด้วย: test_max_lite.py 29/29 · `claude plugin validate .` ผ่าน · cmp สำเนาตรง · SKILL.md+ml.md 22,236 B (เดิม 22,260) · descriptions 2,468 B (เดิม 3,202) · งานทดลองจริงปิดได้ (28 turn, $1.26) · reviewer PASS 3 รอบ (ทั้งงาน + รอบแก้ 1 + รอบแก้ 2) · Agent รับ `model: "fable"` ได้จริง
+- ค้างเล็ก (ยอมรับ): แถว proof ต้องเป็น `C<n> ผ่าน — <หลักฐาน>` ตรงตัว (`ผ่าน:` / `ผ่านแล้ว` จะถูกนับว่าไม่มีหลักฐาน = เข้มไป ไม่ใช่หลวม) · ยังไม่ได้ลอง XL และงาน Kedit จริง
 - commit: ดู git log (commit เดียวกับบันทึกนี้)

@@ -45,7 +45,11 @@
 4. ทุกคำสั่งที่เขียนในเอกสารให้ Claude ใช้ ต้องลองรันจริงก่อน commit
 5. แก้ปลั๊กอิน MAX: แก้ในสำเนาที่ scratchpad เท่านั้น ใช้ python ที่ `assert` ว่าข้อความเดิมเจอครั้งเดียว → `claude plugin validate <โฟลเดอร์>` → zip
    ไฟล์ที่มีทั้งใน repo และในปลั๊กอิน (`require-worklog.mjs`, `max-deep/SKILL.md`) ให้แก้ที่ repo แล้วคัดลอก repo → ปลั๊กอิน ห้ามคัดลอกย้อนกลับ ตรวจด้วย `cmp`
-6. agent/skill ห้ามเขียน path เต็มของเครื่องใดเครื่องหนึ่ง (เช่น `C:\Users\...`) → ให้ main ส่ง path ใน brief + ทางสำรองเป็น Glob ตรวจทั้งปลั๊กอินด้วย grep ก่อน zip (เจอ 2026-11-27)
+6. อัปเกรด MAX (ได้ผล 2026-11-27): สำรองทั้งโฟลเดอร์ใน `.max/<job>/before-…/` → แก้ → `python3 plugins/max-v8/skills/max/scripts/test_max_lite.py`
+   → `claude plugin validate .` → ลองงานจริง: git repo ทิ้งได้ + `claude -p "MAX ขนาด M: …" --plugin-dir plugins/max-v8 --allowedTools Read Write Edit Glob Grep Agent Skill "Bash(python3:*)" "Bash(git:*)" --output-format json`
+   (ห้าม bypassPermissions — ถูกปฏิเสธ) → reviewer เทียบกฎเดิม↔ใหม่ → `/code-review high` (เจอบั๊กที่ reviewer พลาด คุ้ม) · ไฟล์ agent มีท้ายบรรทัด LF/CRLF ผสม ห้ามแปลงทั้งไฟล์
+   · แถว proof ต้องเป็น `C<n> ผ่าน — <หลักฐาน ≥ 8 ตัว>` · ชื่อไฟล์ไทยกับ git ต้อง `-c core.quotePath=false`
+6b. agent/skill ห้ามเขียน path เต็มของเครื่องใดเครื่องหนึ่ง (เช่น `C:\Users\...`) → ให้ main ส่ง path ใน brief + ทางสำรองเป็น Glob ตรวจทั้งปลั๊กอินด้วย grep ก่อน zip (เจอ 2026-11-27)
 7. สคริปต์หลายขั้นต้องหยุดทันทีเมื่อขั้นใดล้มเหลว (`set -e` หรือต่อด้วย `&&`) ไม่อย่างนั้นขั้นถัดไปอาจเขียนทับไฟล์ผิด (เจอ 2026-11-27)
 
 ## 5. วิธีตรวจที่ใช้ได้ในเครื่อง cloud
