@@ -108,3 +108,22 @@ Claude เขียนบันทึกนี้หลังจบทุกง�
 - ที่ไม่ได้ผล / ต้องระวัง: ติดตั้งบนเครื่อง cloud อยู่ได้แค่ session นี้ (เครื่องถูกล้าง) · `marketplace add` แบบไม่ระบุ branch จะอ่าน `main` → ต้อง merge ก่อน หรือใส่ `#<branch>`
 - ตรวจด้วย: `claude plugin list` → max-v8@ks-home 8.2.0 enabled (ทั้งแบบโฟลเดอร์ในเครื่อง และแบบ GitHub `https://github.com/KARANb2308/KS-CANVA.git#ccr-dc26de92-82bie5`)
 - commit: (ดู git log — commit เดียวกับบันทึกนี้)
+
+## 2026-11-27 — อัปเกรด MAX เป็น v8.3 (ทำแบบ MAX ละเอียด)
+- คำขอ: "อัพเกรดให้ Max ฉลาดที่สุด เก่งที่สุด รอบคอบ ละเอียดที่สุด ทำงานได้รอบด้านที่สุด แต่กิน Token เวลา น้อยที่สุด บอกผมก่อนว่ามีอะไรบ้าง" + "ลุย และลดความเสี่ยง ลดข้อเสียให้เหลือน้อยที่สุด"
+- สถานะ: ค้าง — รอบแก้ 2 (ผลจาก code-review high) กำลังทำ
+- ทำอะไร: แก้ของพังใน MAX (คำสั่ง dir ผิด, close/diff ของ max_lite, กฎขัดกัน), ย้ายเนื้อหา Kedit และขั้นหาบั๊กไปไฟล์แยก, ย่อ description, ระดับ XL "MAX สุด" (advisor ใช้ Fable เฉพาะเมื่อผู้ใช้สั่ง), ตารางเส้นทางตามประเภทงาน, hook ไม่บล็อกระหว่างงาน MAX เปิด
+- ไฟล์: `plugins/max-v8/` (SKILL.md, references/{ml,hunt,project-kedit}.md, agents ×7, scripts/max_lite.py + test_max_lite.py ใหม่, hooks/), สำเนา `.claude/hooks/`, `.claude/skills/max-deep/`, `.claude-plugin/marketplace.json`
+- ขั้นตอนที่ได้ผล:
+  1. max-deep: อ่านปลั๊กอินครบ → ยืนยันปัญหาด้วยการรันจริง (`--dir` exit 2, regex ไทยติด, ไฟล์ binary ล้ม) → ส่ง Plan agent หาสิ่งที่พลาด (ได้เพิ่ม 14 ข้อ รับ 20/23) → ถามผู้ใช้ 4+1 ข้อ → preflight → รอ "ลุย"
+  2. สำรองต้นฉบับทั้งโฟลเดอร์ไว้ใน `.max/<job>/before-v8.2/` ก่อนแก้ ใช้เทียบกฎเดิม↔ใหม่ (C16) และย้อนกลับได้
+  3. coder 2 ตัวขนานกันคนละกลุ่มไฟล์ (สคริปต์+hook / เอกสาร+agents) โดยกำหนด interface ของสคริปต์ใน SPEC ให้ฝั่งเอกสารเขียนตาม
+  4. ทดลองงานจริงด้วย `claude -p --plugin-dir plugins/max-v8 --allowedTools ...` ใน git repo ทิ้งได้ → งาน M ปิดได้จริง 28 turn, $1.26, ~4 นาที
+  5. ตรวจซ้อน 3 ชั้น: max-reviewer (รวมเทียบกฎ v8.2→v8.3) → re-review รอบแก้ → `/code-review high` เจอบั๊กที่ 2 ชั้นแรกพลาด (regex สีฐาน 16, คำว่า "รหัสผ่าน", path ภาษาไทย)
+- ที่ไม่ได้ผล / ต้องระวัง:
+  - การรัน `claude -p` ด้วย `--permission-mode bypassPermissions` ถูกปฏิเสธ (auto mode) → ใช้ `--allowedTools` แบบแคบแทน ได้ผล
+  - coder แปลง CRLF → LF ทั้งไฟล์ (diff บวมทุกบรรทัด) → ไฟล์ agent ต้นฉบับมีท้ายบรรทัดผสม ต้องคงไว้
+  - "บรรทัดล่าสุดชนะ" + ค้นคำทั้งบรรทัด ทำให้คำว่า "รหัสผ่าน" นับเป็นผ่าน และบรรทัดของ C-id อื่นทับผลได้ → ต้องอ่านผลเฉพาะคำหลัง C-id ตัวแรกของบรรทัด
+  - git ใส่เครื่องหมายคำพูดให้ชื่อไฟล์ภาษาไทย (core.quotePath) → ต้อง `-c core.quotePath=false`
+- ตรวจด้วย: test_max_lite.py 23/23 (ก่อนรอบแก้ 2) · `claude plugin validate .` ผ่าน · cmp สำเนาตรง · SKILL.md+ml.md 22,167 B (เดิม 22,260) · descriptions 2,470 B (เดิม 3,202) · reviewer PASS (รอบแก้ 1)
+- commit: ดู git log (commit เดียวกับบันทึกนี้)
