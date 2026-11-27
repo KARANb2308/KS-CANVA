@@ -7,7 +7,7 @@ Job files live in <project>/.max/<job>/ so they survive a new Cowork session
   python3 max_lite.py dir <job> --size S|M|L|XL  -> make the job folder, print dir/base/budget
   python3 max_lite.py diff <base> --job <job> [files...]  -> write review.diff, print its path
   python3 max_lite.py status                     -> open jobs + their last ledger line
-  python3 max_lite.py close <job>                -> refuse if a C-id has no proof / any ไม่ผ่าน; else archive
+  python3 max_lite.py close <job> [--turns <n>]   -> refuse if a C-id has no proof / any ไม่ผ่าน; else archive
   python3 max_lite.py abandon <job> "<why>"      -> archive an unfinished job with a reason
   python3 max_lite.py gate <job> <spec|plan|build|review|fix|proof> [--next "<t>"] [--wait "<t>"]
                                                  -> log the stage, update docs/roadmap.md + docs/max-jobs/<id>/
@@ -172,6 +172,7 @@ def _rm_norm(r, data):
             rec.append((m.group(1), l))
     done_ids = {(done_re.match(l).group(2), (re.search(r"docs/max-jobs/([^/\s]+)/?\s*$", l) or [0, None])[1])
                 for _, l in rec}
+    done_ids = {x for x in done_ids if x[1] is not None}
     rec = sorted(rec, key=lambda x: x[0], reverse=True)[:RM_DONE_KEEP]
     sec["เสร็จล่าสุด"] = [l for _, l in rec] + rest
     act, order, rest = {}, [], []
@@ -519,9 +520,13 @@ def cmd_dir(argv):
     check_job_name(job)
     r = root()
     jd = os.path.join(max_dir(r), job)
+    led = os.path.join(jd, "ledger.md")
+    old = None if os.path.exists(led) else find_record(r, job, by_id=False)
+    if old and rec_field(old, "สถานะ").startswith("กำลังทำ"):
+        out(f"กู้ได้ [{job}]: docs/max-jobs/{os.path.basename(old)}/ → resume {job}")
+        sys.exit(1)
     os.makedirs(jd, exist_ok=True)
     base = git(["rev-parse", "--short", "HEAD"], r) or "no-git"
-    led = os.path.join(jd, "ledger.md")
     now = datetime.datetime.now()
     if not os.path.exists(led):
         rec = f" — record={unique_id(r, job, now.strftime('%Y-%m-%d'))}" if size != "S" else ""
@@ -661,7 +666,7 @@ def cmd_status(argv):
             out(f"ถัดไป: {l}" + (f" (+{len(nxt) - 3})" if k == 2 and len(nxt) > 3 else ""))
     else:
         fixed, notes = [], []
-    if not jobs:
+    if not jobs and not notes:
         out("ไม่มีงาน MAX ค้าง")
     for j in jobs:
         lines = [l for l in read(os.path.join(md, j, "ledger.md")).splitlines() if l.strip()]
@@ -791,7 +796,8 @@ def cmd_recheck(argv):
     head = git(["rev-parse", "--short", "HEAD"], r) or "-"
     last = ""
     if origin == "แฟ้มถาวร":
-        last = git(["log", "-1", "--format=%h", "--", rel + "record.md"], r)
+        last = (git(["log", "--format=%h", "-S" + "สถานะ: ปิด", "--", rel + "record.md"], r).splitlines() or [""])[-1] \
+            or git(["log", "-1", "--format=%h", "--", rel + "record.md"], r)
     out(f"แฟ้ม: {rel} (ที่มา: {origin})")
     out(f"ช่วง: {base or '-'}..{last or 'ยังไม่ commit'}  HEAD={head}")
     out(f"ไฟล์: {rec_field(folder, 'ไฟล์') if origin == 'แฟ้มถาวร' else '(ไม่มีข้อมูล)'}")
@@ -807,7 +813,13 @@ def cmd_recheck(argv):
 
 def recheck_sum(r, job, folder, rcfile, cids, today):
     rows = {}
-    for l in read(rcfile).splitlines():
+    raw = read(rcfile)
+    txt, n_cut = clean(raw, r)
+    if txt != raw:
+        atomic_write(rcfile, txt)
+    if n_cut:
+        out(f"ตัดออก: {n_cut}")
+    for l in txt.splitlines():
         m = RC_ROW.match(l)
         if m:
             rows[m.group(1)] = (m.group(2), m.group(3).strip())
@@ -941,7 +953,7 @@ def job_files(r, base):
     new = git(["ls-files", "--others", "--exclude-standard", "--", "."] + EXCL, r)
     seen = []
     for n in names.splitlines() + new.splitlines():
-        if n and n not in seen:
+        if n and n not in seen and "__pycache__/" not in "/" + n and not n.endswith(".pyc"):
             seen.append(n)
     if ".gitattributes" in seen and _attr_only_ours(r, base):
         seen.remove(".gitattributes")

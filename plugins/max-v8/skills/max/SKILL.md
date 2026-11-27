@@ -92,7 +92,7 @@ cap never skips a gate.**
 
 M/L/XL: Read `references/ml.md` once at the start (0b, SPEC + ledger, build, review + verify, close). Bug hunt / audit → `references/hunt.md`.
 "ทำต่อ" / a new session: `python3 …/max_lite.py status`; `กู้ได้ [job]` → `resume <job>`; then read that job's
-`ledger.md` before anything; a `เริ่ม` line with no `เสร็จ` → read its report + `git status` first, never re-send a
+`ledger.md` before anything; `หาย`/`ซ่อมแผนที่` → read references/roadmap.md; a `เริ่ม` line with no `เสร็จ` → read its report + `git status` first, never re-send a
 coder blindly. "ตรวจซ้ำ <งาน>" / "ตรวจซ้ำละเอียด" → read only `references/recheck.md`. Roadmap / next jobs / stats →
 `references/roadmap.md`.
 

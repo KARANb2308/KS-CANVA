@@ -9,13 +9,13 @@ Read once at the start of an M/L job. Sizes, Team, bugs (§3), red flags and cei
 3. Way clear, or "ไม่ต้องถาม" → recommended one, `ตัดสิน:` line, go on.
 
 ## 1 — SPEC + ledger (M, L)
-`python3 "<skill folder>/scripts/max_lite.py" dir <job> --size M|L` (XL only when the user typed "MAX สุด") → `dir` (`<project>/.max/<job>/`), `base` and
-`budget` (run it in the same message as the SPEC Write and the coder brief). Keep
-`SPEC.md`, `ledger.md`, `proof.md` and reports in `dir`. Write the SPEC and send the coder in **one** message
-(Write first, Agent last). **SPEC starts with `แผน (ภาษาคน)`**: 5–10 Thai lines (เปลี่ยนอะไรให้ผู้ใช้ · ขั้นตอน ·
+`python3 "<skill folder>/scripts/max_lite.py" dir <job> --size M|L` → `dir` (`<project>/.max/<job>/`), `base` and
+`budget` (same message as the SPEC Write + coder brief). Keep
+SPEC, ledger, proof and reports in `dir`. Write the SPEC and send the coder in **one** message
+(Write, then Agent). **SPEC starts with `แผน (ภาษาคน)`**: 5–10 Thai lines (เปลี่ยนอะไรให้ผู้ใช้ · ขั้นตอน ·
 พิสูจน์ยังไง · ความเสี่ยง · ไม่ทำ). M: put the plan in the message that sends the coder, `gate <job> build`, go on. L/XL:
-`gate <job> plan` → give its output to the user as is → end the turn, wait for "ลุย" → `gate <job> build`. From
-max-deep with preflight approved → don't ask again, unless the SPEC goes beyond the preflight. L advisor brief: `SPEC: <path>` · `dir:` · `คำขอ:` the user's words · intake answers / `ตัดสิน:` lines · NOTES paths · bound rules (e.g. docs/rules/<area>.md) · `skill:` the project skill path · `ml: <this skill's folder>/references/ml.md` as an absolute path. It self-checks and returns STATUS + a table `G · tasks · files · test command`; main reads the SPEC only when STATUS has concerns. `SPEC.md` (M: by you, ≤ ~50 lines, skip empty headings; L: `max-advisor`), Thai
+`gate <job> plan` → give its output to the user as is → end the turn, wait for "ลุย" → `gate <job> build`. Every turn ending with the job still open (ลุย, question, over budget): the `gate` call also runs `git add docs/max-jobs docs/roadmap.md && git commit -m "max: <job> ด่าน <x>"`; say in one line if pushed (project push rules); not pushed = a new session cannot resume. From
+max-deep with preflight approved → don't ask again, unless the SPEC goes beyond the preflight. L advisor brief: `SPEC: <path>` · `dir:` · `คำขอ:` the user's words · intake answers / `ตัดสิน:` lines · NOTES paths · bound rules (e.g. docs/rules/<area>.md) · `skill:` the project skill path · `ml: <this skill's folder>/references/ml.md` (absolute). It self-checks and returns STATUS + a table `G · tasks · files · test command`; main reads the SPEC only when STATUS has concerns. `SPEC.md` (M: by you, ≤ ~50 lines, skip empty headings; L: `max-advisor`), Thai
 headings exactly:
 1. `เป้าหมาย`: 1–2 lines + checkable acceptance criteria (what the user clicks, sees, where, and when — now or
    after a release) + `คำขอ: "<the user's words, piece by piece>" → C1, C3` (every piece has an id)
@@ -44,7 +44,7 @@ errors", "ตามความเหมาะสม", "TBD") · names match acr
 fix that first (unsure what they meant → it was an intake question; ask now, before T1). Then `SPEC ตรวจแล้ว` in
 the ledger. A real change mid-job → "เปลี่ยนแปลง" heading + why.
 
-`ledger.md` = the job's memory (its header line is written by `max_lite.py dir`, not by main) (a new session resumes from it: SKILL.md "ทำต่อ"). **Agents append their
+`ledger.md` = the job's memory (its header line is written by `max_lite.py dir`, not by main). **Agents append their
 own lines** (coder: `G1 เสร็จ T1-T3 เทส 12/12 review: <path>`; verifier: `ตรวจแล้ว: C1 C2`); main writes only
 `SPEC ตรวจแล้ว` and `ตัดสิน: <choice> — <why> [— ถ้าผิด: <cost>]`,
 inside a call it already makes. Stop and ask only for what SKILL.md 'Front door' lists.
@@ -54,9 +54,9 @@ inside a call it already makes. Stop and ask only for what SKILL.md 'Front door'
   batch) · `เทส: <command>` · `report: <dir>/<job>-G<n>.md` · `ledger: <dir>/ledger.md` · `base: <sha>` ·
   `job: <job>` · `lite: <full path of max_lite.py>` (coder and ui-coder use it; none → they Glob `**/skills/max/scripts/max_lite.py` in the max-v8 plugin) · `คำขอ:` verbatim · `proof: <dir>/proof.md` (M with no screen; M with a screen too — the coder
   writes the C-ids its tests prove, the verifier keeps only what the screen shows) · `ยาก:` task → pass the Agent tool parameter `model: "opus"` to `max-coder` (not text in the brief) · `ดูที่:` when a screen is tuned (→ `max-ui-coder`) · decisions the SPEC can't know. An M is usually one coder.
-- `gate <job> build|review|fix|proof` is chained onto a call you already make (no extra turn); give the user its `ด่าน: …` line.
+- `gate <job> build|review|fix|proof` is chained onto a call you already make (no extra turn); show the user its `ด่าน:` line.
 - Every task: the test is written and seen **red first** (`แดงก่อนแก้:` in the report). The coder ends by running
-  `max_lite.py diff` itself and returns `review: <path>` in STATUS.
+  `max_lite.py diff` itself and returns `review:` in STATUS.
 - More work on files a coder has open → SendMessage it while its context is under ~100k; past that, a fresh coder
   with `report: <its last report>`. Different `กลุ่ม` → up to 2 coders in one message.
 - `STATUS:` `DONE` needs test numbers, `ตรวจตัวเอง: ครบ` and `review:`; `DONE_WITH_CONCERNS` → rule on each
@@ -88,7 +88,7 @@ inside a call it already makes. Stop and ask only for what SKILL.md 'Front door'
   Check `ตัดออก:` + `git diff --stat docs/max-jobs`; `git add docs/max-jobs docs/roadmap.md` in the work's commit.
 - `close` refuses any `ไม่ผ่าน`; a knowingly accepted failure: a `ตัดสิน: ยอมรับ C<n> ไม่ผ่าน — <why>` line in the ledger and append the proof line `C<n> ยังไม่ได้ตรวจ — ยอมรับ: <why>`, then `close`.
 - A job dropped, or finished without `close`: `abandon <job> "<why>"` (logged in history.md, the job folder moved to
-  `.max/closed/`) so it stops showing as open.
+  `.max/closed/`; also writes the record + roadmap) so it stops showing as open.
 - Main over budget → one line `เกินเพดาน: <cause>` in the ledger (close copies it to history).
 - Project memory (SKILL.md 'Front door'; paste the worklog draft `close` printed and fill in ขั้นตอนที่ได้ผล): the job's entry in `docs/worklog.md` — the SPEC's `สมมติฐาน` that proved
   false, the `จุดที่ต้องระวัง` that bit, the `แจ้งซ้ำ` lines go under ที่ไม่ได้ผล/ระวัง — and the playbook updated, in the

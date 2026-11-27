@@ -4,17 +4,17 @@
 
 ## main (ทำตามลำดับ)
 1. `$L recheck <job|id>` (1 call, อ่านอย่างเดียว) → ได้ `แฟ้ม:` `ช่วง:` `ไฟล์:` ทุก `C<n> |` และ `recheck=<path>`
-   exit 1 `ไม่มีแฟ้มงาน` → ลอง `$L backfill <โฟลเดอร์ใน .max/closed>`; ไม่ได้ → บอกผู้ใช้ว่าตรวจได้เฉพาะจาก `docs/worklog.md`
+   แหล่งเป็น `.max/closed` (งาน v8.3) → รัน `$L backfill <โฟลเดอร์>` ก่อน เพื่อให้ไฟล์ recheck อยู่ถาวร · exit 1 `ไม่มีแฟ้มงาน` → ลอง `$L backfill <โฟลเดอร์ใน .max/closed>`; ไม่ได้ → บอกผู้ใช้ว่าตรวจได้เฉพาะจาก `docs/worklog.md`
 2. ส่ง `max-verifier` 1 ตัว brief: `ตรวจซ้ำ: <path แฟ้ม>` · `อ่าน: <path ไฟล์นี้> หัวข้อ "สำหรับ verifier"` ·
    `recheck: <path จากบรรทัด recheck=>` · `lite:` · `คำขอ:` (คำของผู้ใช้ตรงตัว)
 3. verifier กลับมา → `$L recheck <job> --sum` → รายงานผู้ใช้ต่อ C-id: ยังผ่าน / พังแล้ว (ตั้งแต่ commit ไหน) / ตรวจไม่ได้ (เพราะอะไร)
    `--sum` ปฏิเสธถ้าไม่ครบทุก C-id (exit 1 `ตรวจซ้ำไม่ครบ: ขาด C..`) → ส่ง verifier ตัวเดิมทำส่วนที่ขาด · ข้อที่พังขึ้น "ถัดไป" เป็น P1 ให้เอง
-4. commit ไฟล์ `recheck-<วันที่>.md` + `docs/roadmap.md` + `record.md` (`git add docs/max-jobs docs/roadmap.md`)
+4. `--sum` ตัดข้อมูลลับในไฟล์ recheck ให้เอง (พิมพ์ `ตัดออก: n`) · commit ไฟล์ `recheck-<วันที่>.md` + `docs/roadmap.md` + `record.md` (`git add docs/max-jobs docs/roadmap.md`)
 
 ## ตรวจซ้ำละเอียด
 ทั้งหมดข้างบน + ในข้อความเดียวกับ verifier: `max-hunter` บนไฟล์จากบรรทัด `ไฟล์:` (brief ตาม `hunt.md`,
-`findings: <แฟ้ม>/hunt-<วันที่>.md`) + skill `code-review` ระดับ high บนไฟล์ชุดเดียวกัน (ไม่มี skill → บอกผู้ใช้ 1 บรรทัด)
-→ สิ่งที่เจอ: `$L todo next "<เรื่อง>" --p <ความรุนแรง>` ทีละข้อ
+`findings: .max/recheck-<job>/hunt-<วันที่>.md` — อยู่ใน `.max` ไม่ถูก commit) + skill `code-review` ระดับ high บนไฟล์ชุดเดียวกัน (ไม่มี skill → บอกผู้ใช้ 1 บรรทัด)
+→ สิ่งที่เจอ (เฉพาะบรรทัด `todo next` ผ่านการตัดข้อมูลก่อนถึง docs/): `$L todo next "<เรื่อง>" --p <ความรุนแรง>` ทีละข้อ
 
 ## สำหรับ verifier
 - พิสูจน์ทุก C-id ใหม่กับ HEAD วันนี้: รันเทส/คำสั่งที่หลักฐานเดิมระบุ; C-id ที่เป็นจอ → เปิดจอจริง · **ห้ามคัดลอกหลักฐานเดิม**
@@ -28,5 +28,5 @@
 - ตัดได้: `คีย์=ค่า` / `คีย์: ค่า` / `"คีย์": "ค่า"` ที่คีย์ลงท้าย password·passwd·secret·token·api_key·ks_session (มี prefix ได้) · `authorization` ถึงท้ายบรรทัด ·
   Bearer ≥ 20 ตัว · `sk-` `ghp_` `github_pat_` `AKIA` · JWT · private key · `://user:pass@` · `รหัสผ่าน: ค่า` · path ราก repo และ home (`/` `\` `\\`)
 - ตัดไม่ได้: ค่าคั่นด้วยช่องว่าง (`--password x`) · ค่าสั้นกว่า 6 ตัว · token ลอยๆ ไม่มีคีย์ · ค่าที่มีช่องว่าง/คำพูดข้างใน หรือขึ้นบรรทัดใหม่ ·
-  ชื่อ ที่อยู่ เบอร์โทร อีเมลลูกค้า · path แบบ `-I/home/…`, `\n/home/…` (JSON), ของเครื่องอื่น, `%2F`, `\\server\share`
+  ชื่อ ที่อยู่ เบอร์โทร อีเมลลูกค้า · path ที่ขึ้นต้นด้วยโฟลเดอร์ home ของเครื่องหลัง `-I` หรือ `\n` (JSON), ของเครื่องอื่น, `%2F`, `\\server\share`
 - ไฟล์นอก whitelist (SPEC/proof/ledger/preflight/record) ไม่ถูกคัดลอกเลย
