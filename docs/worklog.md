@@ -106,5 +106,5 @@ Claude เขียนบันทึกนี้หลังจบทุกง�
   2. `claude plugin validate .` → ผ่าน · `claude plugin marketplace add <repo>` → `claude plugin install max-v8@ks-home` → enabled 8.2.0 และ CLI แจ้งว่า "max-v8@synced … not loaded — max-v8@ks-home takes precedence"
   3. ทดสอบติดตั้งจาก GitHub ตาม branch (ดูบรรทัดตรวจด้วย)
 - ที่ไม่ได้ผล / ต้องระวัง: ติดตั้งบนเครื่อง cloud อยู่ได้แค่ session นี้ (เครื่องถูกล้าง) · `marketplace add` แบบไม่ระบุ branch จะอ่าน `main` → ต้อง merge ก่อน หรือใส่ `#<branch>`
-- ตรวจด้วย: `claude plugin list` → max-v8@ks-home 8.2.0 enabled
+- ตรวจด้วย: `claude plugin list` → max-v8@ks-home 8.2.0 enabled (ทั้งแบบโฟลเดอร์ในเครื่อง และแบบ GitHub `https://github.com/KARANb2308/KS-CANVA.git#ccr-dc26de92-82bie5`)
 - commit: (ดู git log — commit เดียวกับบันทึกนี้)
