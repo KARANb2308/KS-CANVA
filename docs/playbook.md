@@ -38,7 +38,9 @@
 ## 4. ตั้งค่า Claude / skill / hook ของโปรเจกต์
 **ได้ผล (2026-11-27)**
 1. skill ของโปรเจกต์อยู่ที่ `.claude/skills/<ชื่อ>/SKILL.md` (frontmatter `name` + `description` ที่บอกว่าใช้เมื่อไหร่) → ใช้ได้ session ถัดไป
-2. ปลั๊กอินที่ sync จากบัญชี (`/root/.claude/plugins/synced/…`) แก้แล้วไม่ถาวร → คัดลอกไปที่ scratchpad แก้ เปลี่ยน version ใน `.claude-plugin/plugin.json` zip แล้วส่งให้ผู้ใช้อัปโหลดเอง
+2. ต้นฉบับ MAX อยู่ที่ `plugins/max-v8/` ใน repo นี้ (marketplace `ks-home`) → แก้ที่นี่ เพิ่ม version ทั้งใน `plugins/max-v8/.claude-plugin/plugin.json` และ `.claude-plugin/marketplace.json`
+   → `claude plugin validate .` → commit/push → เครื่องผู้ใช้รัน `/plugin marketplace update ks-home` · zip สำหรับ claude.ai/Cowork: `cd plugins && zip -r max-v8.zip max-v8`
+   ปลั๊กอินที่ sync จากบัญชี (`/root/.claude/plugins/synced/…`) แก้แล้วไม่ถาวร อย่าแก้ตรงนั้น
 3. hook อยู่ใน `.claude/settings.json` ทดสอบด้วยการส่ง JSON เข้า stdin ก่อนเสมอ และต้องไม่บล็อกเมื่อตัวเอง error
 4. ทุกคำสั่งที่เขียนในเอกสารให้ Claude ใช้ ต้องลองรันจริงก่อน commit
 5. แก้ปลั๊กอิน MAX: แก้ในสำเนาที่ scratchpad เท่านั้น ใช้ python ที่ `assert` ว่าข้อความเดิมเจอครั้งเดียว → `claude plugin validate <โฟลเดอร์>` → zip

@@ -95,3 +95,16 @@ Claude เขียนบันทึกนี้หลังจบทุกง�
 - ที่ไม่ได้ผล / ต้องระวัง: agent ของปลั๊กอินห้ามเขียน path แบบเต็มของเครื่องใดเครื่องหนึ่ง ให้รับ path จาก brief เสมอ
 - ตรวจด้วย: grep ไม่เจอ path ของเครื่องเหลือ; `claude plugin validate` → Validation passed; Glob สำรองเจอไฟล์จริง
 - commit: (ดู git log — commit เดียวกับบันทึกนี้)
+
+## 2026-11-27 — ติดตั้ง MAX v8.2 (repo เป็น marketplace)
+- คำขอ: "ติดตั้งให้ผมเลย"
+- สถานะ: ค้าง — ติดตั้งใน claude.ai/Cowork ต้องให้ผู้ใช้อัปโหลด zip เอง (Claude ไม่มีเครื่องมืออัปโหลดปลั๊กอินเข้าบัญชี) · เครื่องผู้ใช้ต้องรันคำสั่งติดตั้ง 2 บรรทัด · ยังไม่ merge เข้า main
+- ทำอะไร: repo นี้เป็น plugin marketplace ชื่อ `ks-home` ที่มี `max-v8` 8.2.0 → Claude Code บนเครื่องไหนก็ติดตั้งได้จาก GitHub และตัวที่ติดตั้งจะทับ v8 เดิมที่ sync จากบัญชี
+- ไฟล์: `.claude-plugin/marketplace.json`, `plugins/max-v8/` (สำเนาของ v8.2), `CLAUDE.md` (แผนผังไฟล์), `docs/playbook.md` §4.2
+- ขั้นตอนที่ได้ผล:
+  1. `ListPlugins`/`SearchPlugins` → ไม่พบ MAX ใน catalog ของบัญชี จึงติดตั้งผ่าน `SuggestPluginInstall` ไม่ได้
+  2. `claude plugin validate .` → ผ่าน · `claude plugin marketplace add <repo>` → `claude plugin install max-v8@ks-home` → enabled 8.2.0 และ CLI แจ้งว่า "max-v8@synced … not loaded — max-v8@ks-home takes precedence"
+  3. ทดสอบติดตั้งจาก GitHub ตาม branch (ดูบรรทัดตรวจด้วย)
+- ที่ไม่ได้ผล / ต้องระวัง: ติดตั้งบนเครื่อง cloud อยู่ได้แค่ session นี้ (เครื่องถูกล้าง) · `marketplace add` แบบไม่ระบุ branch จะอ่าน `main` → ต้อง merge ก่อน หรือใส่ `#<branch>`
+- ตรวจด้วย: `claude plugin list` → max-v8@ks-home 8.2.0 enabled
+- commit: (ดู git log — commit เดียวกับบันทึกนี้)

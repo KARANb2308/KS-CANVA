@@ -1,0 +1,8 @@
+{
+  "name": "max-v8",
+  "version": "8.2.0",
+  "description": "MAX v8 for Cowork: S/M/L sizing, SPEC with coverage ids, test-first Sonnet coders, reviewer + verifier, proof gate before done. Thai reports. v8.1: MAX ละเอียด (max-deep) deep pre-check with an approval stop. v8.2: project memory — docs/worklog.md + docs/playbook.md read before and written after every job, with a Stop hook.",
+  "author": {
+    "name": "KS HOME"
+  }
+}

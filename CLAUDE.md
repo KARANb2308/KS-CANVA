@@ -36,6 +36,7 @@
 | `server.ps1` + `start.bat` | ตัวช่วยในเครื่อง Windows (localhost:8800) มี proxy และเก็บโปรเจกต์ในโฟลเดอร์ `projects/` |
 | `proxy-worker.js` | Worker แบบ proxy อย่างเดียว (ทางเลือกเสริม) |
 | `คู่มือการใช้งาน.html` | คู่มือสำหรับมือใหม่ ถูกฝังเข้า `worker.js` |
+| `plugins/max-v8/` + `.claude-plugin/marketplace.json` | ต้นฉบับปลั๊กอิน MAX (repo นี้เป็น marketplace ชื่อ `ks-home`) แก้ MAX ที่นี่ แล้วเพิ่ม version |
 
 ### กฎที่ผูกกัน
 - **แก้ `index.html`, `worker.src.js` หรือ `คู่มือการใช้งาน.html` แล้ว `worker.js` จะต้องสร้างใหม่**
