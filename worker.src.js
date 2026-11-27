@@ -1,4 +1,4 @@
-// KS HOME Material Selection: the online version, as one Cloudflare Worker.
+// Karan Material Selection: the online version, as one Cloudflare Worker.
 // Does what start.bat / server.ps1 do on one computer, for the whole team:
 //   - asks for the team password before showing anything
 //   - serves the page (index.html) and the user guide
@@ -376,19 +376,19 @@ const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) =>
   ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
 let logoSrc = null;
-// The KS HOME logo already inside index.html.
+// The Karan logo already inside index.html.
 function logo() {
   if (logoSrc === null) {
     const m = /DEFAULT_LOGO = \{ data: '(data:image\/png;base64,[A-Za-z0-9+/=]+)'/.exec(PAGE_HTML);
     logoSrc = m ? m[1] : '';
   }
-  return logoSrc ? `<img class="logo" src="${logoSrc}" alt="KS HOME">` : '';
+  return logoSrc ? `<img class="logo" src="${logoSrc}" alt="Karan">` : '';
 }
 
 function loginBody(error) {
   return `
     ${logo()}
-    <h1>ระบบเลือกวัสดุ KS HOME</h1>
+    <h1>ระบบเลือกวัสดุ Karan</h1>
     <p class="sub">ใส่รหัสผ่านของทีมเพื่อเข้าใช้งาน</p>
     <form method="post" action="/login">
       <label for="pw">รหัสผ่าน</label>
@@ -414,7 +414,7 @@ function smallPage(status, title, body, wide = false) {
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
-<title>${esc(title)} · KS HOME</title>
+<title>${esc(title)} · Karan</title>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
   :root {
