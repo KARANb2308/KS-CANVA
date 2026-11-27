@@ -80,3 +80,18 @@ Claude เขียนบันทึกนี้หลังจบทุกง�
   - `claude plugin validate` เตือนว่าไม่มี LICENSE/icon → เรื่องนี้มีผลเฉพาะตอนส่งเข้า directory สาธารณะ ปลั๊กอินส่วนตัวไม่ต้องมี
 - ตรวจด้วย: `claude plugin validate` → Validation passed; `cmp` ไฟล์ hook และ max-deep ระหว่าง repo กับปลั๊กอิน → เหมือนกัน; `node --check` hook ผ่าน
 - commit: (ดู git log — commit เดียวกับบันทึกนี้)
+
+## 2026-11-27 — แก้ path ของ max-advisor ใน MAX v8.2
+- คำขอ: "แก้ path ของ max-advisor ใน v8.2 ด้วย"
+- สถานะ: เสร็จ (รอผู้ใช้อัปโหลด `max-v8.2.zip` ตัวใหม่)
+- ทำอะไร: advisor ไม่อ้าง `C:\Users\Acer\.claude\skills\max\references\ml.md` แล้ว จึงหา ml.md เจอทั้งบน Windows, Cowork และเครื่อง cloud
+- ไฟล์ (ในปลั๊กอิน):
+  - `agents/max-advisor.md:13` — อ่าน ml.md จาก `ml:` ใน brief ถ้าไม่มี ให้ Glob `**/skills/max/references/ml.md` ใต้ `~/.claude`
+  - `skills/max/references/ml.md:15` — brief ของ advisor ต้องส่ง `ml: <skill folder>/references/ml.md` (path เต็ม)
+- ขั้นตอนที่ได้ผล:
+  1. ค้น path ที่ผูกกับเครื่องทั้งปลั๊กอินด้วย `grep -rn 'C:\\|Acer|\.claude\\'` เจอจุดเดียว
+  2. ให้ main เป็นคนส่ง path จริง (main รู้ตำแหน่ง skill ของตัวเอง) และให้ agent มีทางสำรองเป็น Glob แทนการเดา
+  3. ลอง Glob สำรองบนเครื่อง cloud → เจอ `/root/.claude/plugins/synced/…/max-v8/skills/max/references/ml.md`
+- ที่ไม่ได้ผล / ต้องระวัง: agent ของปลั๊กอินห้ามเขียน path แบบเต็มของเครื่องใดเครื่องหนึ่ง ให้รับ path จาก brief เสมอ
+- ตรวจด้วย: grep ไม่เจอ path ของเครื่องเหลือ; `claude plugin validate` → Validation passed; Glob สำรองเจอไฟล์จริง
+- commit: (ดู git log — commit เดียวกับบันทึกนี้)
